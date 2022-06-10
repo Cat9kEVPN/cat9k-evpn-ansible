@@ -10,10 +10,10 @@ Welcome to Cat9k EVPN VXLAN Ansible documentation's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-    About
-    Inputs
-    Test1
-    Test2
+   About
+   Inputs
+   Test1
+   Test2
 
 
 Indices and tables
