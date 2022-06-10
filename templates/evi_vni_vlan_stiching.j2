@@ -1,0 +1,28 @@
+{#
+This module is configuring, deleting or modifing l2vpn evpn evi to vlan stitching.
+If action is not set in the configurations, it is "add" by default.
+#}
+
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+
+{% for ivlan,idata in vlans.items() %}
+    {% if ((vlan_cli is defined and ivlan in vlan_cli) or (vlan_cli is not defined)) %}
+
+        vlan configuration {{ ivlan }}
+
+        {# Checking an action for vlan - action_stitching #}
+        {% set action = vlans[ivlan].action_stitching | default ('add') %}
+        {% if action == 'delete' %}
+            {% set prefix = 'no' %}
+        {% else %}
+            {% set prefix = '' %}
+        {% endif %}
+
+        {# vlan configuration for l2 or l3 VNI #}
+        {% if idata.vlan_type == 'access' %}
+            {{prefix}} member evpn-instance {{idata.evi}} vni {{idata.vni}}
+        {% elif idata.vlan_type == 'core' %}
+            {{prefix}} member vni {{idata.vni}}
+        {% endif %} 
+    {% endif %}
+{% endfor %}

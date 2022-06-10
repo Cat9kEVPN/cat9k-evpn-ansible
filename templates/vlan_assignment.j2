@@ -1,0 +1,24 @@
+{# DEPRICATED. Replaced by access_interfaces.j2 #}
+
+{% for vlan in vlans %}
+    {% if ( (vlan_cli is defined and vlan in vlan_cli) or (vlan_cli is not defined) ) %}
+        {% if vlans[vlan].vlan_type == 'access' %}
+        
+            {% if vlans[vlan].port_type == 'access'%}
+             interface {{ vlans[vlan].port }}
+             switchport
+             switchport mode access
+             switchport access vlan {{ vlan }}  
+             no shut
+            {% endif %}
+
+            {% if vlans[vlan].port_type == 'trunk'%}
+             interface {{ vlans[vlan].port }}
+             switchport
+             switchport mode trunk
+             no shut
+            {% endif %}
+
+        {% endif %}
+    {% endif %}
+{% endfor %}

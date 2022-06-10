@@ -1,0 +1,10 @@
+show run
+show nve peers
+show bgp l2vpn evpn summary 
+show bgp l2vpn evpn 
+
+{% for ivlan,idata in vlans.items() %}
+show l2vpn evpn mac evi {{idata.evi}}
+show l2fib bridge-domain {{ivlan}} detail
+{% endfor %}
+

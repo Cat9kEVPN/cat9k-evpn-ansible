@@ -1,0 +1,13 @@
+{#
+This module configures pim under interfaces in underlay
+#}
+
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+
+{% for interface in interfaces %}
+    {% set pim_enable = interfaces[interface].pim_enable | default ('no')%}
+    {% if pim_enable == 'yes' %}
+        interface  {{ interface }}
+        ip pim sparse-mode
+    {% endif %}
+{% endfor %}

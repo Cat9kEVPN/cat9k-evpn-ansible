@@ -1,0 +1,9 @@
+{#
+This module configures RP for the global routing table 
+#}
+
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+
+{% if pim.rp_address is defined %}
+    ip pim rp-address {{pim.rp_address}}
+{% endif %}

@@ -1,0 +1,9 @@
+{#
+This module is configuring hostname for a swith
+#}
+
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+
+{% if hostname is defined %}
+    hostname {{ hostname }}
+{% endif %}

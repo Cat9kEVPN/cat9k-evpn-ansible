@@ -1,0 +1,86 @@
+{#
+This module is configuring, deleting or modifing vrf configuration.
+If action is not set in the configurations, it is "add" by default.
+RD is excluded from the automaton as it is very sensitive paramiter and is not being changed ususally.
+
+Note: after deleting vrf, respective subsection for vrf under bgp will be deleted. No additional actions are needed. 
+#}
+
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+
+{% if vrfs is defined %}
+        {% for vrf in vrfs %}
+                {# Checking an action for all vrf #}
+                {% set action = vrfs[vrf].action | default ('add') %}
+                {% if action == 'delete' %}
+                        no vrf definition {{vrf}}
+                {% elif action == 'add' %}
+                        {# Configuring basic vrf definition #}
+                        vrf definition {{ vrf }}
+                        {% for af in vrfs[vrf].afs %}
+                                {# Checking an action for the AF #}
+                                {% set action = vrfs[vrf].afs[af].action | default ('add') %}
+                                {% if action == 'delete' %}
+                                        no address-family {{ af }}
+                                {% elif action == 'add' %}
+                                        address-family {{ af }}
+                                        {# mdt auto-discovery section #}
+                                        {% set mdt_auto_discovery = vrfs[vrf].afs[af].mdt_auto_discovery | default ('not_defined') %}
+                                        {% if mdt_auto_discovery != 'not_defined' %}
+                                                {% set action = vrfs[vrf].afs[af].mdt_auto_discovery.action | default ('add') %}
+                                                {% if action == 'delete' %}
+                                                        no mdt auto-discovery {{ mdt_auto_discovery }}
+                                                {% elif action == 'add' %}
+                                                        mdt auto-discovery {{ mdt_auto_discovery }}
+                                                {% endif %}                                                
+                                        {% endif %}
+
+                                        {# mdt default vxlan group section #}
+                                        {% set mdt_default_vxlan_group = vrfs[vrf].afs[af].mdt_default_vxlan | default ('not_defined') %}
+                                        {% if mdt_default_vxlan_group != 'not_defined' %}
+                                                {% set action = vrfs[vrf].afs[af].mdt_default_vxlan.action | default ('add') %}
+                                                {% if action == 'delete' %}
+                                                        no mdt default vxlan {{ mdt_default_vxlan_group }}
+                                                {% elif action == 'add' %}
+                                                        mdt default vxlan {{ mdt_default_vxlan_group }}
+                                                {% endif %}                                        
+                                        {% endif %}
+
+                                        {# mdt overlay section #}
+                                        {% set mdt_overlay = vrfs[vrf].afs[af].mdt_overlay | default('not_defined') %}
+                                        {% if mdt_overlay != 'not_defined' %}
+                                                {% set action = vrfs[vrf].afs[af].mdt_overlay.action | default ('add') %}
+                                                {% if action == 'delete' %}
+                                                        no mdt overlay  {{ mdt_overlay }}
+                                                {% elif action == 'add' %}
+                                                        mdt overlay {{ mdt_overlay }}
+                                                {% endif %}                                         
+                                        {% endif %}                                        
+                                {% endif %}
+                        {% endfor %}                        
+                {% endif %}        
+        {% endfor %}
+{% endif %}
+
+{%- if vrfs is defined -%}
+    {% for vrf in vrfs -%}
+        {# Check if ipv4 multicast routing should be enabled for vrf#}
+        {% set ipv4_multicast = vrfs[vrf].ipv4_multicast | default('no') %}
+        {% if ipv4_multicast == 'yes' %}
+                ip multicast-routing vrf {{ vrf }}
+        {% endif %}
+
+        {# Check if RP should be configured for vrf #}
+        {% set rp_address = vrfs[vrf].rp_address | default('not_defined') %}
+        {% if rp_address != 'not_defined' %}
+                ip pim vrf {{ vrf }} rp-address {{rp_address}}
+        {% endif %}
+
+        {# Check if SSM should be configured for vrf #}
+        {% set ssm = vrfs[vrf].ssm_enable | default('not_defined') %}
+        {% if ssm != 'not_defined' %}
+                ip pim vrf {{ vrf }} ssm default
+        {% endif %}
+
+    {% endfor %}
+{% endif %}

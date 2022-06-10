@@ -1,0 +1,39 @@
+show run nve
+show nve peers
+show l2vpn evpn peers vxlan
+show bgp l2vpn evpn summary 
+show bgp l2vpn evpn 
+
+{% if vlans is defined -%}
+{% for ivlan,idata in vlans.items() %}
+  {% if vlans[ivlan].vlan_type == 'access' %} 
+     show l2vpn evpn evi {{idata.evi}} detail
+     show l2vpn evpn mac evi {{idata.evi}}
+     show l2vpn evpn mac ip evi {{idata.evi}}
+     show l2fib bridge-domain {{ivlan}} detail
+   {% endif %}
+{% endfor %}
+{% endif %}
+
+{%- if vrfs is defined -%}
+ {% for vrf in vrfs -%}
+    {% for af in vrfs[vrf].afs -%}
+       {% if af == 'ipv4' %}
+          {% set ipv4_multicast  = vrfs[vrf].ipv4_multicast | default ('false') %}
+          {%- if ipv4_multicast != 'false' -%}
+             show bgp ipv4 mvpn all summ
+             show ip pim vrf {{vrf}} rp mapping
+             show ip route vrf {{vrf}} {{ vrfs[vrf].rp_address }}
+             show ip igmp vrf {{vrf}} groups
+             show ip mroute vrf {{vrf}}
+             show ip mfib vrf *
+             show bgp ipv4 mvpn all
+             show ip mroute
+             show ip mfib
+          {% endif %}
+       {% endif %}
+    {% endfor %}
+ {% endfor %}
+{% endif %}
+
+

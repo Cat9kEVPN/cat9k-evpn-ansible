@@ -1,0 +1,9 @@
+all:
+  children:
+    leaf:
+      hosts:
+        Leaf-01:
+          ansible_host: 10.1.1.1
+        Leaf-02:
+          ansible_host: 10.1.1.2
+

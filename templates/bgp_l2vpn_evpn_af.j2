@@ -1,0 +1,43 @@
+{#
+This module is configuring EVPN AF and activates neighbors under AF 
+#}
+
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+
+{# Entering bgp process configuration #}
+router bgp {{ bgp.as_number }}
+
+  {# activating EVPN AF #}
+  address-family l2vpn evpn
+
+      {# in case of eBGP peering, default auto-RT based on AS should be rewrittem #}
+      {% if bgp.rewrite_evpn_rt_asn is defined and bgp.rewrite_evpn_rt_asn == 'yes'%}
+          rewrite-evpn-rt-asn
+      {% endif %}
+
+      {# configuring neighbors under EVPN AF #}
+      {% for neighbor in bgp.neighbors -%}
+          neighbor {{neighbor }} activate
+            
+          {# configuration of RR-client if needed #}
+          {% if bgp.neighbors[neighbor].rrc is defined and  bgp.neighbors[neighbor].rrc == 'yes' %}
+              neighbor {{ neighbor }} inherit peer-policy SPINE-EVPN-PEER-POLICY
+          {% else %}
+              neighbor {{ neighbor }} inherit peer-policy LEAF-EVPN-PEER-POLICY
+          {% endif %}
+
+          {# configuration of allowas-in if needed #}
+          {% if bgp.neighbors[neighbor].allows_as_in is defined and bgp.neighbors[neighbor].allows_as_in == 'yes' %}
+              neighbor {{ neighbor }} allowas-in
+          {% endif %}
+
+          {# configuration of route-map in incoming direction if needed  #}
+          {% if bgp.neighbors[neighbor].route_map.in is defined %}
+              neighbor {{ neighbor }} route-map {{ bgp.neighbors[neighbor].route_map.in }} in
+          {% endif %}
+
+          {# configuration of route-map in outgoing direction if needed  #}
+          {% if bgp.neighbors[neighbor].route_map.out is defined %}
+              neighbor {{ neighbor }} route-map {{ bgp.neighbors[neighbor].route_map.out }} out
+          {% endif %}
+      {% endfor %}

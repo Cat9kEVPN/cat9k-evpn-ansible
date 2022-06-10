@@ -1,0 +1,14 @@
+{#
+This module configures ip addresses for underlay interfaces
+#}
+
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+
+{% for interface in interfaces%}
+    interface  {{ interface }}
+    {% if interfaces[interface].loopback == 'no'%}
+        no switchport
+    {% endif %}
+    ip address {{ interfaces[interface].ip_address }} {{ interfaces[interface].subnet_mask }}
+    no shut
+{% endfor %}

@@ -1,0 +1,75 @@
+---
+
+- name: check for loopback ip reachability
+  hosts: leaf
+  gather_facts: no
+  connection: local
+  tasks:  
+          # Collecting the show_version data
+          - name: Collect "show version"
+            cli_command:
+              command: show version
+            register: leaf_command_output
+          
+          # Getting the loopback from "group_vars/all.yaml"
+          - name: run the new module for version
+            device_reachability: 
+              version: "{{ leaf_command_output.stdout_lines }}"
+              fileName: "group_vars/all.yml"
+            register: result
+            
+          # collecting the "show run interface loopback" output
+          - name: Collect "show run interface loopback"
+            cli_command:
+              command: show run interface {{result['yaml_loopback_check']}}
+            register: command_output
+          
+          # Get the loopback ip from "show run interface loopback output"
+          - name: get the loopback ip
+            set_fact: loopback_ip="{{command_output.stdout | regex_findall('ip\s+address\s+((?:[0-9]{1,3}\.){3}[0-9]{1,3})',multiline=True)}}"         
+          
+          # writing the loopback ip's results to output/loopback.txt 
+          - name: Write results to local output file
+            copy:
+                dest: output/loopback.txt
+                content: |
+                  {% for host in groups['leaf'] %}
+                  {{hostvars[host].loopback_ip}}
+                  {% endfor %}
+
+          # save the loopback ip to item_output
+          - name: save the loopback ip output to file
+            debug: var=item
+            with_file:
+                - "output/loopback.txt"
+            register: item_output
+                
+          # run the module with version output,file_name and loopback_ip
+          - name: run the new module for loopback_ip
+            device_reachability: 
+              version: "{{ leaf_command_output.stdout_lines }}"
+              fileName: "group_vars/all.yml"
+              loopback: "{{item_output}}"
+            register: result
+            
+          # execute the ping command  
+          - name: execute ping command
+            cli_command:
+              command: ping {{item}}
+            loop: "{{result['loopback_ip']}}"
+            register: command_output_loopback
+  
+          # run the module with version,filename,loopback,ping_output and hostname
+          - name: run the new module for final_result
+            device_reachability: 
+              version: "{{ leaf_command_output.stdout_lines }}"
+              fileName: "group_vars/all.yml"
+              loopback: "{{item_output}}"
+              ping_output: "{{ command_output_loopback}}"
+              host_name: "{{ inventory_hostname }}"
+            register: final_result
+                        
+          # printing the final result 
+          - name: Print result
+            debug:
+              msg: "{{ final_result}}'"

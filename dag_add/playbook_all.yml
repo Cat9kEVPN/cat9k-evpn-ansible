@@ -1,0 +1,11 @@
+---
+
+- name: Underlay playbook
+  import_playbook: playbook_underlay.yml
+
+- name: Overlay playbook
+  import_playbook: playbook_overlay.yml
+
+- name: Show command playbook
+  import_playbook: playbook_output.yml
+

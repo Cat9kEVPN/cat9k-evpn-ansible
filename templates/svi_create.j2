@@ -1,0 +1,62 @@
+{#
+This module is configuring, deleting or modifing SVI.
+If action is not set in the configurations, it is "add" by default.
+#}
+
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+
+{% if svis is defined %}
+    {% for svi in svis %}
+        {% if ( (svi_cli is defined and svi in svi_cli) or (svi_cli is not defined) ) %}
+            {% set action = svis[svi].action | default ('add') %}
+            {% if action == 'delete' %}
+                no interface Vlan{{svi}}
+            {% elif action == 'add' %}
+                {% if svis[svi].svi_type == 'access' %}
+                    interface Vlan{{svi}}
+                    vrf forwarding {{ svis[svi].vrf }}
+                    ip address {{svis[svi].ipv4}}
+                    {% if svis[svi].ipv6 is defined %}
+                        {% for ipv6_addr in svis[svi].ipv6 %}
+                            ipv6 address {{ipv6_addr}}
+                        {% endfor %}
+                    {% endif %}
+                    no shut
+                {% elif svis[svi].svi_type == 'core' %}
+                    interface Vlan{{svi}}
+                    vrf forwarding {{ svis[svi].vrf }}
+                    ip unnumbered  {{ svis[svi].src_intf }}
+                    {% if svis[svi].ipv6_enable == 'yes' %}
+                        ipv6 enable
+                    {% endif %}
+                    no autostate
+                    no shut        
+                {% elif svis[svi].svi_type == 'non_vxlan' %}
+                    interface Vlan{{svi}}
+                    vrf forwarding {{ svis[svi].vrf }}
+                    ip address {{svis[svi].ipv4}}
+                    {% if svis[svi].ipv6 is defined %}
+                        {% for ipv6_addr in svis[svi].ipv6 %}
+                            ipv6 address {{ipv6_addr}}
+                        {% endfor %}
+                    {% endif %}
+                    no shut
+                {% endif %}
+
+                {# Check if PIM configuration is needed on the SVI #}
+                {% set pim_enable = svis[svi].pim_enable | default('no') %}
+                {% if pim_enable == 'yes' %}
+                    ip pim sparse-mode
+                {% elif pim_enable == 'no' %}
+                    no ip pim sparse-mode
+                {% endif %}
+
+                {# Check if static MAC configuration is needed on the SVI #}
+                {% if svis[svi].mac is defined %}
+                    mac-address {{ svis[svi].mac }}
+                {% endif %}
+
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+{% endif %}

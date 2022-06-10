@@ -1,0 +1,19 @@
+---
+
+- name: Overlay "group_vars/all.yml" validation 
+  hosts: all 
+  gather_facts: no
+  tasks:  
+          - name: run the "group_vars/all.yml" validation module
+            run_once: true
+            precheck_yml: 
+              fileName: "group_vars/all.yml"
+              #debug : 'verbose'( displaying complete output if validation is successful else displays the errors)
+              debug : 'verbose'
+            register: result
+            
+          - name: Print result
+            run_once: true
+            debug:
+              msg: "Yaml file validation : {{ result}}'"
+              

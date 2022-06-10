@@ -1,0 +1,23 @@
+{#
+This module configures global l2vpn evpn definition.
+#}
+
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+
+{# global l2vpn evpn definition#}
+l2vpn evpn
+
+    {# configure default replication type #}
+    {% if l2vpn_global.replication_type is defined %}
+        replication-type {{ l2vpn_global.replication_type }}
+    {% endif %}
+
+    {# configure router-id #}
+    {% if l2vpn_global.router_id is defined %}
+        router-id {{ l2vpn_global.router_id }}
+    {% endif %}
+
+    {# configure default-gateway advertise #}
+    {% if l2vpn_global.default_gw is defined %}
+        default-gateway advertise
+    {% endif %}}

@@ -1,0 +1,83 @@
+ansible_connection: ansible.netcommon.network_cli
+ansible_network_os: cisco.ios.ios
+ansible_python_interpreter: "python"
+ansible_user: cisco
+ansible_ssh_pass: cisco
+
+vrfs:
+  green:
+    action: delete
+  blue:
+    action: delete
+
+vlans:
+#vrf green vlans
+ 
+ 101:
+  action: delete
+  vlan_type: 'access'
+  vni: '10101'
+  evi: '101'
+  replication_type: 'static'
+  replication_mcast: '225.0.0.101'
+
+ 102:
+  action: delete  
+  vlan_type: 'access'
+  vni: '10102'
+  evi: '102'
+  replication_type: 'ingress'
+ 
+ 901:
+  action: delete  
+  vlan_type: 'core'
+  description: 'Core_VLAN_VRF_green'
+  vni: '50901'
+  vrf: 'green'
+  
+#vrf blue vlans
+ 201:
+  action: delete
+  vlan_type: 'access'
+  vni: '10201'
+  evi: '201'
+  replication_type: 'static'
+  replication_mcast: '225.0.0.101'
+
+ 202:
+  action: delete
+  vlan_type: 'access'
+  vni: '10202'
+  evi: '202'
+  replication_type: 'ingress'
+
+ 902:
+  action: delete
+  vlan_type: 'core'
+  vni: '50902'
+  vrf: 'blue'
+
+svis:
+#vrf green svi's
+ 101:
+  action: delete
+
+ 102:
+  action: delete
+
+ 901:
+  action: delete
+#vrf blue svi's
+ 201:
+  action: delete
+
+ 202:
+  action: delete
+
+ 902:
+  action: delete
+
+nve_interfaces:
+  1:
+    source_interface: 'Loopback1'
+

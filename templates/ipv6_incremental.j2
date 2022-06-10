@@ -1,0 +1,91 @@
+{#
+
+This module incrementally adding/removing ipv6 configuration to the fabric.
+
+#}
+
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+
+{% set action = ipv6_action | default ('add') %}
+{% if action == 'delete' %}
+    {% set prefix = 'no' %}
+{% elif action == 'add' %}
+    {% set prefix = '' %}
+{% endif %}
+
+{# vrf configuration #}
+
+{% if vrfs is defined %}
+    {% for vrf in vrfs %}
+        
+        {# Global ipv6 unicast routing enable/disable #}
+        {% if vrfs[vrf].ipv6_routing is defined %}
+            {{ prefix }} ipv6 unicast-routing
+        {% endif %}
+
+        vrf definition {{ vrf }}
+
+        {# Checking an action for the AF #}
+        {% if vrfs[vrf].afs is defined %}
+            {% for af in vrfs[vrf].afs %}
+                {% set action = vrfs[vrf].afs[af].action | default ('add') %}
+                {% if action == 'delete' %}
+                    no address-family {{ af }}
+                {% elif action == 'add' %}
+                    address-family {{ af }}
+                    {# RT import section #}
+                    {% for rti in vrfs[vrf].afs[af].rt_import %}
+                        {{ prefix }} route-target import {{ rti }}
+                    {% endfor %}
+
+                    {# RT export section #}
+                    {% for rte in vrfs[vrf].afs[af].rt_export %}
+                        route-target export {{ rte}}
+                    {% endfor %}
+                {% endif %}        
+            {% endfor %}
+        {% endif %}
+    {% endfor %}   
+{% endif %}
+
+{# SVI configuration #}
+{% if svis is defined %}
+    {% for svi in svis %}
+
+        interface Vlan{{svi}}
+                    
+        {% if svis[svi].ipv6 is defined %}
+            {% for ipv6_addr in svis[svi].ipv6 %}
+                {{prefix}} ipv6 address {{ipv6_addr}}
+            {% endfor %}
+        {% elif svis[svi].ipv6_enable == 'yes' %}
+            {{ prefix }} ipv6 enable
+        {% endif %}
+
+    {% endfor %}
+{% endif %}
+
+{# bgp configuration #}
+
+{% if vrfs is defined -%}
+    router bgp {{ bgp.as_number }}
+    {% for vrf in vrfs -%}        
+        {% for af in vrfs[vrf].afs -%}
+            {% if prefix == 'no'%}
+                {{ prefix }} address-family {{ af }} vrf {{ vrf }}
+            {% else %}
+                address-family {{ af }} vrf {{ vrf }}
+                advertise l2vpn evpn
+                redistribute connected
+                redistribute static
+                {# Check if something else needed to be redistributed except static or connected #}
+                {% if bgp.afs[af].vrf[vrf].redistribute is defined %}
+                    {% for redist in bgp.afs[af].vrf[vrf].redistribute %}
+                        redistribute {{redist}}
+                    {% endfor%}
+                {% endif %}
+            {% endif %}
+        {% endfor%}
+    {% endfor %}
+{% endif %}
+

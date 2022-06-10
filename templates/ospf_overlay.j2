@@ -1,0 +1,31 @@
+{#
+This module configures overlay OSPF process and interfaces
+#}
+
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+
+{# Configuring ospf processes and interfaces in overlay#}
+{% if ospf_overlay is defined -%}
+    {% for vrf in ospf_overlay.vrf -%}
+        {% for id in ospf_overlay.vrf[vrf].id -%}
+            router ospf {{ id }} vrf {{ vrf }}
+            
+            {# Check if redistribution is configured #}
+            {% set redistribute =  ospf_overlay.vrf[vrf].id[id].redistribute | default ('not_defined') %}
+            {% if redistribute != 'not_defined' %}
+                redistribute {{redistribute}}  
+            {% endif %}
+            
+            {# Configuring interfaces. Must be last section -> leaving router ospf <> configuration#}
+            {% if ospf_overlay.vrf[vrf].id[id].interfaces is defined %}
+                {% for intf in ospf_overlay.vrf[vrf].id[id].interfaces %}
+                    interface {{intf}}
+                        {% set intf_type = ospf_overlay.vrf[vrf].id[id].interfaces[intf].type | default ('broadcast') %}
+                        {% set intf_area = ospf_overlay.vrf[vrf].id[id].interfaces[intf].area | default ('0') %}
+                        ip ospf network {{intf_type}}
+                        ip ospf {{id}} area {{intf_area}}
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+{% endif %}

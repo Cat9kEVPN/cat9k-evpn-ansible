@@ -1,0 +1,48 @@
+---
+
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
+  hosts: all
+  gather_facts: no
+  tasks:
+
+          - name: SVI deleting
+            when: inventory_hostname in groups['leaf']
+            cli_config:
+              config: "{{ lookup('template', '../templates/svi_create.j2') }}"
+              diff_match: none
+            register: result   
+
+          - name: NVE interface VNI deleting
+            when: inventory_hostname in groups['leaf']
+            cli_config:
+              config: "{{ lookup('template', '../templates/nve_create.j2') }}"
+              diff_match: none
+            register: result 
+
+          - name: Access/Core VLAN deleting
+            when: inventory_hostname in groups['leaf']
+            cli_config:
+              config: "{{ lookup('template', '../templates/vlan_create.j2') }}"
+              diff_match: none
+            register: result
+
+          - name: Deleting vlans from port
+            when: inventory_hostname in groups['leaf']
+            cli_config:
+              config: "{{ lookup('template', '../templates/access_interfaces.j2') }}"
+              diff_match: none
+            register: result
+
+          - name: EVPN EVI deleting
+            when: inventory_hostname in groups['leaf']
+            cli_config:
+              config: "{{ lookup('template', '../templates/l2vpn_evpn_evi_create.j2') }}"
+              diff_match: none
+            register: result
+
+          - name: Deleting vrf definition
+            when: inventory_hostname in groups['leaf']
+            cli_config:
+              config: "{{ lookup('template', '../templates/vrf_definition.j2') }}"
+              diff_match: none
+            register: result

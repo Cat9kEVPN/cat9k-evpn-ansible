@@ -1,0 +1,46 @@
+{#
+
+This module is adding/deleting incrementally TRM part of the config to vrf and multicast under vrf
+
+#}
+
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+
+{% set action = trm_action | default ('add') %}
+{% if action == 'delete' %}
+        {% set prefix = 'no' %}
+{% elif action == 'add' %}
+        {% set prefix = '' %}
+{% endif %}
+
+{% if vrfs is defined %}
+        {% for vrf in vrfs %}
+                vrf definition {{ vrf }}
+                {% for af in vrfs[vrf].afs %}
+                        address-family {{ af }}
+                                {% set mdt_auto_discovery = vrfs[vrf].afs[af].mdt_auto_discovery | default (None) %}
+                                {% if mdt_auto_discovery is defined %}
+                                        {{ prefix }} mdt auto-discovery {{ mdt_auto_discovery }}
+                                {% endif %}
+                                {% set mdt_default_vxlan = vrfs[vrf].afs[af].mdt_default_vxlan | default (None) %}
+                                {% if mdt_default_vxlan is defined %}
+                                        {{ prefix }} mdt default vxlan {{ mdt_default_vxlan }}    
+                                {% endif %}
+                                {% set mdt_overlay = vrfs[vrf].afs[af].mdt_overlay | default (None) %}
+                                {% if mdt_overlay is defined %}
+                                        {{ prefix }} mdt overlay  {{ mdt_overlay }}
+                                {% endif%}
+                {% endfor %}
+
+                {% if vrfs[vrf].ipv4_multicast is defined %}
+                        {{ prefix }} ip multicast-routing vrf {{ vrf }}
+                {% endif %}
+                {% if vrfs[vrf].rp_address is defined %}
+                        {{ prefix }} ip pim vrf {{ vrf }} rp-address {{ vrfs[vrf].rp_address }}
+                {% endif %}
+                {% if vrfs[vrf].ssm_enable is defined %}
+                        {{ prefix }} ip pim vrf {{ vrf }} ssm default
+                {% endif %}
+
+        {% endfor %}
+{% endif %}

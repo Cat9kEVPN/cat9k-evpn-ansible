@@ -1,0 +1,23 @@
+{#
+This module is enabling IPv4 unicast, IPv6 unicast  and IPv4 multicast routing for global routing table
+#}
+
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+
+{% if routing is defined %}
+
+    {# Enabling IPv4 unicast routing #}
+    {% if routing.ipv4_uni is defined and routing.ipv4_uni == 'yes' %}
+        ip routing
+    {% endif %}
+
+    {# Enabling IPv6 unicast routing #}   
+    {% if routing.ipv6_uni is defined and routing.ipv6_uni == 'yes' %}
+        ipv6 unicast-routing
+    {% endif %}
+
+    {# Enabling IPv4 multicast routing #}    
+    {% if routing.ipv4_multi is defined and routing.ipv4_multi == 'yes' %}
+        ip multicast-routing
+    {% endif %}
+{% endif %}

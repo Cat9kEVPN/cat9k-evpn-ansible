@@ -1,0 +1,11 @@
+{#
+This module configures route-map for preserve next-hop.
+It is needed when Leafs and Spines are in the different ASes.
+By default NH will be changed in eBGP session, but it will break VXLAN tunnel - another end will be Spine, not Leaf.
+To fix this issue "next-hop unchanged" is used. 
+#}
+
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+
+route-map BGP-NHU permit 10
+ set ip next-hop unchanged

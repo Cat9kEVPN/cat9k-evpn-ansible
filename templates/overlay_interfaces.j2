@@ -1,0 +1,16 @@
+{#
+This module configures overlay interfaces
+#}
+
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+
+{% if overlay_interfaces is defined %}
+    {% for intf in overlay_interfaces -%}
+        {% if ((ovrl_intf_cli is defined and intf in ovrl_intf_cli) or (ovrl_intf_cli is not defined)) %}
+            interface {{ intf }}
+            vrf forwarding {{ overlay_interfaces[intf].vrf }}
+            ip address {{ overlay_interfaces[intf].ip_address }} {{ overlay_interfaces[intf].subnet_mask }} 
+            no shut
+        {% endif %}
+    {% endfor %}
+{% endif %}
