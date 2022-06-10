@@ -1,20 +1,16 @@
-.. Cat9k EVPN VXLAN Ansible documentation documentation master file, created by
-   sphinx-quickstart on Fri Jun 10 11:49:05 2022.
+.. Cat9k EVPN Ansible documentation documentation master file, created by
+   sphinx-quickstart on Fri Jun 10 12:02:38 2022.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Cat9k EVPN VXLAN Ansible documentation's documentation!
-==================================================================
+Cat9k EVPN Ansible
+==================
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-   About
-   Inputs
-   Test1
-   Test2
-
+   about
 
 Indices and tables
 ==================

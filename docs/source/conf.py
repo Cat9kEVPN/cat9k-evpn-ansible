@@ -17,9 +17,9 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'Cat9k EVPN VXLAN Ansible documentation'
-copyright = '2022, Cat9k EVPN Ansible Team'
-author = 'Cat9k EVPN Ansible Team'
+project = 'Cat9k EVPN Ansible documentation'
+copyright = '2022, Cat9k EVPN Team'
+author = 'Cat9k EVPN Team'
 
 # The full version, including alpha/beta/rc tags
 release = '1.0'
@@ -47,7 +47,7 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'classic'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
