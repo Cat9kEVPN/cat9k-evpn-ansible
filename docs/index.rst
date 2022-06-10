@@ -11,10 +11,11 @@ Cat9k EVPN Ansible
    :caption: Contents:
 
    about
+   topology
 
-Indices and tables
-==================
+.. Indices and tables
+.. ==================
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. * :ref:`genindex`
+.. * :ref:`modindex`
+.. * :ref:`search`
