@@ -9,8 +9,8 @@ Each directory has scripts for specific steps for EVPN provisioning:
 * **dag_delete** DAG selective unprovisioning
 
 Detailed instructions for running playbook you can find under each directory:
-* **dag_add** https://github.com/dvishchu/cat9k-evpn-ansible/tree/main/dag_add
-* **dag_delete** https://github.com/dvishchu/cat9k-evpn-ansible/tree/main/dag_delete
+* [dag_add](https://github.com/dvishchu/cat9k-evpn-ansible/tree/main/dag_add)
+* [dag_delete](https://github.com/dvishchu/cat9k-evpn-ansible/tree/main/dag_delete)
 
 # Topology #
 
@@ -23,6 +23,8 @@ Below you can find a topology which is used in the automation scenario.
 <img width="903" alt="playbook_description" src="https://user-images.githubusercontent.com/99259970/172883945-3997d95b-3d6c-47f4-97ac-de0826b281c5.png">
 
 ## Inputs ##
+
+### inventory.yml ###
 
 In the file **inventory.yml** all nodes of the network are described. Nodes are grouped into two groups/roles - Leafs and Spines.
 
@@ -43,7 +45,9 @@ all:
 
 ```
 
-Under **group/all.yaml** access section and configuration for all VTEPs are present.
+### group_vars/all.yaml
+
+Under **group_vars/all.yaml** access section and configuration for all VTEPs are present.
 
 ```yml
 # Access section
@@ -70,6 +74,9 @@ vrfs:
           - '1:1 stitching'
 <...skip...>
 ```
+
+Full documentation about **group_vars/all.yaml** section could be found [here]()
+
 Each directory may has several playbook. Usually there are 4 of them:
 
 ```
