@@ -1,8 +1,8 @@
 Inputs
-======
+######
 
 Inventory.yml
--------------
+*************
 
 In the inventory file roles (Spine or Leaf), names and management IP addresses of nodes are described.
 
@@ -31,10 +31,13 @@ In the inventory file roles (Spine or Leaf), names and management IP addresses o
 ``ansible_host`` is an ip address of the management interface.
 
 group_vars/all.yml
-------------------
+*******************
 
 In the file ``all.yml`` defined parameters which are applicable for several devices in the network.
 Lets check it one by one.
+
+General access
+==============
 
 .. code-block:: yaml
 
@@ -98,3 +101,5 @@ Lets check it one by one.
 
 If ``enable`` password should be used, check the `Enable Mode <https://docs.ansible.com/ansible/latest/network/user_guide/platform_ios.html>`_ documentation.
      
+L2VPN EVPN general definition
+=============================
