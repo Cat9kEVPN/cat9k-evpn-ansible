@@ -122,7 +122,3 @@ archive
 end
 term mon
 ```
-
-# Documentation #
-
-For complete documentation visit [Cat9k EVPN Ansible documentation](https://cat9k-evpn-ansible.readthedocs.io/en/latest/index.html) page.
