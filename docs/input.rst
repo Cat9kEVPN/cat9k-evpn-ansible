@@ -30,14 +30,19 @@ In the inventory file roles (Spine or Leaf), names and management IP addresses o
 
 ``ansible_host`` is an ip address of the management interface.
 
-group_vars/all.yml
-*******************
+group_vars
+**********
+
+In this directory stored **common** to all or most of devices configuration.
+
+all.yml
+=======
 
 In the file ``all.yml`` defined parameters which are applicable for several devices in the network.
 Lets check it one by one.
 
 General access
-==============
+--------------
 
 This section defines access paramerets to the remote devices.
 
@@ -102,9 +107,12 @@ This section defines access paramerets to the remote devices.
    In the example unencrypted password is used. Fill free to use HIDDEN (7)
 
 If ``enable`` password should be used, check the `Enable Mode <https://docs.ansible.com/ansible/latest/network/user_guide/platform_ios.html>`_ documentation.
-     
+
+overlay.yml
+===========
+
 L2VPN EVPN general definition
-=============================
+-----------------------------
 
 This section defines global l2vpn evpn parameters.
 
@@ -159,7 +167,7 @@ This section defines global l2vpn evpn parameters.
    ================================================ ==========================================================================
 
 VRF definition
-==============
+--------------
 
 This section defines vrf parameters. Lets review parameters for unicast first.
 
@@ -227,8 +235,8 @@ This section defines vrf parameters. Lets review parameters for unicast first.
                                                 * 1:1 stitching (L2VPN EVPN AF)
 =============================================== ==========================================================================
 
-Vlans section
-=============
+VLANs section
+-------------
 
 This section defines VLANs and it stitching with EVIs(EVPN instance) and VNIs(VXLAN network identifier).
 
@@ -329,3 +337,402 @@ This section defines VLANs and it stitching with EVIs(EVPN instance) and VNIs(VX
 
                                                     This parameter is  **mandatory for L3VNIs only.**
    ================================================ ==========================================================================
+
+SVIs section
+------------
+
+This section defines SVIs configuration.
+
+.. code-block:: yaml
+
+   svis:
+
+    101:
+     svi_type: 'access'
+     vrf: 'green'
+     ipv4: '10.1.101.1 255.255.255.0'
+     ipv6:
+       - '2001:101::1/64'
+     mac: 'dead.beef.abcd'
+
+    102:
+     svi_type: 'access'
+     vrf: 'green'
+     ipv4: '10.1.102.1 255.255.255.0'
+     ipv6:
+       - '2001:102::1/64'
+     mac: 'dead.beef.abcd'
+    
+    901:
+     svi_type: 'core'
+     vrf: 'green'
+     src_intf: 'Loopback1'
+     ipv6_enable: 'yes
+
+
+    <...snip...>
+
+.. table::
+   :widths: auto
+
+   ================================================ ==========================================================================
+     **Parameter**                                                            **Comments**
+   ================================================ ==========================================================================
+   **svis** / :red:`mandatory`                      This option defines SVIs section globally.
+
+   **<svi_id>** / :red:`mandatory`                  This option defines SVI ID on the switch. In this example there are **101,**
+
+                                                    **102, 901**.
+
+   **svi_type** / :red:`mandatory`                  | This option defines type of the SVI. 
+
+                                                    Option **access** is used for SVI for vlans stitched to L2VNIs.
+
+                                                    Option **core** is used for SVI for vlans stitched to L3VNIs.
+
+                                                    | Option **non-vxlan** is used for SVI for vlans, which are not extended over Fabric.
+
+                                                    **Choices**
+
+                                                    * access
+
+                                                    * core
+
+                                                    * non-vxlan
+   
+   **vrf** / :red:`mandatory`                       This option defines vrf which SVI belongs to.
+
+   **ipv4** / :red:`mandatory`                      This option defines the IPv4 address configured on the SVI. 
+   
+                                                    This parameter is applicable **for SVIs for L2VNIs only.**
+
+   **ipv6** / :orange:`optional`                    This option defines the IPv6 addresses configured on the SVI.
+
+                                                    This parameter is applicable **for SVIs for L2VNIs only.**
+
+   **mac** / :orange:`optional`                     This option defines the MAC to be configured on SVI.
+
+                                                    This parameter is applicable **for SVIs for L2VNIs only.**
+
+   **src_intf** / :red:`mandatory`                  This option defines Source Interface for the SVI for L3VNI.
+
+                                                    This parameter is applicable **for SVIs for L3VNIs only.**
+                                                    
+   **ipv6_enable** / :orange:`optional`             This option defines enables IPv6 on the SVI.
+
+                                                    This parameter is applicable **for SVIs for L3VNIs only.**
+                                                    
+   ================================================ ==========================================================================
+
+NVE section
+-----------
+
+   This section defines NVE interface configuration.
+
+.. code-block:: yaml
+
+    nve_interfaces:
+        1:
+            source_interface: 'Loopback1'
+
+    <...snip...>
+
+.. table::
+   :widths: auto
+
+   ================================================ ==========================================================================
+     **Parameter**                                                            **Comments**
+   ================================================ ==========================================================================
+   **nve_interfaces** / :red:`mandatory`            This option defines NVE section globally.
+
+   **nve_id>** / :red:`mandatory`                   This option defines NVE ID on the switch. 
+
+   **source_interface** / :red:`mandatory`          This option defines source interface for corresponding NVE interface. 
+
+   ================================================ ==========================================================================
+
+host_vars
+*********
+
+In this directory stored **specific** to the dedicated device configuration.
+
+<node_name>.yml
+===============
+
+In the file ``<node_name>.yml`` defined specific to the dedicated node configuration parameters. Usually it is related to interface 
+configuration and underlay configuration in general.
+
+Lets review the configuration options one by one.
+
+Hostname section
+----------------
+
+In this section hostname of the node is defined.
+
+.. code-block:: yaml
+
+    hostname: 'Leaf-01'
+
+    <...snip...>
+
+
+.. table::
+    :widths: auto
+
+    =============================================== ==========================================================================
+    **Parameter**                                                            **Comments**
+    =============================================== ==========================================================================
+    **hostname** / :orange:`optional`               This option defines remote device hostname.
+    =============================================== ==========================================================================
+
+Global routing section
+----------------------
+
+In this section parameters of IPv4/IPv6 in GRT are defined.
+
+ç
+
+
+.. table::
+    :widths: auto
+
+    =============================================== ==========================================================================
+    **Parameter**                                                            **Comments**
+    =============================================== ==========================================================================
+    **routing** / :red:`mandatory`                  This option defines global routing section.
+
+    **ipv4_uni** / :red:`mandatory`                 This option enables global IPv4 unicast routing on the switch.
+
+    **ipv6_uni** / :red:`mandatory`                 This option enables global IPv6 unicast routing on the switch.
+
+    **ipv6_multi** / :red:`mandatory`               This option enables global IPv4 multicast routing on the swith.
+
+    =============================================== ==========================================================================
+
+Interface section
+-----------------
+
+In this section interfaces configuration is defined.
+
+.. code-block:: yaml
+
+    interfaces:
+
+        Loopback0:
+            name: 'Routing Loopback'
+            ip_address: '172.16.255.3'
+            subnet_mask: '255.255.255.255'
+            loopback: 'yes'
+            pim_enable: 'no'
+
+        Loopback1:
+            name: 'NVE Loopback'
+            ip_address: '172.16.254.3'
+            subnet_mask: '255.255.255.255'
+            loopback: 'yes'
+            pim_enable: 'yes'
+
+        GigabitEthernet1/0/1:
+            name: 'Backbone interface to Spine-01'
+            ip_address: '172.16.13.3'
+            subnet_mask: '255.255.255.0'
+            loopback: 'no'
+            pim_enable: 'yes'
+
+        GigabitEthernet1/0/2:
+            name: 'Backbone interface to Spine-02'
+            ip_address: '172.16.23.3'
+            subnet_mask: '255.255.255.0'
+            loopback: 'no'
+            pim_enable: 'yes' 
+
+    <...snip...>
+
+
+.. table::
+    :widths: auto
+
+    =============================================== ==========================================================================
+    **Parameter**                                                            **Comments**
+    =============================================== ==========================================================================
+    **interfaces** / :red:`mandatory`               This option defines global interface section.
+
+    **<interface_name>** / :red:`mandatory`         This option defines interface name i.e. ``Loopback0`` or ``GigabitEthernet1/0/1``
+
+    **name** / :orange:`optional`                   This option defines interface description.
+
+    **ip_address** / :red:`mandatory`               This option defines IPv4 address on the interface.
+
+    **subnet_mask** / :red:`mandatory`              This option defines subnet mask for the IPv4 address.
+
+    **loopback** / :red:`mandatory`                 | This option defines if interface is loopback or not.
+
+                                                    **Choices:**
+
+                                                    * yes
+
+                                                    * no
+
+    **pim_enable** / :red:`mandatory`               | This option defines if PIM has to be enabled on the interface.
+
+                                                    **Choices:**
+
+                                                    * yes
+
+                                                    * no
+    =============================================== ==========================================================================
+
+OSPF section
+------------
+
+This section defines ospf parameters.
+
+By default next OSPF configuration is applied:
+
+* Interface network type - **point-to-point**
+
+* OSPF process ID - **1**
+
+* OSPF area number - **0**
+
+OSPF router-id is configurable parameter.
+
+.. code-block:: yaml
+
+    ospf:
+        router_id: '172.16.255.3'
+
+    <...snip...>
+
+.. table::
+    :widths: auto
+
+    =============================================== ==========================================================================
+    **Parameter**                                                            **Comments**
+    =============================================== ==========================================================================
+    **ospf** / :red:`mandatory`                     This option defines OSPF section globally.
+    
+    **router_id** / :red:`mandatory`                This option defines OSPF router-id.
+    =============================================== ==========================================================================
+
+PIM section
+-----------
+
+This section defines global PIM parameters. This section is optional if Ingress-Replication in the core is used.
+
+
+.. code-block:: yaml
+
+    pim:
+        rp_address: '172.16.255.255'
+    
+    <...skip...>
+
+.. table::
+    :widths: auto
+
+    =============================================== ==========================================================================
+    **Parameter**                                                            **Comments**
+    =============================================== ==========================================================================
+    **pim** / :red:`mandatory`                      This option defines PIM section globally.
+    
+    **rp_address** / :red:`mandatory`               This option defines RP address.
+    =============================================== ==========================================================================
+
+MSDP section
+------------
+
+This section defines MSDP parameters. Usually MSDP is used for configuration RP redundancy in underlay.
+
+This section in general is optional.
+
+.. code-block:: yaml
+    
+    msdp:
+        '1':
+            peer_ip: '172.16.254.2'
+            source_interface: 'Loopback1'
+            remote_as: '65001'
+
+    <...skip...>
+
+.. table::
+    :widths: auto
+
+    =============================================== ==========================================================================
+    **Parameter**                                                            **Comments**
+    =============================================== ==========================================================================
+    **msdp** / :red:`mandatory`                     This option defines MSDP section globally.
+    
+    **<msdp_neighbor_id>** / :red:`mandatory`       This option defines ID for the MSDP peer. This number is not used in the 
+
+                                                    switch configuration, just index number.
+
+    **peer_ip** / :red: `mandatory`                 This option defines MSDP peer IPv4 address.
+
+    **source_interface** / :red: `mandatory`        This option defindes source interface which IP address will be used like SRC IP
+
+                                                    for the MSDP seession.
+
+    **remote_as** / :red: `mandatory`               This option is used for defining BGP AS number of the MSDP peer.                               
+    =============================================== ==========================================================================
+
+BGP section
+-----------
+
+This section defines BGP parameters. 
+
+By default next design assumption are made:
+
+* Leafs are Route-Reflector clients
+
+* Two present Spines in the topology are Route-Reflectors
+
+
+.. code-block:: yaml
+
+    bgp:
+      as_number: '65001'
+      router_id: 'Loopback0'
+      neighbors:
+        '172.16.255.1':
+            peer_as_number: '65001'
+            source_interface: 'Loopback0'
+
+        '172.16.255.2':
+            peer_as_number: '65001'
+            source_interface: 'Loopback0'
+
+        '172.16.255.3':
+            peer_as_number: '65001'
+            source_interface: 'Loopback0'
+            rrc: 'yes'
+    
+    <...snip...>
+
+.. table::
+    :widths: auto
+
+    =============================================== ==========================================================================
+    **Parameter**                                                            **Comments**
+    =============================================== ==========================================================================
+    **bgp** / :red:`mandatory`                      This option defines BGP section globally.
+    
+    **as_number** / :red:`mandatory`                This option defines BGP AS number.
+
+    **router_id** / :red:`mandatory`                This option defines interface which ip address will be used like BGP router ID.
+
+    **neighbors** / :red:`mandatory`                This option defines neighbors section.
+
+    **neigbor_ip_address** / :red:`mandatory`       This option defines BGP neighbor ip address
+
+    **peer_as_number** / :red:`mandatory`           This option defines BGP neighbor AS number
+
+    **source_interface** / :red:`mandatory`         This option defines source interface which ip address will be used like a SRC IP
+
+                                                    for BGP session.
+
+    **rrc** / :orange:`optional`                    This option defines the peer like a BGP route-reflector client.
+    =============================================== ==========================================================================
+
+
