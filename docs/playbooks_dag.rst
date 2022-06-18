@@ -535,6 +535,10 @@ This playbook is used to generate list of commands which have to be entered on r
 
 inputs from ``playbook_overlay_incremental_preview.yml``. 
 
+.. warning::
+
+    No config will be pushed to the remote devices!
+
 .. code-block::
 
     ansible-playbook -i inventory.yml playbook_overlay_incremental_preview.yml
@@ -829,6 +833,10 @@ This playbook is used to generate list of commands which have to be entered on r
 
 inputs from ``playbook_overlay_delete_preview.yml``. 
 
+.. warning::
+
+    No config will be pushed to the remote devices!
+
 .. code-block::
 
     ansible-playbook -i inventory.yml playbook_overlay_delete_preview.yml
@@ -921,6 +929,12 @@ playbook_access_incremental_preview.yml
 After initial configuration (aka Day0) some incremental changes are need after some time.
 
 For avoiding full reprovisioning of the network incremental update could be used.
+
+This playbook generates list of commands that will be pushed to the remote devices without provisioning.
+
+.. warning::
+
+    No config will be pushed to the remote devices!
 
 .. code-block::
 
