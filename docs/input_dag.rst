@@ -737,7 +737,7 @@ Access interface configuration
 
 This section defines configuration for the customer-facing access interfaces.
 
-By default all access interfaces will be configured like trunks with all L2VNI vlans that are mentioned in ``all.yml``
+By default all access interfaces will be configured like trunks with all L2VNI vlans that are mentioned in ``group_vars/overlay_db.yml``
 
 Trunk configuration
 -------------------
@@ -748,7 +748,7 @@ Vlans to be assigned to an interace are taken from the following in increasing *
 
     **Trunk configuration order of priority (3 > 2 > 1)**
  
-1. ``vlans`` in ``all.yml`` (for ``playbook_access_add_commit/preview.yml``) or ``access_intf_cli`` in ``host_vars/inc_vars/<hostname>.yml`` 
+1. ``vlans`` in ``group_vars/overlay_db.yml`` (for ``playbook_access_add_commit/preview.yml``) or ``access_intf_cli`` in ``host_vars/inc_vars/<hostname>.yml`` 
 
 (for ``playbook_access_incremental_commit/preview.yml``)
  
@@ -821,7 +821,7 @@ Vlan to be assigned to an interace are taken from the following in increasing **
 Examples
 --------
 
-There is an assumption, that in ``all.yml`` defined next vlans: :green:`101,102,201,202`
+There is an assumption, that in ``group_vars/overlay_db.yml`` defined next vlans: :green:`101,102,201,202`
 
 Example 1
 ^^^^^^^^^
@@ -837,9 +837,9 @@ Content of ``host_vars/access_intf/<hostname>.yml``
 
 Values assigned after execution
 
-**GigabitEthernet1/0/7** - :green:`101,102,201,202` (from ``all.yml`` or ``host_vars/inc_vars/<hostname>.yml``)
+**GigabitEthernet1/0/7** - :green:`101,102,201,202` (from ``group_vars/overlay_db.yml`` or ``host_vars/inc_vars/<hostname>.yml``)
 
-**GigabitEthernet1/0/8** - :green:`101,102,201,202` (from ``all.yml`` or ``host_vars/inc_vars/<hostname>.yml``)
+**GigabitEthernet1/0/8** - :green:`101,102,201,202` (from ``group_vars/overlay_db.yml`` or ``host_vars/inc_vars/<hostname>.yml``)
 
 Example 2
 ^^^^^^^^^
@@ -938,11 +938,11 @@ Content of ``host_vars/access_intf/<hostname>.yml``
 
 Values assigned after execution
 
-**GigabitEthernet1/0/5** - :green:`101,102,201,202` (from ``all.yml`` or ``host_vars/inc_vars/<hostname>.yml``)
+**GigabitEthernet1/0/5** - :green:`101,102,201,202` (from ``group_vars/overlay_db.yml`` or ``host_vars/inc_vars/<hostname>.yml``)
 
 **GigabitEthernet1/0/6** - :green:`101,102,201`
 
-**GigabitEthernet1/0/7** - :green:`101,102,201,202` (from ``all.yml`` or ``host_vars/inc_vars/<hostname>.yml``)
+**GigabitEthernet1/0/7** - :green:`101,102,201,202` (from ``group_vars/overlay_db.yml`` or ``host_vars/inc_vars/<hostname>.yml``)
 
 **GigabitEthernet1/0/8** - :green:`201`
 
@@ -964,7 +964,7 @@ Content of ``host_vars/access_intf/<hostname>.yml``
 
 Values assigned after execution
 
-**GigabitEthernet1/0/7** - :green:`101,102,201,202` (from ``all.yml`` or ``host_vars/inc_vars/<hostname>.yml``)
+**GigabitEthernet1/0/7** - :green:`101,102,201,202` (from ``group_vars/overlay_db.yml`` or ``host_vars/inc_vars/<hostname>.yml``)
 
 **GigabitEthernet1/0/8** - :green:`201`
 

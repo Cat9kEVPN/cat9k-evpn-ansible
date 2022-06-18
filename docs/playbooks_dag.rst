@@ -856,3 +856,86 @@ Access interfaces provisioning
 ==============================
 
 Playbooks described in this section are used for provisioning access interfaces.
+
+Detailed description for the configuration file you can find `here <https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html#access-interface-configuration>`_
+
+For provisioning access interfaces next playbook could be used:
+
+* playbook_access_add_preview.yml
+
+* playbook_access_add_commit.yml
+
+* playbook_access_incremental_preview.yml
+
+* playbook_access_incremental_commit.yml
+
+playbook_access_add_preview.yml
+-------------------------------
+
+This playbook is used for generating config which will be pushed to remote devices.
+
+.. warning::
+
+    No config will be pushed to the remote devices!
+
+For this example basic config is used ``host_vars/access_intf/Leaf-01.yml``
+
+.. code-block:: yaml
+
+    access_interfaces:
+        trunks:
+            - GigabitEthernet1/0/7
+            - GigabitEthernet1/0/8
+
+Let's execute the playbook.
+
+.. code-block:: 
+
+     ansible-playbook -i inventory.yml playbook_access_add_preview.yml
+
+Outputs will be written to files ``preview_files/<hostname>-add-intf.txt``.
+
+.. code-block::
+
+    ! access interface block 
+    interface GigabitEthernet1/0/8
+    switchport trunk allowed vlan 101,102,201,202
+    switchport mode trunk
+    interface GigabitEthernet1/0/7
+    switchport trunk allowed vlan 101,102,201,202
+
+playbook_access_add_commit.yml
+------------------------------
+
+This playbook is used for deploying the configration on the remote devices.
+
+This playbook could be used separetly.
+
+.. code-block::
+
+    ansible-playbook -i inventory.yml playbook_access_add_commit.yml
+
+playbook_access_incremental_preview.yml
+---------------------------------------
+
+After initial configuration (aka Day0) some incremental changes are need after some time.
+
+For avoiding full reprovisioning of the network incremental update could be used.
+
+.. code-block::
+
+     ansible-playbook -i inventory.yml playbook_access_incremental_preview.yml
+
+Output files could be found in ``preview_files/<hostname>-inc-intf.txt``
+
+playbook_access_incremental_commit.yml
+--------------------------------------
+
+This playbook is used for provisioning remote devices.
+
+.. code-block::
+
+    ansible-playbook -i inventory.yml playbook_access_incremental_commit.yml
+
+
+
