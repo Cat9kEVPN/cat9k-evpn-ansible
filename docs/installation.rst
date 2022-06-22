@@ -21,7 +21,7 @@ Below installation process for Linux (ubuntu) server
 
 .. code-block::
 
-    source ansible/bin/activated
+    source ansible/bin/activate
 
 * Install ``pip`` if it is not already installed
 
