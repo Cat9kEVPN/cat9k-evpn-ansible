@@ -1,10 +1,21 @@
+DAG (Distributed Anycast Gateway)
+#################################
+
+Distributed anycast gateway feature for EVPN VXLAN is a default gateway addressing mechanism that enables the use of the same gateway IP addresses 
+across all the leaf switches that are part of a VXLAN network.
+
+.. warning::
+
+    The same subnet mask and IP address must be configured on all the switch virtual interfaces (SVIs) that act as a distributed anycast gateway (DAG).
+
 Inputs
 ######
 
 Inventory.yml
 *************
 
-In the inventory file roles (Spine or Leaf), names and management IP addresses of nodes are described.
+ In the inventory file, roles (Spine or Leaf), names, and management IP addresses of the nodes are
+ described.
 
 .. code-block:: yaml
 
@@ -24,27 +35,27 @@ In the inventory file roles (Spine or Leaf), names and management IP addresses o
                     Spine-02:
                         ansible_host: 10.62.149.181
 
-``leaf`` and ``spine`` are two roles. Each node should be placed under one of the sections.
+``leaf`` and ``spine`` are two roles. Each node should be placed under one of these roles.
 
-``Leaf-1`` , ``Spine-01`` are the hostnames. Keep in mind that that names should be in sync with configuration file names in the directory **host_vars**.
+``Leaf-1`` , ``Spine-01`` are the hostnames (nodes). Keep in mind that the names should be with the name of the configuration files 
+in the directory ``host_vars``.
 
-``ansible_host`` is an ip address of the management interface.
+``ansible_host`` is the ip address of the management interface.
 
 group_vars
 **********
 
-In this directory stored **common** to all or most of devices configuration.
+This directory contains the configurations which are common to all or most of devices.
 
 all.yml
 =======
 
-In the file ``all.yml`` defined parameters which are applicable for several devices in the network.
-Lets check it one by one.
+The parameters defined in the file ``all.yml`` are applicable to all devices in the network.
 
 General access
 --------------
 
-This section defines access paramerets to the remote devices.
+This section defines access parameters of the remote devices.
 
 .. code-block:: yaml
 
@@ -62,18 +73,18 @@ This section defines access paramerets to the remote devices.
    ================================ ==========================================================================
      **Parameter**                  **Comments**
    ================================ ==========================================================================
-   **ansible_connection**           This option defines type for connection to the remote devices. In this
+   **ansible_connection**           This option defines thetype for connection to the remote devices. In this
 
-                                    project connection via SSH withimplementation of CLI is used:
+                                    project, connection via SSH with implementation of CLI is used:
 
 
                                     * **ansible.netcommon.network_cli**
 
-   **ansible_network_os**           This option defines operation system of the remote device. This option is
-
-                                    needed in case of usage "network_cli". Cat9k uses IOS-XE so parameter is 
-
-                                    set to:
+   **ansible_network_os**           This option defines the operation system of the remote device. This option is needed 
+   
+                                    if “network_cli” is used for 'ansible_connection'. In this project, Cat9k with IOS-XE is used, 
+                                    
+                                    so this option is set to:
 
                                     * **cisco.ios.ios** 
 
@@ -85,33 +96,39 @@ This section defines access paramerets to the remote devices.
     
    **ansible_user**                 This option defines a username which is used for access remote devices 
     
-                                    over SSH. In this project user must have priviledge level 15. It is set to:
+                                    over SSH. In this project, user must have privilege level 15. This option is set to:
     
                                     * **cisco**
     
-   **ansible_password**             This option defined a password for the user which is set in ``ansible_user``.
+   **ansible_password**             This option defines a password for the user in 'ansible_user'.
     
-                                    In this project password is set to:
+                                    In this project, the password is set to:
     
                                     * **cisco123**                                
    ================================ ==========================================================================
 
 .. warning::
 
-   ``ansible_user`` must have priveldge level 15. Example of the configuration is below 
+   ``ansible_user`` must have privildge level 15. Example of the configuration is below 
 
    .. code-block::
 
        username cisco privilege 15 password 0 cisco123
 
-   In the example unencrypted password is used. Fill free to use HIDDEN (7)
+In this example, unencrypted password is used. Feel free to use HIDDEN (7)
 
 If ``enable`` password should be used, check the `Enable Mode <https://docs.ansible.com/ansible/latest/network/user_guide/platform_ios.html>`_ documentation.
+
+overlay_db.yml
+==============
+
+In this file information about EVPN configuration is stored.
+Let's check this file gradually step-by-step.
 
 L2VPN EVPN general definition
 -----------------------------
 
-This section defines global l2vpn evpn parameters.
+This section defines global L2VPN EVPN parameters.
 
 .. code-block:: yaml
     
@@ -128,17 +145,17 @@ This section defines global l2vpn evpn parameters.
    ================================================ ==========================================================================
      **Parameter**                                                            **Comments**
    ================================================ ==========================================================================
-   **l2vpn_global** / :red:`mandatory`              This option defines l2vpn epvn globally.
+   **l2vpn_global** / :red:`mandatory`              This option defines L2VPN EVPN globally.
 
-   **replication_type** / :orange:`optional`        This option defines type of repliction for the L2 BUM traffic globally.
+   **replication_type** / :orange:`optional`        This option defines the type of repliction for the L2 BUM traffic globally.
 
-                                                    Could be overwritten per vlan in "vlans" -> "vlan_id" -> "replication_type"
+                                                    Could be overwritten per vlan by "vlans" -> "vlan_id" -> "replication_type"
 
                                                     | section. 
                                                     
-                                                    Option **static** instuct to use multicast for the BUM replication.
+                                                    Option **static** enables to use multicast for the BUM replication.
 
-                                                    Option **ingress** instruct to use Ingress-replication (unicast) for
+                                                    Option **ingress** enables to use Ingress-replication (unicast) for
 
                                                     | BUM replication.
 
@@ -148,11 +165,11 @@ This section defines global l2vpn evpn parameters.
                                                     
                                                     * ingress
    
-   **router_id** / :orange:`optional`               This option defines interface, which IP address will be used for defining
+   **router_id** / :orange:`optional`               This option defines the interface whose IP address will be used for defining
 
-                                                    router-id of l2vpn. In this project interface **Loopback1** is used. This option 
-
-                                                    is set to:
+                                                    router-id of L2VPN. In this project, the  interface **Loopback1** is used for the router-id
+                                                    
+                                                    of L2VPN, so the option is set to:
 
                                                     * **Loopback1**
    
@@ -195,11 +212,11 @@ This section defines vrf parameters. Lets review parameters for unicast first.
 =============================================== ==========================================================================
 **vrfs** / :red:`mandatory`                     This option defines vrf section globally.
 
-**<vrf_name>** / :red:`mandatory`               This option defines a vrf name.
+**<vrf_name>** / :red:`mandatory`               This option defines the vrf name.
 
-**rd** / :red:`mandatory`                       This option defines a **route distinguisher** of the vrf.
+**rd** / :red:`mandatory`                       This option defines the **route distinguisher** of the vrf.
 
-**afs** / :red:`mandatory`                      | This option defines Address Families which will be activated for vrf.
+**afs** / :red:`mandatory`                      | This option defines the address families which will be activated for the vrf.
 
                                                 Option **ipv4** defines ipv4 address family.
 
@@ -211,9 +228,9 @@ This section defines vrf parameters. Lets review parameters for unicast first.
 
                                                 * ipv6
 
-**rt_import** / :red:`mandatory`                This option defines Route Target **Import** per VRF/AF. In the option is it allowed
+**rt_import** / :red:`mandatory`                This option defines the  **Route Target Import** per VRF/AF. This option allows
 
-                                                to define more than one RT. For EVPN AF additional key is used - **"stitching".**
+                                                more than one RT to be defined. For EVPN AF additional key is used - **"stitching".**
 
                                                 | In this project next parameter are set by default for both AFs(IPv4 and IPv6):
 
@@ -221,11 +238,11 @@ This section defines vrf parameters. Lets review parameters for unicast first.
 
                                                 * 1:1 stitching (L2VPN EVPN AF)
 
-**rt_export** / :red:`mandatory`                This option defines Route Target **Export** per VRF/AF. In the option is it allowed
+**rt_export** / :red:`mandatory`                This option defines the **Route Target Export** per VRF/AF. This option allows
 
-                                                to define more than one RT. For EVPN AF additional key is used - **"stitching".**
+                                                more than one RT to be defined. For EVPN AF additional key is used - **"stitching".**
 
-                                                | In this project next parameter are set by default for both AFs(IPv4 and IPv6):
+                                                | In this project below parameters are set by default for both AFs(IPv4 and IPv6):
 
                                                 * 1:1
 
@@ -835,7 +852,7 @@ Content of ``host_vars/access_intf/<hostname>.yml``
             - GigabitEthernet1/0/7
             - GigabitEthernet1/0/8
 
-Values assigned after execution
+Vlans assigned after execution:
 
 **GigabitEthernet1/0/7** - :green:`101,102,201,202` (from ``group_vars/overlay_db.yml`` or ``host_vars/inc_vars/<hostname>.yml``)
 
@@ -854,7 +871,7 @@ Content of ``host_vars/access_intf/<hostname>.yml``
             - GigabitEthernet1/0/7
             - GigabitEthernet1/0/8
 
-Values assigned after execution
+Vlans assigned after execution:
 
 **GigabitEthernet1/0/7** - :green:`202`
 
@@ -877,7 +894,7 @@ Content of ``host_vars/access_intf/<hostname>.yml``
             - GigabitEthernet1/0/9
         access_vlan: 202
 
-Values assigned after execution
+Vlans assigned after execution:
 
 **GigabitEthernet1/0/6** - :green:`101,102,201,202` (from ``all.yml`` or ``host_vars/inc_vars/<hostname>.yml``)
 
@@ -906,7 +923,7 @@ Content of ``host_vars/access_intf/<hostname>.yml``
                 access_vlan: 102
         access_vlan: 202
 
-Values assigned after execution
+Vlans assigned after execution:
 
 **GigabitEthernet1/0/6** - :green:`101,201`
 
@@ -936,7 +953,7 @@ Content of ``host_vars/access_intf/<hostname>.yml``
                 access_vlan: 102
         access_vlan: 202
 
-Values assigned after execution
+Vlans assigned after execution:
 
 **GigabitEthernet1/0/5** - :green:`101,102,201,202` (from ``group_vars/overlay_db.yml`` or ``host_vars/inc_vars/<hostname>.yml``)
 
@@ -962,7 +979,7 @@ Content of ``host_vars/access_intf/<hostname>.yml``
         - GigabitEthernet1/0/8:
             access_vlan: 201
 
-Values assigned after execution
+Vlans assigned after execution:
 
 **GigabitEthernet1/0/7** - :green:`101,102,201,202` (from ``group_vars/overlay_db.yml`` or ``host_vars/inc_vars/<hostname>.yml``)
 
