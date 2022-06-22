@@ -860,6 +860,35 @@ Output could be checked in ``preview_files/<hostname>-delete.txt``.
 
     :~/cat9k-evpn-ansible/dag$ cat preview_files/Leaf-01-delete.txt 
 
+    ! svi block 
+    no interface Vlan201
+    no interface Vlan202
+    no interface Vlan902
+
+    ! nve block 
+    interface nve1
+    no ip address
+    source-interface Loopback1
+    host-reachability protocol bgp
+    no member vni 10201 mcast-group 225.0.0.101
+    no member vni 10202 ingress-replication
+    no member vni 50902 vrf blue
+
+    ! vlan block 
+    no vlan 201
+    no vlan configuration 201
+    no vlan 202
+    no vlan configuration 202
+    no vlan 902
+    no vlan configuration 902
+    
+    ! l2vpn evpn evi block 
+    no l2vpn evpn instance 201
+    no l2vpn evpn instance 202
+    
+    ! vrf block 
+    no vrf definition blue
+
     <...snip...>
 
 playbook_overlay_delete_commit.yml
