@@ -328,6 +328,9 @@ Then VRF :blue:`blue` and VLANs/SVIs :blue:`201,202,902` should be provisioned. 
 .. code-block:: yaml
 
     vrfs:
+    ########################################
+    # Day 0 VRF green configuration        #
+    ########################################
       green:
         ipv6_unicast: 'enable'
         description: 'green VRF defn'
@@ -348,7 +351,9 @@ Then VRF :blue:`blue` and VLANs/SVIs :blue:`201,202,902` should be provisioned. 
             rt_export:
               - '1:1'
               - '1:1 stitching'
-
+    ########################################
+    # Day 1 VRF blue configuration         #
+    ########################################
       blue:
         rd: '2:2'
         afs:
@@ -367,7 +372,9 @@ Then VRF :blue:`blue` and VLANs/SVIs :blue:`201,202,902` should be provisioned. 
               - '2:2'
     
     vlans:
-    #vrf green vlans
+    ###########################################
+    # Day 0 VLANs configuration for VRF green #
+    ###########################################
      101:
       vlan_type: 'access'
       description: 'Access_VLAN_101'
@@ -393,7 +400,9 @@ Then VRF :blue:`blue` and VLANs/SVIs :blue:`201,202,902` should be provisioned. 
       vni: '50901'
       vrf: 'green'
     
-    #vrf blue vlans
+    ###########################################
+    # Day 1 VLANs configuration for VRF blue  #
+    ###########################################
      201:
       vlan_type: 'access'
       description: 'Access_VLAN_101'
@@ -420,7 +429,9 @@ Then VRF :blue:`blue` and VLANs/SVIs :blue:`201,202,902` should be provisioned. 
       vrf: 'blue'
 
     svis:
-    #vrf green svi's
+    ###########################################
+    # Day 0 SVIs configuration for VRF green  #
+    ###########################################
      101:
       svi_type: 'access'
       vrf: 'green'
@@ -443,7 +454,9 @@ Then VRF :blue:`blue` and VLANs/SVIs :blue:`201,202,902` should be provisioned. 
       src_intf: 'Loopback1'
       ipv6_enable: 'yes'
     
-    #vrf blue svi's
+    ###########################################
+    # Day 1 SVIs configuration for VRF blue   #
+    ###########################################
      201:
       svi_type: 'access'
       vrf: 'blue'
