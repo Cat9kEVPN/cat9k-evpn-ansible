@@ -20,20 +20,7 @@ Below you can find a topology which is used in the automation scenario.
 
 <img width="1192" alt="ansible" src="https://user-images.githubusercontent.com/107021162/175528526-5d8b59ea-7f39-4d78-ac95-b08fed9ebbf6.png">
 
-## Documentation ##
+# Documentation #
 
 Detailed documentation about usage could be found [here](https://cat9k-evpn-ansible.readthedocs.io)
 
-# Observe changes on the switch #
-
-For checking the configuration that is deployed by Ansible on the switch next configuration could be used.
-
-```
-conf t
-archive
- log config
-  logging enable
-  notify syslog contenttype plaintext
-end
-term mon
-```
