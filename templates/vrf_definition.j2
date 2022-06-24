@@ -18,7 +18,9 @@ Note: after deleting vrf, respective subsection for vrf under bgp will be delete
                         {% elif action == 'add' %}
                                 {# Configuring basic vrf definition #}
                                 vrf definition {{ vrf }}
-                                description test vrf
+                                {% if vrfs[vrf].description is defined %}
+                                        description {{ vrfs[vrf].description }}
+                                {% endif %}
                                 rd {{ vrfs[vrf].rd }}
                                 {% for af in vrfs[vrf].afs %}
                                         {# Checking an action for the AF #}

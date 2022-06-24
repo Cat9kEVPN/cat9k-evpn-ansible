@@ -1,0 +1,84 @@
+ 
+! vrf block 
+vrf definition blue
+rd 2:2
+address-family ipv4
+route-target import 2:2
+route-target import 2:2 stitching
+route-target export 2:2
+route-target export 2:2 stitching
+address-family ipv6
+route-target import 2:2
+route-target import 2:2 stitching
+route-target export 2:2
+
+! bgp l2vpn ipv46 per vrf block 
+router bgp 65001
+address-family ipv4 vrf blue
+advertise l2vpn evpn
+redistribute connected
+redistribute static
+address-family ipv6 vrf blue
+advertise l2vpn evpn
+redistribute connected
+redistribute static
+
+! vlan block 
+vlan 201
+name Access_VLAN_101
+vlan 202
+name Access_VLAN_102
+vlan 902
+name Core_VLAN_VRF_blue
+
+! l2vpn evpn evi create block 
+l2vpn evpn instance 201 vlan-based
+encapsulation vxlan
+replication-type static
+l2vpn evpn instance 202 vlan-based
+encapsulation vxlan
+replication-type ingress
+
+! evi vni vlan stiching block 
+vlan configuration 201
+member evpn-instance 201 vni 10201
+vlan configuration 202
+member evpn-instance 202 vni 10202
+vlan configuration 902
+member vni 50902
+
+! nve create block 
+interface nve1
+no ip address
+source-interface Loopback1
+host-reachability protocol bgp
+member vni 10201 mcast-group 225.0.0.101
+member vni 10202 ingress-replication
+member vni 50902 vrf blue
+
+! svi create block 
+interface Vlan201
+vrf forwarding blue
+ip address 10.1.201.1 255.255.255.0
+ipv6 address 2001:201::1/64
+no shut
+no ip pim sparse-mode
+interface Vlan202
+vrf forwarding blue
+ip address 10.1.202.1 255.255.255.0
+ipv6 address 2001:202::1/64
+no shut
+no ip pim sparse-mode
+interface Vlan902
+vrf forwarding blue
+ip unnumbered  Loopback1
+ipv6 enable
+no autostate
+no shut        
+no ip pim sparse-mode
+
+! overlay interfaces block 
+interface Loopback12
+vrf forwarding blue
+ip address 10.1.12.12 255.255.255.0 
+no shut

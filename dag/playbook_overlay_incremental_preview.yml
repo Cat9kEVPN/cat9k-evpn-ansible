@@ -1,0 +1,94 @@
+---
+- name: Write DAG incremental info to files in host_vars/inc_vars folder
+  import_playbook: playbook_overlay_incremental_generate.yml
+
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
+  hosts: all
+  gather_facts: no
+  vars_files:
+    - "group_vars/overlay_db.yml"
+  vars:
+    incremental_run: false
+    whole_block: ""
+
+    vrf_dict:
+      '../templates/vrf_definition.j2': 'vrf block'
+      '../templates/bgp_l2vpn_ipv46_per_vrf.j2': 'bgp l2vpn ipv46 per vrf block'
+    vlan_dict:
+      '../templates/vlan_create.j2': 'vlan block'
+      '../templates/l2vpn_evpn_evi_create.j2': 'l2vpn evpn evi create block'
+      '../templates/evi_vni_vlan_stiching.j2': 'evi vni vlan stiching block'
+      '../templates/nve_create.j2': 'nve create block'
+    svi_dict:
+      '../templates/svi_create.j2': 'svi create block'
+    overlay_intf_dict:
+      '../templates/overlay_interfaces.j2': 'overlay interfaces block'
+    l2vpn_evpn_global_dict:
+      '../templates/l2vpn_evpn_global.j2': 'l2vpn evpn global block'
+    common_dict:
+      '../templates/bgp_global.j2': 'bgp global block'
+      '../templates/bgp_l2vpn_evpn_af.j2': 'bgp l2vpn evpn af block'
+      
+  tasks:
+          - name: Load variables from files under host_vars/inc_vars folder
+            when: inventory_hostname in groups['leaf']
+            include_vars: host_vars/inc_vars/{{ inventory_hostname }}.yml
+
+          - name: Check if full execution is needed
+            set_fact: 
+              incremental_run: true
+            when: (vrf_cli is defined) or (vlan_cli is defined) or (svi_cli is defined) or (ovrl_intf_cli is defined)
+
+          - name: Read VRF related template files
+            when: (inventory_hostname in groups['leaf']) and ((incremental_run == true and vrf_cli is defined) or (incremental_run == false))
+            set_fact:
+              whole_block: "{{ whole_block }} ! {{ vrf_dict[item.key] }} {{ lookup('template', item.key) }}"
+            with_dict: "{{ vrf_dict }}"
+
+          - name: Read VLAN related template files
+            when: (inventory_hostname in groups['leaf']) and ((incremental_run == true and vlan_cli is defined) or (incremental_run == false)) 
+            set_fact:
+              whole_block: "{{ whole_block }} ! {{ vlan_dict[item.key] }} {{ lookup('template', item.key) }}"
+            with_dict: "{{ vlan_dict }}"
+
+          - name: Read SVI related template files
+            when: (inventory_hostname in groups['leaf']) and ((incremental_run == true and svi_cli is defined) or (incremental_run == false)) 
+            set_fact:
+              whole_block: "{{ whole_block }} ! {{ svi_dict[item.key] }} {{ lookup('template', item.key) }}"
+            with_dict: "{{ svi_dict }}"
+
+          - name: Read overlay interface related template files
+            when: (inventory_hostname in groups['leaf']) and ((incremental_run == true and ovrl_intf_cli is defined) or (incremental_run == false)) 
+            set_fact:
+              whole_block: "{{ whole_block }} ! {{ overlay_intf_dict[item.key] }} {{ lookup('template', item.key) }}"
+            with_dict: "{{ overlay_intf_dict }}"
+
+          - name: Read global L2VPN EVPN related template files
+            when: (inventory_hostname in groups['leaf']) and (incremental_run == false)
+            set_fact:
+              whole_block: "{{ whole_block }} ! {{ l2vpn_evpn_global_dict[item.key] }} {{ lookup('template', item.key) }}"
+            with_dict: "{{ l2vpn_evpn_global_dict }}"
+
+          - name: Read BGP neighbors related template files
+            when: incremental_run == false
+            set_fact:
+              whole_block: "{{ whole_block }} ! {{ common_dict[item.key] }} {{ lookup('template', item.key) }}"
+            with_dict: "{{ common_dict }}"
+
+          - name: Render template files output
+            set_fact:
+              rendered: "{{  whole_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n! ') }}"
+
+          - name: Copy configurations to respective file ( <hostname>-inc.txt ) under 'preview_files' folder
+            copy:
+              dest: preview_files/{{inventory_hostname}}-inc.txt
+              content: "{{ rendered }}"
+
+- name: Display output file info
+  hosts: localhost
+  gather_facts: no
+  run_once: True
+
+  tasks:
+    - debug:
+        msg: Please refer to <hostname>-inc.txt in 'preview_files' folder

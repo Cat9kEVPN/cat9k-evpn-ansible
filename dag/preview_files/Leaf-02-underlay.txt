@@ -1,0 +1,55 @@
+ 
+! hostname block 
+hostname Leaf-02
+
+! global routing block 
+ip routing
+ipv6 unicast-routing
+ip multicast-routing
+
+! underlay interface block 
+interface  Loopback0
+description Routing Loopback
+ip address 172.16.255.4 255.255.255.255
+no shut
+interface  Loopback1
+description NVE Loopback
+ip address 172.16.254.4 255.255.255.255
+no shut
+interface  GigabitEthernet1/0/1
+description Backbone interface to Spine-01
+no switchport
+ip address 172.16.14.4 255.255.255.0
+no shut
+interface  GigabitEthernet1/0/2
+description Backbone interface to Spine-02
+no switchport
+ip address 172.16.24.4 255.255.255.0
+no shut
+
+! ospf interface block 
+interface  Loopback0
+ip ospf 1 area 0
+interface  Loopback1
+ip ospf 1 area 0
+interface  GigabitEthernet1/0/1
+ip ospf network point-to-point
+ip ospf 1 area 0
+interface  GigabitEthernet1/0/2
+ip ospf network point-to-point
+ip ospf 1 area 0
+router ospf 1
+router-id 172.16.255.4
+
+! pim interface block 
+interface  Loopback0
+ip pim sparse-mode
+interface  Loopback1
+ip pim sparse-mode
+interface  GigabitEthernet1/0/1
+ip pim sparse-mode
+interface  GigabitEthernet1/0/2
+ip pim sparse-mode
+
+! pim rp block 
+ip pim rp-address 172.16.255.255

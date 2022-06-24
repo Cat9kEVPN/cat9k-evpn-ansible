@@ -1,0 +1,16 @@
+  - name: Collect vars from group_vars/overlay_db.yml
+    run_once: true
+    include_vars:
+      file: group_vars/overlay_db.yml
+      name: overlay_data
+
+  - name: Load all.yml
+    block:
+      - set_fact: 
+          vlan_id_all: []
+      - set_fact: 
+          vlan_id_all: "{{ vlan_id_all + [ item ] }}"
+        loop: "{{ overlay_data.vlans.keys() }}"
+        when: overlay_data['vlans'][item]['vlan_type'] == 'access'  
+      - set_fact: 
+          counter: 1

@@ -1,0 +1,50 @@
+---
+
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
+  hosts: all
+  gather_facts: no
+  connection: network_cli
+  tasks:  
+
+          - name: Configure hostnames
+            cli_config:
+              config: "{{ lookup('template', '../templates/hostname.j2') }}"
+              diff_match: none 
+            register: result
+
+          - name: Enable Unicast/Multicast routing
+            cli_config:
+              config: "{{ lookup('template', '../templates/global_routing.j2') }}"
+              diff_match: none 
+            register: result
+          
+          - name: Configure ip addresses
+            cli_config:
+              config: "{{ lookup('template', '../templates/underlay_interfaces.j2') }}"
+              diff_match: none 
+            register: result
+
+          - name: Configure OSPF
+            cli_config:
+              config: "{{ lookup('template', '../templates/ospf_interfaces.j2') }}"
+              diff_match: none 
+            register: result
+
+          - name: Configure PIM on interfaces
+            cli_config:
+              config: "{{ lookup('template', '../templates/pim_interfaces.j2') }}"
+              diff_match: none 
+            register: result
+
+          - name: Configure RP
+            cli_config:
+              config: "{{ lookup('template', '../templates/pim_rp.j2') }}"
+              diff_match: none 
+            register: result
+          
+          - name: Configure MSDP peering
+            when: inventory_hostname in groups['spine']
+            cli_config:
+              config: "{{ lookup('template', '../templates/msdp_peering.j2') }}"
+              diff_match: none 
+            register: result

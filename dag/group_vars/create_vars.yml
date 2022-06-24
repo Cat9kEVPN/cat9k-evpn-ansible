@@ -1,0 +1,24 @@
+# This is the input file for playbook_overlay_incremental_preview.yml and playbook_overlay_incremental_commit.yml
+#
+# If there are multiple DAGs in the overlay_db.yml and if you want to provision only selective DAGs then declare the respective DAGs as shown below 
+#
+# List the DAG/s to be added under 'dag' keyword
+#
+#
+# ______________________________________________
+# __________ EXAMPLE SCENARIOS _________________
+# ______________________________________________
+#
+# Example: Adds blue and green DAGs 
+# 
+#   dag:
+#      - blue             <--------- adds blue and green DAGs
+#      - green
+#
+# ______________________________________________
+# ______________________________________________
+# ______________________________________________
+
+dag:
+   - blue
+

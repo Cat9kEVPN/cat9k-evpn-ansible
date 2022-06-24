@@ -1,0 +1,57 @@
+  - name: Set inteface detail
+    when: " intf_item | type_debug != 'dict' "
+    set_fact:
+      intf_name: "{{ intf_item }}"
+      vlan_id: "{{ vlan_id_common }}"
+
+  - name: Collect custom VLAN/s per interface
+    when: " intf_item | type_debug == 'dict' "
+    block:
+      - set_fact:
+          intf_name: "{{ item }}"
+        with_items: "{{ intf_item.keys() }}"
+
+      - name: Get custom VLAN/s
+        set_fact:
+          vlan_id: "{{ intf_item[intf_name][info_dict[intf_mode]['key_name']] }}"
+
+  - name: Trunk interface configuration
+    when: intf_mode == 'trunks'
+    block:
+      - name: Call ios_l2_interfaces module
+        cisco.ios.ios_l2_interfaces:
+          config:
+          - name: "{{ intf_name }}"
+            mode: trunk
+            trunk:
+              allowed_vlans: "{{ vlan_id }}"
+          state: rendered
+        register: trunk_unit
+
+      - set_fact:
+          intf_conf_unit: "{{ trunk_unit }}"
+
+  - name: Access interface configuration
+    when: intf_mode == 'access'
+    block:
+      - name: Call ios_l2_interfaces module
+        cisco.ios.ios_l2_interfaces:
+          config:
+          - name: "{{ intf_name }}"
+            mode: access
+            access:
+              vlan: "{{ vlan_id }}"
+          state: rendered
+        register: access_unit
+
+      - set_fact:
+          intf_conf_unit: "{{ access_unit }}"
+
+  - name: Rendering output for playbook mode incrememtal
+    when: playbook_mode == 'inc'
+    set_fact:
+      intf_conf_unit: "{{ intf_conf_unit | regex_replace('trunk allowed vlan', 'trunk allowed vlan add') }}"
+
+  - name: Appending output
+    set_fact:
+      intf_conf: "{{ intf_conf_unit.rendered + intf_conf }}"

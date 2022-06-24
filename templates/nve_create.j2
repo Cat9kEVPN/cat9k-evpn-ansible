@@ -42,7 +42,7 @@ Immutable paramiters:
                  {% if idata.evi is defined %}
                     {% if  idata.replication_type  == 'static' %}
                        {{prefix}} member vni {{ idata.vni }} mcast-group {{idata.replication_mcast}}
-                    {% elif  idata.replication_type  == 'ingress' %}
+                    {% elif  ((idata.replication_type  == 'ingress') or (idata.replication_type  == 'ingress-replication')) %}
                        {{prefix}} member vni {{ idata.vni }} ingress-replication
                     {% endif %}
                  {% endif %}

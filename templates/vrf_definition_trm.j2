@@ -32,15 +32,18 @@ This module is adding/deleting incrementally TRM part of the config to vrf and m
                                 {% endif%}
                 {% endfor %}
 
-                {% if vrfs[vrf].ipv4_multicast is defined %}
-                        {{ prefix }} ip multicast-routing vrf {{ vrf }}
-                {% endif %}
-                {% if vrfs[vrf].rp_address is defined %}
-                        {{ prefix }} ip pim vrf {{ vrf }} rp-address {{ vrfs[vrf].rp_address }}
-                {% endif %}
+                {% for ver in vrfs[vrf].ip_multicast %}
+                        {% if ( (vrfs[vrf].ip_multicast[ver].multicast is defined) and (ver =='ip') ) %}
+                                {{ prefix }} {{ ver }} multicast-routing vrf {{ vrf }}
+                        {% endif %}
+                        {% if vrfs[vrf].ip_multicast[ver].rp_address is defined %}
+                                {{ prefix }} {{ ver }} pim vrf {{ vrf }} rp-address {{ vrfs[vrf].ip_multicast[ver].rp_address }}
+                        {% endif %}
+                {% endfor %}
                 {% if vrfs[vrf].ssm_enable is defined %}
                         {{ prefix }} ip pim vrf {{ vrf }} ssm default
                 {% endif %}
 
         {% endfor %}
 {% endif %}
+

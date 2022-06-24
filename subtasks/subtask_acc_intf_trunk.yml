@@ -1,0 +1,38 @@
+  - name: Set interface type
+    set_fact:
+      intf_mode: "trunks"
+  
+  - name: Get VLAN/s list from file in host_vars/access_intf
+    when: '"trunk_vlan_list" in get_Leaf_vars["access_interfaces"]'
+    set_fact: 
+      vlan_id_common: "{{ get_Leaf_vars.access_interfaces.trunk_vlan_list }}"
+
+  - name: Get VLAN/s list from group_vars/overlay_db.yml or host_vars/inc_vars/<hostname>.yml file
+    when: '"trunk_vlan_list" not in get_Leaf_vars["access_interfaces"]'
+    block:
+      - name: Assign VLANs from host_vars/inc_vars/<hostname>.yml
+        when: playbook_mode == 'inc'
+        block:
+          - name: Load variables from host_vars/inc_vars/<hostname>.yml
+            include_vars:
+              file: host_vars/inc_vars/{{ inventory_hostname }}.yml
+              name: inc_vars_data
+
+          - set_fact: 
+              vlan_id_common: "{{ inc_vars_data['access_inft_cli'] }}"
+
+      - name: Assign VLANs from group_vars/overlay_db.yml
+        when: playbook_mode == 'add'
+        block:
+          - name: Filter 'access' type VLAN/s
+            when: counter is not defined
+            include_tasks: ../subtasks/subtask_get_access_vlan.yml
+
+          - set_fact: 
+              vlan_id_common: "{{ vlan_id_all }}"
+
+  - name: Loop through interfaces
+    include_tasks: "{{ execute_task }}"
+    loop: "{{ get_Leaf_vars['access_interfaces']['trunks'] }}"
+    loop_control:
+      loop_var: intf_item

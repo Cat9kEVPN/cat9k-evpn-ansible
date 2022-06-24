@@ -6,6 +6,10 @@ This module configures ip addresses for underlay interfaces
 
 {% for interface in interfaces%}
     interface  {{ interface }}
+    {% if interfaces[interface].name is defined %}
+        description {{ interfaces[interface].name }}
+    {% endif %}
+
     {% if interfaces[interface].loopback == 'no'%}
         no switchport
     {% endif %}

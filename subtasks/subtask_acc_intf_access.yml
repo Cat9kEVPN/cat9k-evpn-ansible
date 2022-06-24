@@ -1,0 +1,14 @@
+  - name: Set interface type
+    set_fact:
+      intf_mode: "access"
+      
+  - name: Get VLAN/s list from file in host_vars/access_intf
+    when: '"access_vlan" in get_Leaf_vars["access_interfaces"]'
+    set_fact: 
+      vlan_id_common: "{{ get_Leaf_vars['access_interfaces']['access_vlan'] }}"
+
+  - name: Loop through interfaces
+    include_tasks: "{{ execute_task }}"
+    loop: "{{ get_Leaf_vars['access_interfaces']['access'] }}"
+    loop_control:
+      loop_var: intf_item
