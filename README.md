@@ -22,5 +22,14 @@ Below you can find a topology which is used in the automation scenario.
 
 # Documentation #
 
-Detailed documentation about usage could be found [here](https://cat9k-evpn-ansible.readthedocs.io)
+Detailed documentation could be found [here](https://cat9k-evpn-ansible.readthedocs.io)
 
+# Release notes #
+
+## 2.0.0 ##
+
+* Precheck of configuration file is added
+* Access interface configuration is added
+* Incremental changes configuration is automated and simplified
+* Moving L2VPN EVPN relatead information from ``group_vars/all.yml`` to ``group_vars/overlay_db.yml``
+* Documentation update
