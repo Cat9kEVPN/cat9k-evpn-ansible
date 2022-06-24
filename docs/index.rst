@@ -15,6 +15,7 @@ WORK in progress. Content could be changed!
    about
    topology
    installation
+   notes
 
 .. toctree::
    :maxdepth: 3
