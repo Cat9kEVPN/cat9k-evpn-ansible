@@ -1,8 +1,0 @@
-
-! access interface block 
-interface GigabitEthernet1/0/8
-switchport trunk allowed vlan 101,102,201,202
-switchport mode trunk
-interface GigabitEthernet1/0/7
-switchport trunk allowed vlan 101,102,201,202
-switchport mode trunk
