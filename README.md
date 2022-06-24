@@ -6,7 +6,9 @@ Custom Jinja templates and Python modules are used to build an initial config an
 
 Project has a modular structure which gives an ability to introduce new features/services gradually step-by-step.
 
-* [DAG (Distributed Anycast Gateway)](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html)
+* DAG (Distributed Anycast Gateway)
+  * [DAG github](https://github.com/Cat9kEVPN/cat9k-evpn-ansible/tree/releases/v2.x.x/dag)
+  * [DAG documentation](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html)
 
 # Topology #
 
@@ -14,7 +16,7 @@ Below you can find a topology which is used in the automation scenario.
 
 <img width="737" alt="ansible_lab_topology" src="https://user-images.githubusercontent.com/99259970/155182099-7e5d98f4-8e4e-4b01-96a8-30b9badc5be2.png">
 
-# Playbooks description #
+# General description #
 
 <img width="903" alt="playbook_description" src="https://user-images.githubusercontent.com/99259970/172883945-3997d95b-3d6c-47f4-97ac-de0826b281c5.png">
 
