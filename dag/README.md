@@ -79,3 +79,6 @@ inputs from ``playbook_overlay_delete_preview.yml``
 
 * the playbook is used for collecting outputs from the remote devices
 
+# Documentation #
+
+Detailed documentation could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html)
