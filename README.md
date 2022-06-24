@@ -1,16 +1,14 @@
 # About #
 
-The main goal of this project is automation of Campus EVPN Deployment.
+The main goal of this project is the automation of Campus EVPN Deployment based on Catalyst 9000.
 
-Custom Jinja templates and Python modules are used for provisioning the network
+Custom Jinja templates and Python modules are used to build an initial config and modify the network configuration.
 
-Each directory has scripts for specific steps for EVPN provisioning:
-* **dag_add** DAG (Distributed Anycast Gateway) provisioning
-* **dag_delete** DAG selective unprovisioning
+Project has a modular structure which gives an ability to introduce new features/services gradually step-by-step.
 
-Detailed instructions for running playbook you can find under each directory:
-* [dag_add](https://github.com/dvishchu/cat9k-evpn-ansible/tree/main/dag_add)
-* [dag_delete](https://github.com/dvishchu/cat9k-evpn-ansible/tree/main/dag_delete)
+* DAG (Distributed Anycast Gateway)
+  * [DAG github](https://github.com/Cat9kEVPN/cat9k-evpn-ansible/tree/releases/v2.x.x/dag)
+  * [DAG documentation](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html)
 
 # Topology #
 
@@ -18,7 +16,7 @@ Below you can find a topology which is used in the automation scenario.
 
 <img width="737" alt="ansible_lab_topology" src="https://user-images.githubusercontent.com/99259970/155182099-7e5d98f4-8e4e-4b01-96a8-30b9badc5be2.png">
 
-# Playbooks description #
+# General description #
 
 <img width="903" alt="playbook_description" src="https://user-images.githubusercontent.com/99259970/172883945-3997d95b-3d6c-47f4-97ac-de0826b281c5.png">
 
