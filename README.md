@@ -18,94 +18,11 @@ Below you can find a topology which is used in the automation scenario.
 
 # General description #
 
-<img width="903" alt="playbook_description" src="https://user-images.githubusercontent.com/99259970/172883945-3997d95b-3d6c-47f4-97ac-de0826b281c5.png">
+<img width="1192" alt="ansible" src="https://user-images.githubusercontent.com/107021162/175528526-5d8b59ea-7f39-4d78-ac95-b08fed9ebbf6.png">
 
-## Inputs ##
+## Documentation ##
 
-### inventory.yml ###
-
-In the file **inventory.yml** all nodes of the network are described. Nodes are grouped into two groups/roles - Leafs and Spines.
-
-```yml
-all:
-  children:
-    leaf:
-      hosts:
-        Leaf-01:
-          ansible_host: 10.1.1.3
-<...skip...>
-          
-    spine:
-      hosts:
-        Spine-01:
-          ansible_host: 10.1.1.1
-<...skip...>
-
-```
-
-### group_vars/all.yaml
-
-Under **group_vars/all.yaml** access section and configuration for all VTEPs are present.
-
-```yml
-# Access section
-ansible_connection: ansible.netcommon.network_cli
-ansible_network_os: cisco.ios.ios
-ansible_python_interpreter: "python"
-ansible_user: cisco
-ansible_ssh_pass: cisco123
-
-# EVPN section
-l2vpn_global:
-  replication_type: 'static'
-  router_id: 'Loopback1'
-  default_gw: 'yes'
-
-vrfs:
-  green:
-    ipv6_unicast: 'enable'
-    rd: '1:1'
-    afs:
-      ipv4:
-        rt_import: 
-          - '1:1'
-          - '1:1 stitching'
-<...skip...>
-```
-
-Full documentation about **group_vars/all.yaml** section could be found [here]()
-
-Each directory may has several playbook. Usually there are 4 of them:
-
-```
-playbook_underlay.yml:
-      underlay config. Please check the host_vars/xx.yml
-
-playbook_overlay.yml: 
-       overlay config. Please refer to the overlay configuration parameters
-
-playbook_output.yml:  
-        executes overlay show commands including the config per node into output/xxx.txt
-
-playbook_all.yml:      
-         run above three.
-
-Each of the playbooks above can be run independantly.
-```
-
-# Variables config description #
-
-Configuration on the fabric switch usually consists from two parts:
-- individual node configuration. Ususally it is Underlay config with unique ip addresses, interfaces, etc.
-- shared configuration. Usually it is Overlay part like VLANs, SVIs, EVIs, etc.
-
-Individual part of the configuration is stored in **host_vars/Leaf-xx.yml** and **host_vars/Spine-xx.yml**.
-This configuration will be applied to the specific node only.
-
-Shared configuration is stored in **groups/all.yml**.
-This configuration will be applied to all nodes in group.
-
-File **inventory.yaml** has an information about switch ip addresses, hostnames and groups that it belongs to.
+Detailed documentation about usage could be found [here](https://cat9k-evpn-ansible.readthedocs.io)
 
 # Observe changes on the switch #
 
