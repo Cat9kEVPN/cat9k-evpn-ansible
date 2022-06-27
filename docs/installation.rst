@@ -16,6 +16,8 @@ Below installation process for Linux (ubuntu) server
 .. code-block::
 
     python3 -m venv ansible
+    
+More details cound be found `here <https://docs.python.org/3/library/venv.html>`_
 
 * Activate virtual environment.
 
