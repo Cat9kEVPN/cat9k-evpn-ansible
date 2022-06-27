@@ -10,15 +10,45 @@ Project has a modular structure which gives an ability to introduce new features
   * [DAG github](https://github.com/Cat9kEVPN/cat9k-evpn-ansible/tree/releases/v2.x.x/dag)
   * [DAG documentation](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html)
 
-# Topology #
-
-Below you can find a topology which is used in the automation scenario.
-
-<img width="737" alt="ansible_lab_topology" src="https://user-images.githubusercontent.com/99259970/155182099-7e5d98f4-8e4e-4b01-96a8-30b9badc5be2.png">
-
 # General description #
 
 <img width="1192" alt="ansible" src="https://user-images.githubusercontent.com/107021162/175528526-5d8b59ea-7f39-4d78-ac95-b08fed9ebbf6.png">
+
+# Installation #
+
+It is recommended to run the project in the virtual environment.
+
+Below you can find installation steps for Linux (ubuntu) server
+
+* Install python3
+```
+    sudo apt install python3
+```
+* Create the python virtual environment. In this example the virtual environment will be created in the folder ``virtual-env/ansible``
+```
+    python3 -m venv ansible
+```
+* Activate virtual environment.
+```
+    source ansible/bin/activate
+```
+* Install ``pip`` if it is not already installed
+```
+    sudo apt install pip
+```
+* Install all necessary packages
+```
+    pip install -r requirements.txt
+```
+* Or you can do it manually
+```
+    pip install ansible
+    pip install ansible-pylibssh
+    pip install paramiko
+    pip install pyats
+    pip install genie
+```
+* Next step - go to desired feature directory or [documentation](https://cat9k-evpn-ansible.readthedocs.io)
 
 # Documentation #
 
