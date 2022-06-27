@@ -28,6 +28,9 @@ Below you can find installation steps for Linux (ubuntu) server
 ```
     python3 -m venv ansible
 ```
+
+More details could be found [here](https://docs.python.org/3/library/venv.html)
+
 * Activate virtual environment.
 ```
     source ansible/bin/activate
