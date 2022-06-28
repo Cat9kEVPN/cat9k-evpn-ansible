@@ -312,7 +312,9 @@ This section defines the VLANs and their stitching with EVIs (EVPN instance) and
 
                                                     Option **core** is used for L3VNIs.
 
-                                                    | Option **non-vxlan** is used for VLANs, which are not extended over Fabric.
+                                                    | Option **non-vxlan** is used for VLANs, which are not extended over 
+                                                    
+                                                    the Fabric.
 
                                                     **Choices**
 
@@ -414,11 +416,17 @@ This section defines SVIs configuration.
 
    **svi_type** / :red:`mandatory`                  | This option defines the SVI type. 
 
-                                                    Option **access** is used when the VLAN associated with an SVI is stitched to L2VNIs.
+                                                    Option **access** is used when the VLAN associated with an SVI is stitched 
+                                                    
+                                                    to L2VNIs.
 
-                                                    Option **core** is used when the VLAN associated with an SVI is stitched to L3VNIs.
+                                                    Option **core** is used when the VLAN associated with an SVI is stitched 
+                                                    
+                                                    to L3VNIs.
 
-                                                    | Option **non-vxlan** is used when the VLAN associated with an SVI are not extended over Fabric.
+                                                    | Option **non-vxlan** is used when the VLAN associated with an SVI is not 
+                                                    
+                                                    extended over the Fabric.
 
                                                     **Choices**
 
