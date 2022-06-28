@@ -483,7 +483,9 @@ NVE section
 
    **nve_id>** / :red:`mandatory`                   This option defines the NVE ID.
 
-   **source_interface** / :red:`mandatory`          This option defines the source interface for the corresponding NVE interface. 
+   **source_interface** / :red:`mandatory`          This option defines the source interface for the corresponding 
+
+                                                    NVE interface. 
 
    ================================================ ==========================================================================
 
@@ -704,11 +706,12 @@ This section is optional.
 
     **peer_ip** / :red: `mandatory`                 This option defines the MSDP peer's IPv4 address.
 
-    **source_interface** / :red: `mandatory`        This option defines the IP address of the source interface which will be 
+    **source_interface** / :red: `mandatory`        This option defines the IP address of the source interface which will be
+
                                                     used as a source IP for the MSDP session.
 
-    **remote_as** / :red: `mandatory`               This option is used for defining the BGP AS number of the MSDP
-                                                    peer.                               
+    **remote_as** / :red: `mandatory`               This option is used for defining the BGP AS number of the MSDP peer.
+
     =============================================== ==========================================================================
 
 BGP section
@@ -754,7 +757,9 @@ By default next design assumption are made:
     
     **as_number** / :red:`mandatory`                This option defines BGP AS number.
 
-    **router_id** / :red:`mandatory`                This option defines interface which ip address will be used like BGP router ID.
+    **router_id** / :red:`mandatory`                This option defines interface which ip address will be used like 
+    
+                                                    BGP router ID.
 
     **neighbors** / :red:`mandatory`                This option defines neighbors section.
 
@@ -762,9 +767,9 @@ By default next design assumption are made:
 
     **peer_as_number** / :red:`mandatory`           This option defines BGP neighbor AS number
 
-    **source_interface** / :red:`mandatory`         This option defines source interface which ip address will be used like a SRC IP
-
-                                                    for BGP session.
+    **source_interface** / :red:`mandatory`         This option defines source interface which ip address will be used like 
+    
+                                                    the SRC IP for the BGP session.
 
     **rrc** / :orange:`optional`                    This option defines the peer like a BGP route-reflector client.
     =============================================== ==========================================================================
@@ -772,9 +777,9 @@ By default next design assumption are made:
 Access interface configuration
 ==============================
 
-This section defines configuration for the customer-facing access interfaces.
+This section defines the configuration for the customer-facing access interfaces.
 
-By default all access interfaces will be configured like trunks with all L2VNI vlans that are mentioned in ``group_vars/overlay_db.yml``
+By default, all access interfaces will be configured like trunks with all L2VNI VLANs that are mentioned in ``group_vars/overlay_db.yml``
 
 Trunk configuration
 -------------------
