@@ -1,3 +1,5 @@
+/* Colors definition*/
+
 .black {
     color: black;
 }
@@ -80,4 +82,9 @@
 
 .purple {
     color: purple;
+}
+
+/* The table width fix to avoid scrollbar */
+.wy-table-responsive table td {
+    white-space: normal;
 }

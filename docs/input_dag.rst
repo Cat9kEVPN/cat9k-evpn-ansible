@@ -20,20 +20,20 @@ Inventory.yml
 .. code-block:: yaml
 
     all:
-        children:
-            leaf:
-                hosts:
-                    Leaf-01:
-                        ansible_host: 10.62.149.179
-                    Leaf-02:
-                        ansible_host: 10.62.149.182
+      children:
+        leaf:
+          hosts:
+            Leaf-01:
+              ansible_host: 10.62.149.179
+            Leaf-02:
+              ansible_host: 10.62.149.182
             
-            spine:
-                hosts:
-                    Spine-01:
-                        ansible_host: 10.62.149.180
-                    Spine-02:
-                        ansible_host: 10.62.149.181
+        spine:
+          hosts:
+            Spine-01:
+              ansible_host: 10.62.149.180
+            Spine-02:
+              ansible_host: 10.62.149.181
 
 ``leaf`` and ``spine`` are two roles. Each node should be placed under one of these roles.
 
@@ -73,30 +73,30 @@ This section defines access parameters of the remote devices.
    ================================ ==========================================================================
      **Parameter**                  **Comments**
    ================================ ==========================================================================
-   **ansible_connection**           This option defines thetype for connection to the remote devices. In this
-
-                                    project, connection via SSH with implementation of CLI is used:
-
+   **ansible_connection**           This option defines thetype for connection to the remote devices. 
+   
+                                    In this project, connection via SSH with implementation of CLI is used:
 
                                     * **ansible.netcommon.network_cli**
 
-   **ansible_network_os**           This option defines the operation system of the remote device. This option is needed 
-   
-                                    if “network_cli” is used for 'ansible_connection'. In this project, Cat9k with IOS-XE is used, 
+   **ansible_network_os**           This option defines the operation system of the remote device. 
+                                    This option is needed if “network_cli” is used for 'ansible_connection'. 
                                     
-                                    so this option is set to:
+                                    In this project, Cat9k with IOS-XE is used, so this option is set to:
 
                                     * **cisco.ios.ios** 
 
-   **ansible_python_interpreter**   This option instruct Ansible to use defined python interpreter. This option  
-
-                                    is set to:
+   **ansible_python_interpreter**   This option instruct Ansible to use defined python interpreter. 
+   
+                                    This option is set to:
     
                                     * **python**
     
    **ansible_user**                 This option defines a username which is used for access remote devices 
     
-                                    over SSH. In this project, user must have privilege level 15. This option is set to:
+                                    over SSH. In this project, user must have privilege level 15. 
+                                    
+                                    This option is set to:
     
                                     * **cisco**
     
@@ -133,9 +133,9 @@ This section defines global L2VPN EVPN parameters.
 .. code-block:: yaml
     
     l2vpn_global:
-        replication_type: 'static'
-        router_id: 'Loopback1'
-        default_gw: 'yes'
+      replication_type: 'static'
+      router_id: 'Loopback1'
+      default_gw: 'yes'
     
     <...skip...>
 
@@ -166,10 +166,9 @@ This section defines global L2VPN EVPN parameters.
                                                     * ingress
    
    **router_id** / :orange:`optional`               This option defines the interface whose IP address will be used for defining
-
-                                                    router-id of L2VPN. In this project, the  interface **Loopback1** is used for the router-id
+                                                    router-id of L2VPN.The  interface **Loopback1** is used for the router-id of L2VPN.
                                                     
-                                                    of L2VPN, so the option is set to:
+                                                    In this project the option is set to:
 
                                                     * **Loopback1**
    
@@ -188,29 +187,29 @@ This section defines vrf parameters. Lets review parameters for unicast first.
 .. code-block:: yaml
 
     vrfs:
-        green:
-            rd: '1:1'
-                afs:
-                    ipv4:
-                        rt_import: 
-                            - '1:1'
-                            - '1:1 stitching'
-                        rt_export: 
-                            - '1:1'
-                            - '1:1 stitching'
-                    ipv6:
-                        rt_import:
-                            - '1:1'
-                            - '1:1 stitching'
-                        rt_export:
-                            - '1:1'
-                            - '1:1 stitching'
+      green:
+        rd: '1:1'
+          afs:
+            ipv4:
+              rt_import: 
+                - '1:1'
+                - '1:1 stitching'
+              rt_export: 
+                - '1:1'
+                - '1:1 stitching'
+            ipv6:
+              rt_import:
+                - '1:1'
+                - '1:1 stitching'
+              rt_export:
+                - '1:1'
+                - '1:1 stitching'
     <...skip...>
 
 =============================================== ========================================================================== 
 **Parameter**                                                            **Comments**
 =============================================== ==========================================================================
-**vrfs** / :red:`mandatory`                     This option defines vrf section globally.
+**vrfs** / :red:`mandatory`                     This option defines the vrf section.
 
 **<vrf_name>** / :red:`mandatory`               This option defines the vrf name.
 
@@ -228,8 +227,7 @@ This section defines vrf parameters. Lets review parameters for unicast first.
 
                                                 * ipv6
 
-**rt_import** / :red:`mandatory`                This option defines the  **Route Target Import** per VRF/AF. This option allows
-
+**rt_import** / :red:`mandatory`                This option defines the  **Route Target Import** per VRF/AF. This option allows 
                                                 more than one RT to be defined. For EVPN AF additional key is used - **"stitching".**
 
                                                 | In this project next parameter are set by default for both AFs(IPv4 and IPv6):
@@ -239,8 +237,7 @@ This section defines vrf parameters. Lets review parameters for unicast first.
                                                 * 1:1 stitching (L2VPN EVPN AF)
 
 **rt_export** / :red:`mandatory`                This option defines the **Route Target Export** per VRF/AF. This option allows
-
-                                                more than one RT to be defined. For EVPN AF additional key is used - **"stitching".**
+                                                more than one RT to be defined. For EVPN AF, additional key  **"stitching"** is used.
 
                                                 | In this project below parameters are set by default for both AFs(IPv4 and IPv6):
 
@@ -252,36 +249,36 @@ This section defines vrf parameters. Lets review parameters for unicast first.
 VLANs section
 -------------
 
-This section defines VLANs and it stitching with EVIs(EVPN instance) and VNIs(VXLAN network identifier).
+This section defines the VLANs and their stitching with EVIs (EVPN instance) and VNIs (VXLAN network identifier).
 
 .. code-block:: yaml
 
     vlans:
 
-     101:
-      vlan_type: 'access'
-      description: 'Access_VLAN_101'
-      vni: '10101'
-      evi: '101'
-      type: 'vlan-based'
-      encapsulation: 'vxlan'
-      replication_type: 'static'
-      replication_mcast: '225.0.0.101'
+      101:
+        vlan_type: 'access'
+        description: 'Access_VLAN_101'
+        vni: '10101'
+        evi: '101'
+        type: 'vlan-based'
+        encapsulation: 'vxlan'
+        replication_type: 'static'
+        replication_mcast: '225.0.0.101'
     
-     102:
-      vlan_type: 'access'
-      description: 'Access_VLAN_102'
-      vni: '10102'
-      evi: '102'
-      type: 'vlan-based'
-      encapsulation: 'vxlan'
-      replication_type: 'ingress'
+      102:
+        vlan_type: 'access'
+        description: 'Access_VLAN_102'
+        vni: '10102'
+        evi: '102'
+        type: 'vlan-based'
+        encapsulation: 'vxlan'
+        replication_type: 'ingress'
     
-     901:
-      vlan_type: 'core'
-      description: 'Core_VLAN_VRF_green'
-      vni: '50901'
-      vrf: 'green'
+      901:
+        vlan_type: 'core'
+        description: 'Core_VLAN_VRF_green'
+        vni: '50901'
+        vrf: 'green'
 
     <...snip...>
 
@@ -291,13 +288,13 @@ This section defines VLANs and it stitching with EVIs(EVPN instance) and VNIs(VX
    ================================================ ==========================================================================
      **Parameter**                                                            **Comments**
    ================================================ ==========================================================================
-   **vlans** / :red:`mandatory`                     This option defines vlan section globally.
+   **vlans** / :red:`mandatory`                     This option defines the VLAN section.
 
-   **<vlan_id>** / :red:`mandatory`                 This option defines VLAN ID on the switch. In this example there are **101,**
+   **<vlan_id>** / :red:`mandatory`                 This option defines the VLAN ID. 
+   
+                                                    In the example shown, VLAN IDs are **101**, **102**, **901**.
 
-                                                    **102, 901**.
-
-   **vlan_type** / :red:`mandatory`                 | This option defines type of the VLAN. 
+   **vlan_type** / :red:`mandatory`                 | This option defines the VLAN type. 
 
                                                     Option **access** is used for L2VNIs.
 
@@ -313,29 +310,32 @@ This section defines VLANs and it stitching with EVIs(EVPN instance) and VNIs(VX
 
                                                     * non-vxlan
    
-   **description** / :orange:`optional`             This option defines VLAN description.
+   **description** / :orange:`optional`             This option defines the VLAN description.
 
-   **vni** / :red:`mandatory`                       This option defines the VNI which is stitched with a VLAN ID on the swith.
+   **vni** / :red:`mandatory`                       This option defines the VNI which is stitched with the VLAN ID on the switch.
 
-   **evi** / :red:`mandatory`                       This option defines the EVI which is stitched with a VLAN ID on the swith.
+   **evi** / :red:`mandatory`                       This option defines the EVI which is stitched with the VLAN ID on the switch.
 
                                                     This parameter is **mandatory for L2VNIs only.**
 
-   **type** / :red:`mandatory`                      This option defines the type of EVI. On Cat9k **vlan-based** is supported
-
-                                                    for now. This parameter is  **mandatory for L2VNIs only.**
-
-   **encapsulation** / :red:`mandatory`             This option defines encapsulation for packet is the core. It is set to
-
-                                                    **vxlan**. This parameter is  **mandatory for L2VNIs only.**
+   **type** / :red:`mandatory`                      This option defines the EVI type. For Cat9k **vlan-based** is only supported
+                                                    EVI type presently. 
                                                     
-   **replication_type** / :red:`mandatory`          | This option defines replication type for the BUM for L2VNI.
+                                                    This parameter is  **mandatory for L2VNIs only.**
+
+   **encapsulation** / :red:`mandatory`             This option defines encapsulation for the packet is the core. 
+   
+                                                    This parameter is  **mandatory for L2VNIs only.**
+
+                                                    In the example shown, it is set to vxlan.
                                                     
-                                                    Option **static** is used for multicast replication. In this case 
+   **replication_type** / :red:`mandatory`          | This option defines the replication type for the BUM for L2VNI.
+                                                    
+                                                    Option **static** is used for multicast replication. In this case, 
 
                                                     **replication_mcast** parameter is needed.
 
-                                                    | Option **ingress** is used for Ingress-replication (unicast).
+                                                    | Option **ingress** is used for ingress-replication (unicast).
 
                                                     **Choices:**
 
@@ -345,9 +345,10 @@ This section defines VLANs and it stitching with EVIs(EVPN instance) and VNIs(VX
 
                                                     This parameter is  **mandatory for L2VNIs only.**
 
-   **vrf** / :red:`mandatory`                       This option defines VRF for which L3VNI is used for encapsulation the routed
-
-                                                    | traffic in the core. For this option **vlan_type** must be **core**.
+   **vrf** / :red:`mandatory`                       This option defines the VRF that uses the VLAN’s L3VNI for encapsulating
+                                                    the routed traffic in the core.
+                                                    
+                                                    For this option, **vlan_type** must be **core**.
 
                                                     This parameter is  **mandatory for L3VNIs only.**
    ================================================ ==========================================================================
@@ -359,30 +360,29 @@ This section defines SVIs configuration.
 
 .. code-block:: yaml
 
-   svis:
+    svis:
 
-    101:
-     svi_type: 'access'
-     vrf: 'green'
-     ipv4: '10.1.101.1 255.255.255.0'
-     ipv6:
-       - '2001:101::1/64'
-     mac: 'dead.beef.abcd'
+      101:
+        svi_type: 'access'
+        vrf: 'green'
+        ipv4: '10.1.101.1 255.255.255.0'
+        ipv6:
+          - '2001:101::1/64'
+        mac: 'dead.beef.abcd'
 
-    102:
-     svi_type: 'access'
-     vrf: 'green'
-     ipv4: '10.1.102.1 255.255.255.0'
-     ipv6:
-       - '2001:102::1/64'
-     mac: 'dead.beef.abcd'
+      102:
+        svi_type: 'access'
+        vrf: 'green'
+        ipv4: '10.1.102.1 255.255.255.0'
+        ipv6:
+          - '2001:102::1/64'
+        mac: 'dead.beef.abcd'
     
-    901:
-     svi_type: 'core'
-     vrf: 'green'
-     src_intf: 'Loopback1'
-     ipv6_enable: 'yes
-
+      901:
+        svi_type: 'core'
+        vrf: 'green'
+        src_intf: 'Loopback1'
+        ipv6_enable: 'yes
 
     <...snip...>
 
@@ -392,19 +392,19 @@ This section defines SVIs configuration.
    ================================================ ==========================================================================
      **Parameter**                                                            **Comments**
    ================================================ ==========================================================================
-   **svis** / :red:`mandatory`                      This option defines SVIs section globally.
+   **svis** / :red:`mandatory`                      This option defines SVIs section.
 
-   **<svi_id>** / :red:`mandatory`                  This option defines SVI ID on the switch. In this example there are **101,**
+   **<svi_id>** / :red:`mandatory`                  This option defines the SVI ID on the switch. In this example, there are **101,**
 
                                                     **102, 901**.
 
-   **svi_type** / :red:`mandatory`                  | This option defines type of the SVI. 
+   **svi_type** / :red:`mandatory`                  | This option defines the SVI type. 
 
-                                                    Option **access** is used for SVI for vlans stitched to L2VNIs.
+                                                    Option **access** is used when the VLAN associated with an SVI is stitched to L2VNIs.
 
-                                                    Option **core** is used for SVI for vlans stitched to L3VNIs.
+                                                    Option **core** is used when the VLAN associated with an SVI is stitched to L3VNIs.
 
-                                                    | Option **non-vxlan** is used for SVI for vlans, which are not extended over Fabric.
+                                                    | Option **non-vxlan** is used when the VLAN associated with an SVI are not extended over Fabric.
 
                                                     **Choices**
 
@@ -414,40 +414,40 @@ This section defines SVIs configuration.
 
                                                     * non-vxlan
    
-   **vrf** / :red:`mandatory`                       This option defines vrf which SVI belongs to.
+   **vrf** / :red:`mandatory`                       This option defines the vrf which SVI belongs to.
 
    **ipv4** / :red:`mandatory`                      This option defines the IPv4 address configured on the SVI. 
    
-                                                    This parameter is applicable **for SVIs for L2VNIs only.**
+                                                    This parameter is applicable **for L2VNI SVIs only.**
 
    **ipv6** / :orange:`optional`                    This option defines the IPv6 addresses configured on the SVI.
 
-                                                    This parameter is applicable **for SVIs for L2VNIs only.**
+                                                    This parameter is applicable **for L2VNI SVIs only.**
 
-   **mac** / :orange:`optional`                     This option defines the MAC to be configured on SVI.
+   **mac** / :orange:`optional`                     This option defines the MAC which is to be configured on the SVI.
 
-                                                    This parameter is applicable **for SVIs for L2VNIs only.**
+                                                    This parameter is applicable **for L2VNI SVIs only.**
 
-   **src_intf** / :red:`mandatory`                  This option defines Source Interface for the SVI for L3VNI.
+   **src_intf** / :red:`mandatory`                  This option defines thee source Interface for the SVI for L3VNI.
 
-                                                    This parameter is applicable **for SVIs for L3VNIs only.**
+                                                    This parameter is applicable **for L3VNI SVIs only.**
                                                     
    **ipv6_enable** / :orange:`optional`             This option defines enables IPv6 on the SVI.
 
-                                                    This parameter is applicable **for SVIs for L3VNIs only.**
+                                                    This parameter is applicable **for L3VNI SVIs only.**
                                                     
    ================================================ ==========================================================================
 
 NVE section
 -----------
 
-   This section defines NVE interface configuration.
+   This section defines the NVE interface configuration.
 
 .. code-block:: yaml
 
     nve_interfaces:
-        1:
-            source_interface: 'Loopback1'
+      1:
+        source_interface: 'Loopback1'
 
     <...snip...>
 
@@ -457,31 +457,30 @@ NVE section
    ================================================ ==========================================================================
      **Parameter**                                                            **Comments**
    ================================================ ==========================================================================
-   **nve_interfaces** / :red:`mandatory`            This option defines NVE section globally.
+   **nve_interfaces** / :red:`mandatory`            This option defines the NVE section.
 
-   **nve_id>** / :red:`mandatory`                   This option defines NVE ID on the switch. 
+   **nve_id>** / :red:`mandatory`                   This option defines the NVE ID.
 
-   **source_interface** / :red:`mandatory`          This option defines source interface for corresponding NVE interface. 
+   **source_interface** / :red:`mandatory`          This option defines the source interface for the corresponding NVE interface. 
 
    ================================================ ==========================================================================
 
 host_vars
 *********
 
-In this directory stored **specific** to the dedicated device configuration.
+This directory contains configuration specific to a device.
 
 <node_name>.yml
 ===============
 
-In the file ``<node_name>.yml`` defined specific to the dedicated node configuration parameters. Usually it is related to interface 
-configuration and underlay configuration in general.
+The file ``<node_name>.yml`` contains configurations, usually the ones related to interface and underlay, specific to a node.
 
-Lets review the configuration options one by one.
+Let us review the configuration in ``<node_name>.yml``.
 
 Hostname section
 ----------------
 
-In this section hostname of the node is defined.
+This section defines the hostname of a node.
 
 .. code-block:: yaml
 
@@ -496,15 +495,13 @@ In this section hostname of the node is defined.
     =============================================== ==========================================================================
     **Parameter**                                                            **Comments**
     =============================================== ==========================================================================
-    **hostname** / :orange:`optional`               This option defines remote device hostname.
+    **hostname** / :orange:`optional`               This option defines the remote device's hostname.
     =============================================== ==========================================================================
 
 Global routing section
 ----------------------
 
-In this section parameters of IPv4/IPv6 in GRT are defined.
-
-ç
+In this section, IPv4/IPv6 related parameters for global routing table are defined.
 
 
 .. table::
@@ -513,52 +510,52 @@ In this section parameters of IPv4/IPv6 in GRT are defined.
     =============================================== ==========================================================================
     **Parameter**                                                            **Comments**
     =============================================== ==========================================================================
-    **routing** / :red:`mandatory`                  This option defines global routing section.
+    **routing** / :red:`mandatory`                  This option defines the global routing section.
 
-    **ipv4_uni** / :red:`mandatory`                 This option enables global IPv4 unicast routing on the switch.
+    **ipv4_uni** / :red:`mandatory`                 This option enables the global IPv4 unicast routing on the device.
 
-    **ipv6_uni** / :red:`mandatory`                 This option enables global IPv6 unicast routing on the switch.
+    **ipv6_uni** / :red:`mandatory`                 This option enables the global IPv6 unicast routing on the device.
 
-    **ipv6_multi** / :red:`mandatory`               This option enables global IPv4 multicast routing on the swith.
+    **ipv6_multi** / :red:`mandatory`               This option enables the global IPv4 multicast routing on the device.
 
     =============================================== ==========================================================================
 
 Interface section
 -----------------
 
-In this section interfaces configuration is defined.
+In this section, the configurations of the interfaces are defined.
 
 .. code-block:: yaml
 
     interfaces:
 
-        Loopback0:
-            name: 'Routing Loopback'
-            ip_address: '172.16.255.3'
-            subnet_mask: '255.255.255.255'
-            loopback: 'yes'
-            pim_enable: 'no'
+      Loopback0:
+        name: 'Routing Loopback'
+        ip_address: '172.16.255.3'
+        subnet_mask: '255.255.255.255'
+        loopback: 'yes'
+        pim_enable: 'no'
 
-        Loopback1:
-            name: 'NVE Loopback'
-            ip_address: '172.16.254.3'
-            subnet_mask: '255.255.255.255'
-            loopback: 'yes'
-            pim_enable: 'yes'
+      Loopback1:
+        name: 'NVE Loopback'
+        ip_address: '172.16.254.3'
+        subnet_mask: '255.255.255.255'
+        loopback: 'yes'
+        pim_enable: 'yes'
 
-        GigabitEthernet1/0/1:
-            name: 'Backbone interface to Spine-01'
-            ip_address: '172.16.13.3'
-            subnet_mask: '255.255.255.0'
-            loopback: 'no'
-            pim_enable: 'yes'
+      GigabitEthernet1/0/1:
+        name: 'Backbone interface to Spine-01'
+        ip_address: '172.16.13.3'
+        subnet_mask: '255.255.255.0'
+        loopback: 'no'
+        pim_enable: 'yes'
 
-        GigabitEthernet1/0/2:
-            name: 'Backbone interface to Spine-02'
-            ip_address: '172.16.23.3'
-            subnet_mask: '255.255.255.0'
-            loopback: 'no'
-            pim_enable: 'yes' 
+      GigabitEthernet1/0/2:
+        name: 'Backbone interface to Spine-02'
+        ip_address: '172.16.23.3'
+        subnet_mask: '255.255.255.0'
+        loopback: 'no'
+        pim_enable: 'yes' 
 
     <...snip...>
 
@@ -569,17 +566,18 @@ In this section interfaces configuration is defined.
     =============================================== ==========================================================================
     **Parameter**                                                            **Comments**
     =============================================== ==========================================================================
-    **interfaces** / :red:`mandatory`               This option defines global interface section.
+    **interfaces** / :red:`mandatory`               This option defines the interface section.
 
-    **<interface_name>** / :red:`mandatory`         This option defines interface name i.e. ``Loopback0`` or ``GigabitEthernet1/0/1``
+    **<interface_name>** / :red:`mandatory`         This option defines the interface name. For example: ``Loopback0`` or
+                                                    ``GigabitEthernet1/0/1``
 
-    **name** / :orange:`optional`                   This option defines interface description.
+    **name** / :orange:`optional`                   This option defines the interface description.
 
-    **ip_address** / :red:`mandatory`               This option defines IPv4 address on the interface.
+    **ip_address** / :red:`mandatory`               This option defines the IPv4 address on the interface.
 
-    **subnet_mask** / :red:`mandatory`              This option defines subnet mask for the IPv4 address.
+    **subnet_mask** / :red:`mandatory`              This option defines the subnet mask for the IPv4 address.
 
-    **loopback** / :red:`mandatory`                 | This option defines if interface is loopback or not.
+    **loopback** / :red:`mandatory`                 | This option tells whether the interface is loopback or not.
 
                                                     **Choices:**
 
@@ -587,7 +585,7 @@ In this section interfaces configuration is defined.
 
                                                     * no
 
-    **pim_enable** / :red:`mandatory`               | This option defines if PIM has to be enabled on the interface.
+    **pim_enable** / :red:`mandatory`               | This option tells whether PIM must be enabled on the interface.
 
                                                     **Choices:**
 
@@ -599,9 +597,9 @@ In this section interfaces configuration is defined.
 OSPF section
 ------------
 
-This section defines ospf parameters.
+This section defines the OSPF parameters.
 
-By default next OSPF configuration is applied:
+By default, next OSPF configurations are applied:
 
 * Interface network type - **point-to-point**
 
@@ -609,12 +607,12 @@ By default next OSPF configuration is applied:
 
 * OSPF area number - **0**
 
-OSPF router-id is configurable parameter.
+OSPF **router-id** is a configurable parameter.
 
 .. code-block:: yaml
 
     ospf:
-        router_id: '172.16.255.3'
+      router_id: '172.16.255.3'
 
     <...snip...>
 
@@ -624,9 +622,9 @@ OSPF router-id is configurable parameter.
     =============================================== ==========================================================================
     **Parameter**                                                            **Comments**
     =============================================== ==========================================================================
-    **ospf** / :red:`mandatory`                     This option defines OSPF section globally.
+    **ospf** / :red:`mandatory`                     This option defines the OSPF section.
     
-    **router_id** / :red:`mandatory`                This option defines OSPF router-id.
+    **router_id** / :red:`mandatory`                This option defines the OSPF router-id.
     =============================================== ==========================================================================
 
 PIM section
@@ -638,7 +636,7 @@ This section defines global PIM parameters. This section is optional if Ingress-
 .. code-block:: yaml
 
     pim:
-        rp_address: '172.16.255.255'
+      rp_address: '172.16.255.255'
     
     <...skip...>
 
@@ -648,25 +646,25 @@ This section defines global PIM parameters. This section is optional if Ingress-
     =============================================== ==========================================================================
     **Parameter**                                                            **Comments**
     =============================================== ==========================================================================
-    **pim** / :red:`mandatory`                      This option defines PIM section globally.
+    **pim** / :red:`mandatory`                      This option defines the PIM section.
     
-    **rp_address** / :red:`mandatory`               This option defines RP address.
+    **rp_address** / :red:`mandatory`               This option defines the RP address.
     =============================================== ==========================================================================
 
 MSDP section
 ------------
 
-This section defines MSDP parameters. Usually MSDP is used for configuration RP redundancy in underlay.
+This section defines the MSDP parameters. Usually, MSDP is used for configuration RP redundancy in the underlay.
 
-This section in general is optional.
+This section is optional.
 
 .. code-block:: yaml
     
     msdp:
-        '1':
-            peer_ip: '172.16.254.2'
-            source_interface: 'Loopback1'
-            remote_as: '65001'
+      '1':
+        peer_ip: '172.16.254.2'
+        source_interface: 'Loopback1'
+        remote_as: '65001'
 
     <...skip...>
 
@@ -676,19 +674,19 @@ This section in general is optional.
     =============================================== ==========================================================================
     **Parameter**                                                            **Comments**
     =============================================== ==========================================================================
-    **msdp** / :red:`mandatory`                     This option defines MSDP section globally.
+    **msdp** / :red:`mandatory`                     This option defines the MSDP section.
     
     **<msdp_neighbor_id>** / :red:`mandatory`       This option defines ID for the MSDP peer. This number is not used in the 
 
                                                     switch configuration, just index number.
 
-    **peer_ip** / :red: `mandatory`                 This option defines MSDP peer IPv4 address.
+    **peer_ip** / :red: `mandatory`                 This option defines the MSDP peer's IPv4 address.
 
-    **source_interface** / :red: `mandatory`        This option defindes source interface which IP address will be used like SRC IP
+    **source_interface** / :red: `mandatory`        This option defines the IP address of the source interface which will be 
+                                                    used as a source IP for the MSDP session.
 
-                                                    for the MSDP seession.
-
-    **remote_as** / :red: `mandatory`               This option is used for defining BGP AS number of the MSDP peer.                               
+    **remote_as** / :red: `mandatory`               This option is used for defining the BGP AS number of the MSDP
+                                                    peer.                               
     =============================================== ==========================================================================
 
 BGP section
@@ -710,17 +708,17 @@ By default next design assumption are made:
       router_id: 'Loopback0'
       neighbors:
         '172.16.255.1':
-            peer_as_number: '65001'
-            source_interface: 'Loopback0'
+          peer_as_number: '65001'
+          source_interface: 'Loopback0'
 
         '172.16.255.2':
-            peer_as_number: '65001'
-            source_interface: 'Loopback0'
+          peer_as_number: '65001'
+          source_interface: 'Loopback0'
 
         '172.16.255.3':
-            peer_as_number: '65001'
-            source_interface: 'Loopback0'
-            rrc: 'yes'
+          peer_as_number: '65001'
+          source_interface: 'Loopback0'
+          rrc: 'yes'
     
     <...snip...>
 
@@ -772,8 +770,8 @@ Vlans to be assigned to an interace are taken from the following in increasing *
 .. code-block:: yaml
     
     access_interfaces:              
-        trunks:                       
-            - GigabitEthernet1/0/6     
+      trunks:                       
+        - GigabitEthernet1/0/6     
 
     <...snip...>
 
@@ -783,9 +781,9 @@ Vlans to be assigned to an interace are taken from the following in increasing *
 .. code-block:: yaml
     
     access_interfaces:                
-        trunk_vlan_list: 101,102,201     
-        trunks:                         
-            - GigabitEthernet1/0/6       
+      trunk_vlan_list: 101,102,201     
+      trunks:                         
+        - GigabitEthernet1/0/6       
     
     <...snip...>
 
@@ -794,9 +792,9 @@ Vlans to be assigned to an interace are taken from the following in increasing *
 .. code-block:: yaml
 
     access_interfaces:                 
-        trunks:                          
-            - GigabitEthernet1/0/6:        
-                trunk_vlan_list: 101,102   
+      trunks:                          
+        - GigabitEthernet1/0/6:        
+          trunk_vlan_list: 101,102   
     
     <...snip...>
 
@@ -827,9 +825,9 @@ Vlan to be assigned to an interace are taken from the following in increasing **
 .. code-block:: yaml
 
     access_interfaces:               
-        access:                        
-            - GigabitEthernet1/0/6:      
-                access_vlan: 102         
+      access:                        
+        - GigabitEthernet1/0/6:      
+          access_vlan: 102         
 
     <...snip...>
 
@@ -848,9 +846,9 @@ Content of ``host_vars/access_intf/<hostname>.yml``
 .. code-block:: yaml
 
     access_interfaces:
-        trunks:
-            - GigabitEthernet1/0/7
-            - GigabitEthernet1/0/8
+      trunks:
+        - GigabitEthernet1/0/7
+        - GigabitEthernet1/0/8
 
 Vlans assigned after execution:
 
@@ -866,10 +864,10 @@ Content of ``host_vars/access_intf/<hostname>.yml``
 .. code-block:: yaml
 
     access_interfaces:
-        access_vlan: 202
-        access:
-            - GigabitEthernet1/0/7
-            - GigabitEthernet1/0/8
+      access_vlan: 202
+      access:
+        - GigabitEthernet1/0/7
+        - GigabitEthernet1/0/8
 
 Vlans assigned after execution:
 
@@ -885,14 +883,14 @@ Content of ``host_vars/access_intf/<hostname>.yml``
 .. code-block:: yaml
 
     access_interfaces:
-        trunks:
-            - GigabitEthernet1/0/6
-            - GigabitEthernet1/0/7:
-                trunk_vlan_list: 101,102,201
-        access:
-            - GigabitEthernet1/0/8
-            - GigabitEthernet1/0/9
-        access_vlan: 202
+      trunks:
+        - GigabitEthernet1/0/6
+        - GigabitEthernet1/0/7:
+          trunk_vlan_list: 101,102,201
+      access:
+        - GigabitEthernet1/0/8
+        - GigabitEthernet1/0/9
+      access_vlan: 202
 
 Vlans assigned after execution:
 
@@ -912,16 +910,16 @@ Content of ``host_vars/access_intf/<hostname>.yml``
 .. code-block:: yaml
 
     access_interfaces:
-        trunks:
-            - GigabitEthernet1/0/6
-            - GigabitEthernet1/0/7:
-                trunk_vlan_list: 101,102,201
-        trunk_vlan_list: 101,201
-        access:
-            - GigabitEthernet1/0/8
-            - GigabitEthernet1/0/9:
-                access_vlan: 102
-        access_vlan: 202
+      trunks:
+        - GigabitEthernet1/0/6
+        - GigabitEthernet1/0/7:
+          trunk_vlan_list: 101,102,201
+      trunk_vlan_list: 101,201
+      access:
+        - GigabitEthernet1/0/8
+        - GigabitEthernet1/0/9:
+          access_vlan: 102
+      access_vlan: 202
 
 Vlans assigned after execution:
 
@@ -941,17 +939,17 @@ Content of ``host_vars/access_intf/<hostname>.yml``
 .. code-block:: yaml
 
     access_interfaces:
-        trunks:
-            - GigabitEthernet1/0/5
-            - GigabitEthernet1/0/6:
-                trunk_vlan_list: 101,102,201
-            - GigabitEthernet1/0/7
-        access:
-            - GigabitEthernet1/0/8:
-                access_vlan: 201
-            - GigabitEthernet1/0/9:
-                access_vlan: 102
-        access_vlan: 202
+      trunks:
+        - GigabitEthernet1/0/5
+        - GigabitEthernet1/0/6:
+          trunk_vlan_list: 101,102,201
+        - GigabitEthernet1/0/7
+      access:
+        - GigabitEthernet1/0/8:
+          access_vlan: 201
+        - GigabitEthernet1/0/9:
+          access_vlan: 102
+      access_vlan: 202
 
 Vlans assigned after execution:
 
@@ -973,11 +971,11 @@ Content of ``host_vars/access_intf/<hostname>.yml``
 .. code-block:: yaml
 
     access_interfaces:
-        trunks:
-            - GigabitEthernet1/0/7
+      trunks:
+        - GigabitEthernet1/0/7
     access:
         - GigabitEthernet1/0/8:
-            access_vlan: 201
+          access_vlan: 201
 
 Vlans assigned after execution:
 
