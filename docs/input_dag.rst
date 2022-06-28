@@ -80,6 +80,7 @@ This section defines access parameters of the remote devices.
                                     * **ansible.netcommon.network_cli**
 
    **ansible_network_os**           This option defines the operation system of the remote device. 
+   
                                     This option is needed if “network_cli” is used for 'ansible_connection'. 
                                     
                                     In this project, Cat9k with IOS-XE is used, so this option is set to:
