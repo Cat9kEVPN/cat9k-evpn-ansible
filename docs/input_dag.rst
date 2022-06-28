@@ -324,14 +324,15 @@ This section defines the VLANs and their stitching with EVIs (EVPN instance) and
    
    **description** / :orange:`optional`             This option defines the VLAN description.
 
-   **vni** / :red:`mandatory`                       This option defines the VNI which is stitched with the VLAN ID on the switch.
+   **vni** / :red:`mandatory`                       This option defines the VNI which is stitched with the VLAN ID.
 
-   **evi** / :red:`mandatory`                       This option defines the EVI which is stitched with the VLAN ID on the switch.
+   **evi** / :red:`mandatory`                       This option defines the EVI which is stitched with the VLAN ID.
 
                                                     This parameter is **mandatory for L2VNIs only.**
 
-   **type** / :red:`mandatory`                      This option defines the EVI type. For Cat9k **vlan-based** is only supported
-                                                    EVI type presently. 
+   **type** / :red:`mandatory`                      This option defines the EVI type. 
+   
+                                                    For Cat9k **vlan-based** is only supported EVI type presently. 
                                                     
                                                     This parameter is  **mandatory for L2VNIs only.**
 
@@ -357,8 +358,9 @@ This section defines the VLANs and their stitching with EVIs (EVPN instance) and
 
                                                     This parameter is  **mandatory for L2VNIs only.**
 
-   **vrf** / :red:`mandatory`                       This option defines the VRF that uses the VLAN’s L3VNI for encapsulating
-                                                    the routed traffic in the core.
+   **vrf** / :red:`mandatory`                       This option defines the VRF that uses the VLAN’s L3VNI for 
+   
+                                                    encapsulating the routed traffic in the core.
                                                     
                                                     For this option, **vlan_type** must be **core**.
 
