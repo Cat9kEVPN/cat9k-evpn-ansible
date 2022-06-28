@@ -73,14 +73,14 @@ This section defines access parameters of the remote devices.
    ================================ ==========================================================================
      **Parameter**                  **Comments**
    ================================ ==========================================================================
-   **ansible_connection**           This option defines thetype for connection to the remote devices. 
+   **ansible_connection**           This option defines the type of the connection to the remote devices. 
    
-                                    In this project, connection via SSH with implementation of CLI is used:
+                                    In this project, the connection via SSH with the implementation of CLI is used:
 
                                     * **ansible.netcommon.network_cli**
 
    **ansible_network_os**           This option defines the operation system of the remote device. 
-   
+
                                     This option is needed if “network_cli” is used for 'ansible_connection'. 
                                     
                                     In this project, Cat9k with IOS-XE is used, so this option is set to:
@@ -93,9 +93,9 @@ This section defines access parameters of the remote devices.
     
                                     * **python**
     
-   **ansible_user**                 This option defines a username which is used for access remote devices 
+   **ansible_user**                 This option defines a username that is used to access remote devices 
     
-                                    over SSH. In this project, user must have privilege level 15. 
+                                    over SSH. In this project, the user must have privilege level 15. 
                                     
                                     This option is set to:
     
