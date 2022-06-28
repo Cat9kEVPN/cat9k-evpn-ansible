@@ -156,7 +156,7 @@ This section defines global L2VPN EVPN parameters.
 
                                                     | section. 
                                                     
-                                                    Option **static** enables to use multicast for the BUM replication.
+                                                    Option **static** enables to use of multicast for the BUM replication.
 
                                                     Option **ingress** enables to use Ingress-replication (unicast) for
 
@@ -239,7 +239,9 @@ This section defines vrf parameters. Lets review parameters for unicast first.
                                                 
                                                 For EVPN AF additional key is used - **"stitching".**
 
-                                                | In this project next parameters are set by default for both AFs(IPv4 and IPv6):
+                                                | In this project, the next parameters are set by default for 
+                                                
+                                                both AFs (IPv4 and IPv6):
 
                                                 * 1:1
 
@@ -251,7 +253,9 @@ This section defines vrf parameters. Lets review parameters for unicast first.
                                                 
                                                 For EVPN AF, an additional key  **"stitching"** is used.
 
-                                                | In this project below parameters are set by default for both AFs(IPv4 and IPv6):
+                                                | In this project, the  parameters are set by default for 
+
+                                                both AFs (IPv4 and IPv6):
 
                                                 * 1:1
 
@@ -700,17 +704,19 @@ This section is optional.
     =============================================== ==========================================================================
     **msdp** / :red:`mandatory`                     This option defines the MSDP section.
     
-    **<msdp_neighbor_id>** / :red:`mandatory`       This option defines ID for the MSDP peer. This number is not used in the 
-
-                                                    switch configuration, just index number.
+    **<msdp_neighbor_id>** / :red:`mandatory`       This option defines ID for the MSDP peer. This number is not used 
+    
+                                                    in the switch configuration, just index number.
 
     **peer_ip** / :red: `mandatory`                 This option defines the MSDP peer's IPv4 address.
 
-    **source_interface** / :red: `mandatory`        This option defines the IP address of the source interface which will be
+    **source_interface** / :red: `mandatory`        This option defines the IP address of the source interface which 
+    
+                                                    will be used as a source IP for the MSDP session.
 
-                                                    used as a source IP for the MSDP session.
-
-    **remote_as** / :red: `mandatory`               This option is used for defining the BGP AS number of the MSDP peer.
+    **remote_as** / :red: `mandatory`               This option is used for defining the BGP AS number 
+    
+                                                    of the MSDP peer.
 
     =============================================== ==========================================================================
 
@@ -767,9 +773,9 @@ By default next design assumption are made:
 
     **peer_as_number** / :red:`mandatory`           This option defines BGP neighbor AS number
 
-    **source_interface** / :red:`mandatory`         This option defines source interface which ip address will be used like 
+    **source_interface** / :red:`mandatory`         This option defines source interface which ip address will be used  
     
-                                                    the SRC IP for the BGP session.
+                                                    like the SRC IP for the BGP session.
 
     **rrc** / :orange:`optional`                    This option defines the peer like a BGP route-reflector client.
     =============================================== ==========================================================================
