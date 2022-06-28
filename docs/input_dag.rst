@@ -235,9 +235,11 @@ This section defines vrf parameters. Lets review parameters for unicast first.
 
 **rt_import** / :red:`mandatory`                This option defines the  **Route Target Import** per VRF/AF. This option allows 
 
-                                                more than one RT to be defined. For EVPN AF additional key is used - **"stitching".**
+                                                more than one RT to be defined. 
+                                                
+                                                For EVPN AF additional key is used - **"stitching".**
 
-                                                | In this project next parameter are set by default for both AFs(IPv4 and IPv6):
+                                                | In this project next parameters are set by default for both AFs(IPv4 and IPv6):
 
                                                 * 1:1
 
@@ -245,7 +247,9 @@ This section defines vrf parameters. Lets review parameters for unicast first.
 
 **rt_export** / :red:`mandatory`                This option defines the **Route Target Export** per VRF/AF. This option allows
 
-                                                more than one RT to be defined. For EVPN AF, additional key  **"stitching"** is used.
+                                                more than one RT to be defined. 
+                                                
+                                                For EVPN AF, an additional key  **"stitching"** is used.
 
                                                 | In this project below parameters are set by default for both AFs(IPv4 and IPv6):
 
