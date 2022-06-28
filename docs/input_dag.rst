@@ -75,7 +75,9 @@ This section defines access parameters of the remote devices.
    ================================ ====================================================================================
    **ansible_connection**           This option defines the type of the connection to the remote devices. 
    
-                                    In this project, the connection via SSH with the implementation of CLI is used:
+                                    In this project, the connection via SSH with the implementation of CLI 
+                                    
+                                    is used:
 
                                     * **ansible.netcommon.network_cli**
 
