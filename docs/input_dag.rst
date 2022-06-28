@@ -167,7 +167,8 @@ This section defines global L2VPN EVPN parameters.
                                                     * ingress
    
    **router_id** / :orange:`optional`               This option defines the interface whose IP address will be used for defining
-                                                    router-id of L2VPN.The  interface **Loopback1** is used for the router-id of L2VPN.
+
+                                                    router-id of L2VPN. The interface **Loopback1** is used for the router-id of L2VPN.
                                                     
                                                     In this project the option is set to:
 
