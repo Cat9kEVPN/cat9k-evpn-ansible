@@ -85,6 +85,7 @@
 }
 
 /* The table width fix to avoid scrollbar */
-.wy-table-responsive table td {
+
+.wy-table-responsive table td, .wy-table-responsive table th {
     white-space: normal;
 }
