@@ -13,6 +13,10 @@ Below you can find a topology which is used in the automation scenario.
 For the quick start with DAG provisioning next steps have to be executed:
  
 ## Step 1 ## 
+
+On this step Underaly is provisioned.
+
+### Step 1a ###
  
 Edit ``inventory.yml`` and set proper name and management ip address.
 
@@ -28,7 +32,7 @@ all:
 ```
 Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html#inventory-yml)
 
-## Step 2 ##
+### Step 1b ###
 
 Edit ``group_vars/all.yml`` and set proper login and password
 
@@ -50,7 +54,7 @@ If enable password should be used, check the [Enable Mode](https://docs.ansible.
 
 Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html#all-yml)
 
-## Step 3 ##
+### Step 1c ###
 
 Edit ``host_vars/<hostname>.yml`` and set required parameters for underlay
 
@@ -76,7 +80,7 @@ interfaces:
 
 Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html#host-vars).
 
-## Step 4 ##
+### Step 1d ###
 
 Run the underlay provisioning playbook. It is possible to see in terminal logs all the changes - [how to do this](https://cat9k-evpn-ansible.readthedocs.io/en/latest/notes.html#cli-commands-logging).
 
@@ -86,7 +90,11 @@ Run the underlay provisioning playbook. It is possible to see in terminal logs a
 
 Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/playbooks_dag.html#underlay-provisioning).
 
-## Step 5 ##
+## Step 2 ##
+
+On this step Overlay is provisioned.
+
+### Step 2a ###
 
 Edit the ``group_vars/overlay_db.yml`` file and set desired parameters for EVPN overlay.
 
@@ -101,7 +109,7 @@ l2vpn_global:
 
 Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html#overlay-db-yml)
 
-## Step 6 ##
+### Step 2b ###
 
 Run the overlay provisioning playbook. It is possible to see in terminal logs all the changes - [how to do this](https://cat9k-evpn-ansible.readthedocs.io/en/latest/notes.html#cli-commands-logging).
 
@@ -110,6 +118,33 @@ ansible-playbook -i inventory.yml playbook_overlay_commit.yml
 ```
 
 Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/playbooks_dag.html#overlay-provisioning)
+
+## Step 3 ##
+
+On this step Access Interfaces are provisioned.
+
+### Step 3a ###
+
+Edit the ``host_vars/access_intf/<nodename>.yml`` files and set desired parameters for access interfaces.
+
+```
+access_interfaces:
+  trunks:
+    - GigabitEthernet1/0/6
+  access:
+    - GigabitEthernet1/0/7
+  access_vlan: 102
+```
+
+### Step 3b ###
+
+Run the Access Interfaces provisioning playbook. It is possible to see in terminal logs all the changes - [how to do this](https://cat9k-evpn-ansible.readthedocs.io/en/latest/notes.html#cli-commands-logging).
+
+```
+ansible-playbook -i inventory.yml playbook_access_add_commit.yml
+```
+
+Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/playbooks_dag.html#access-interfaces-provisioning)
 
 # Playbooks description #
 
@@ -141,6 +176,26 @@ Detailed information could be found [here](https://cat9k-evpn-ansible.readthedoc
 
 * the playbook is used for provisioning configuration for the overlay to the remote devices
 
+## Incremental overlay adding ##
+
+**playbook_overlay_incremental_generate.yml**
+
+* the playbook is checking ``overlay_db.yml``, current configuration on the switch and generate internal configuration files in
+
+directory ``host_vars/inc_vars/``
+
+⚠️ This playbook is used internally and should not be run separately by user.
+
+**playbook_overlay_incremental_preview.yml**
+
+* the playbook is used to generate list of commands which have to be entered on remote device based on
+
+inputs from ``host_vars/inc_vars/<hostname>.yml``. Output could be checked in ``preview_files/<hostname>-inc.txt``
+
+**playbook_overlay_incremental_commit.yml**
+
+* the playbook is used for provisioning incremental add changes to the remote devices
+
 ## Incremental overlay deleting ##
 
 **playbook_overlay_delete_generate.yml:**
@@ -148,6 +203,8 @@ Detailed information could be found [here](https://cat9k-evpn-ansible.readthedoc
 * the playbook checks ``group_vars/overlay_db.yml, group_vars/delete_vars.yml`` and current configuration on the switch
 
 and generates internal configuration files in the directory ``host_vars/delete_vars/``
+
+⚠️ This playbook is used internally and should not be run separately by user.
 
 **playbook_overlay_delete_preview.yml:**
 
@@ -192,11 +249,11 @@ inputs from ``playbook_overlay_delete_preview.yml``
 
 ## Initial provisioning ##
 
-<img width="1216" alt="day0" src="https://user-images.githubusercontent.com/99259970/176645955-703d0951-ccf2-415e-bdbc-9768ae883a9c.png">
+<img width="1215" alt="day0" src="https://user-images.githubusercontent.com/99259970/176646266-1ad9773c-fe88-4beb-bda0-9ed3b6585913.png">
 
 ## Incremental provisioning ##
 
-<img width="1247" alt="day1" src="https://user-images.githubusercontent.com/99259970/176645937-9cef19ce-7a28-4505-a071-354d1f991e1b.png">
+<img width="1220" alt="day1" src="https://user-images.githubusercontent.com/99259970/176646640-c05b3b5a-d756-4118-a960-ebcef83a9a39.png">
 
 # Documentation #
 
