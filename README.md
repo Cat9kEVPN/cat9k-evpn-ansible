@@ -66,3 +66,8 @@ Detailed documentation could be found [here](https://cat9k-evpn-ansible.readthed
 * Incremental changes configuration is automated and simplified
 * Moving L2VPN EVPN relatead information from ``group_vars/all.yml`` to ``group_vars/overlay_db.yml``
 * Documentation update
+
+## 1.0.0 ##
+
+* The release is depricated
+* Code is still avaliable in branch ``releases/v1.x.x``
