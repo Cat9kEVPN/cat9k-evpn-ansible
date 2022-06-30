@@ -192,11 +192,11 @@ inputs from ``playbook_overlay_delete_preview.yml``
 
 ## Initial provisioning ##
 
-<img width="830" alt="day_0_initial" src="https://user-images.githubusercontent.com/99259970/175955658-d47bad61-dd7d-4671-97b3-3e7b253712b3.png">
+<img width="1216" alt="day0" src="https://user-images.githubusercontent.com/99259970/176645955-703d0951-ccf2-415e-bdbc-9768ae883a9c.png">
 
 ## Incremental provisioning ##
 
-<img width="765" alt="day_1" src="https://user-images.githubusercontent.com/99259970/175956107-da9ac612-d82d-4b9c-b0a9-5798d9920576.png">
+<img width="1247" alt="day1" src="https://user-images.githubusercontent.com/99259970/176645937-9cef19ce-7a28-4505-a071-354d1f991e1b.png">
 
 # Documentation #
 
