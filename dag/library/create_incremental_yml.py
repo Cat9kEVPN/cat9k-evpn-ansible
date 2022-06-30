@@ -24,8 +24,13 @@ short_description: This module is used for getting the extra values  by comparin
 def compare(userinput:dict,parsed_output:dict, tocompare:dict , overlay_intf:dict)->dict:
 
     for dag in userinput['dag'] :
-      if dag in tocompare['vrfs'].keys() :
-        mul_list_dict['vrf'].append(dag)
+        try :
+          if dag in tocompare['vrfs'].keys() and "vrf" not in parsed_output :
+            mul_list_dict['vrf'].append(dag)
+          elif dag in tocompare['vrfs'].keys() and dag not in parsed_output['vrf']:
+            mul_list_dict['vrf'].append(dag)
+        except :
+            pass
     
     for overlay_inft in overlay_intf['overlay_interfaces'] :
         try :
@@ -34,7 +39,10 @@ def compare(userinput:dict,parsed_output:dict, tocompare:dict , overlay_intf:dic
         except :
             mul_list_dict['overlay_inft'].append(str(overlay_inft))
     
-    filtered_svis = list( set(tocompare['svis'].keys()) - set(parsed_output['svis'].keys()) )
+    if "svis" in parsed_output :
+        filtered_svis = list( set(tocompare['svis'].keys()) - set(parsed_output['svis'].keys()) )
+    else :
+        filtered_svis = list( set(tocompare['svis'].keys()))
 
     for svi in filtered_svis :
       if tocompare['svis'][svi]['vrf'] in mul_list_dict['vrf'] :
@@ -42,10 +50,16 @@ def compare(userinput:dict,parsed_output:dict, tocompare:dict , overlay_intf:dic
     
     for access_vlan in mul_list_dict['vlan_svi'] :
       if tocompare['vlans'][str(access_vlan)]['vlan_type'] == "access" :
-        mul_list_dict['access_vlan'].append(int(access_vlan)) 
+        mul_list_dict['access_vlan'].append(int(access_vlan))
     
-    yml_dict =  {'vrf_cli' : mul_list_dict['vrf'] , 'vlan_cli' : mul_list_dict['vlan_svi'] , 'svi_cli' : mul_list_dict['vlan_svi'] , 'access_inft_cli' : mul_list_dict['access_vlan'] , 'ovrl_intf_cli' : mul_list_dict['overlay_inft']  }
-  
+    yml_dict_output =  {'vrf_cli' : mul_list_dict['vrf'] , 'vlan_cli' : mul_list_dict['vlan_svi'] , 'svi_cli' : mul_list_dict['vlan_svi'] , 'access_inft_cli' : mul_list_dict['access_vlan'] , 'ovrl_intf_cli' : mul_list_dict['overlay_inft']  }
+    
+    yml_dict = {}
+    
+    for keys,values in yml_dict_output.items() :
+        if values != [] :
+            yml_dict[keys] = values
+        
     compare_op = json.loads(json.dumps(yml_dict))
 
     return yaml.dump(json.loads(json.dumps(compare_op)), sort_keys=True, default_flow_style=False)
