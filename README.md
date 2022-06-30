@@ -7,7 +7,7 @@ Custom Jinja templates and Python modules are used to build an initial config an
 Project has a modular structure which gives an ability to introduce new features/services gradually step-by-step.
 
 * DAG (Distributed Anycast Gateway)
-  * [DAG github](https://github.com/Cat9kEVPN/cat9k-evpn-ansible/tree/releases/v2.x.x/dag)
+  * [DAG github](https://github.com/Cat9kEVPN/cat9k-evpn-ansible/tree/main/dag)
   * [DAG documentation](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html)
 
 # General description #
