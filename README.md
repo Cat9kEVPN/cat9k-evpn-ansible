@@ -70,4 +70,4 @@ Detailed documentation could be found [here](https://cat9k-evpn-ansible.readthed
 ## 1.0.0 ##
 
 * The release is depricated
-* Code is still avaliable in branch ``releases/v1.x.x``
+* The code is still avaliable in the branch ``releases/v1.x.x``
