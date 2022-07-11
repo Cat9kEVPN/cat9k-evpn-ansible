@@ -47,7 +47,7 @@ ansible_ssh_pass: cisco123
 ``ansible_user`` must have privildge level 15. Example of the configuration is below
 
 ```
-  username cisco privilege 15 password 0 cisco123
+username cisco privilege 15 password 0 cisco123
 ```
 
 If enable password should be used, check the [Enable Mode](https://docs.ansible.com/ansible/latest/network/user_guide/platform_ios.html) documentation.
@@ -82,10 +82,35 @@ Detailed information could be found [here](https://cat9k-evpn-ansible.readthedoc
 
 ### Step 1d ###
 
+:pushpin: This step is optional but recommended.
+
+Run the underlay preview playbook. This playbook generates the configuration for preview without deploying it to the network devices.
+
+```
+ansible-playbook -i inventory.yml playbook_underlay_preview.yml
+```
+The files ``<hostname>-underlay.txt`` could be found in the directory ``cat9k-evpn-ansible/dag/preview_files``
+
+```
+#cat preview_files/Leaf-01-underlay.txt
+
+! hostname block 
+hostname Leaf-01
+
+! global routing block 
+ip routing
+ipv6 unicast-routing
+ip multicast-routing
+
+<...snip...>
+```
+
+### Step 1e ###
+
 Run the underlay provisioning playbook. It is possible to see in terminal logs all the changes - [how to do this](https://cat9k-evpn-ansible.readthedocs.io/en/latest/notes.html#cli-commands-logging).
 
 ```
-  ansible-playbook -i inventory.yml playbook_underlay_commit.yml
+ansible-playbook -i inventory.yml playbook_underlay_commit.yml
 ```
 
 Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/playbooks_dag.html#underlay-provisioning).
@@ -110,6 +135,56 @@ l2vpn_global:
 Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html#overlay-db-yml)
 
 ### Step 2b ###
+
+:pushpin: **This step is optional but recommended**
+
+Run the yml config validation playbook. This playbook checks for issues in the file ``group_vars/overlay_db.yml``
+
+### Step 2c ###
+
+:pushpin: **This step is optional but recommended**
+
+Run the network precheck playbook. It will check if the activated license and current version. Also underlay reachibility between "nve loopback" is checked.
+
+```
+ansible-playbook -i inventory.yml playbook_yml_validation.yml
+```
+
+### Step 2d ###
+
+:pushpin: **This step is optional but recommended**
+
+Run the overlay preview playbook. This playbook generates the configuration for preview without deploying it to the network devices.
+
+```
+ansible-playbook -i inventory.yml playbook_overlay_preview.yml
+```
+
+The files ``<hostname>-overlay.txt`` could be found in the directory ``cat9k-evpn-ansible/dag/preview_files``
+
+```
+#cat preview_files/Leaf-01-overlay.txt 
+ 
+! vrf definition block 
+vrf definition green
+description green VRF defn
+rd 1:1
+address-family ipv4
+route-target import 1:1
+route-target import 1:1 stitching
+route-target export 1:1
+route-target export 1:1 stitching
+address-family ipv6
+route-target import 1:1
+route-target import 1:1 stitching
+route-target export 1:1
+route-target export 1:1 stitching
+vrf definition blue
+
+<...snip...>
+```
+
+### Step 2e ###
 
 Run the overlay provisioning playbook. It is possible to see in terminal logs all the changes - [how to do this](https://cat9k-evpn-ansible.readthedocs.io/en/latest/notes.html#cli-commands-logging).
 
@@ -137,6 +212,30 @@ access_interfaces:
 ```
 
 ### Step 3b ###
+
+:pushpin: **This step is optional but recommended**
+
+Run the access interfaces preview playbook. This playbook generates the configuration for preview without deploying it to the network devices.
+
+```
+ansible-playbook -i inventory.yml playbook_access_add_preview.yml
+```
+
+The files ``<hostname>-add-intf.txt`` could be found in the directory ``cat9k-evpn-ansible/dag/preview_files``
+
+```
+#cat preview_files/Leaf-01-add-intf.txt
+
+! access interface block 
+interface GigabitEthernet1/0/8
+switchport trunk allowed vlan 101,102,201,202
+switchport mode trunk
+interface GigabitEthernet1/0/7
+switchport trunk allowed vlan 101,102,201,202
+
+<...snip...>
+```
+### Step 3c ###
 
 Run the Access Interfaces provisioning playbook. It is possible to see in terminal logs all the changes - [how to do this](https://cat9k-evpn-ansible.readthedocs.io/en/latest/notes.html#cli-commands-logging).
 
