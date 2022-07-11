@@ -140,6 +140,10 @@ Detailed information could be found [here](https://cat9k-evpn-ansible.readthedoc
 
 Run the yml config validation playbook. This playbook checks for issues in the file ``group_vars/overlay_db.yml``
 
+```
+ansible-playbook -i inventory.yml playbook_yml_validation.yml
+```
+
 ### Step 2c ###
 
 :pushpin: **This step is optional but recommended**
@@ -147,7 +151,7 @@ Run the yml config validation playbook. This playbook checks for issues in the f
 Run the network precheck playbook. It will check if the activated license and current version. Also underlay reachibility between "nve loopback" is checked.
 
 ```
-ansible-playbook -i inventory.yml playbook_yml_validation.yml
+ansible-playbook -i inventory.yml playbook_overlay_precheck.yml 
 ```
 
 ### Step 2d ###
