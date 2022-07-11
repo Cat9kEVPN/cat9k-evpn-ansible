@@ -26,14 +26,18 @@ Below you can find installation steps for Linux (ubuntu) server
 ```
 * Create the python virtual environment. In this example the virtual environment will be created in the folder ``virtual-env/ansible``
 ```
-    python3 -m venv ansible
+    python3 -m venv virtual-env/ansible
 ```
 
 More details could be found [here](https://docs.python.org/3/library/venv.html)
 
 * Activate virtual environment.
 ```
-    source ansible/bin/activate
+    source virtual-env/ansible/bin/activate
+```
+* Clone the repository
+```
+    git clone https://github.com/Cat9kEVPN/cat9k-evpn-ansible.git
 ```
 * Install ``pip`` if it is not already installed
 ```
