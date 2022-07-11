@@ -39,6 +39,10 @@ More details could be found [here](https://docs.python.org/3/library/venv.html)
 ```
     git clone https://github.com/Cat9kEVPN/cat9k-evpn-ansible.git
 ```
+* Go to project directory
+```
+    cd cat9k-evpn-ansible/
+```
 * Install ``pip`` if it is not already installed
 ```
     sudo apt install pip
