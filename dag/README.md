@@ -338,7 +338,7 @@ inputs from ``playbook_overlay_delete_preview.yml``
 
 * the playbook is used for provisioning configuration for incremental changes for the access interfaces to the remote devices
 
-## DHCP incremental provisioning ##
+## DHCP provisioning ##
 
 **playbook_dhcp_add_preview.yml**
 
