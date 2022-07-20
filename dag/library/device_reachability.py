@@ -28,7 +28,14 @@ def version_license_check(parsed_output) :
     """
 
     try :
-        if float(parsed_output["version"]["version"][:4]) >= float(17.3) :
+        parsed_output_version = parsed_output['version']['version_short']
+        version = parsed_output_version.split('.')
+        if int(version[0]) > int(17) :
+            if parsed_output["version"]["license_package"]["network-advantage"]['license_level'] == "network-advantage" :
+                return ("{} version is compatible  and license is {} which is expected".format(parsed_output["version"]["version"],parsed_output["version"]["license_package"]["network-advantage"]['license_level']))
+            else :
+                return ("version {} is compatable but the license {} is Incompatable".format(parsed_output["version"]["version"],parsed_output["version"]["license_package"]["network-advantage"]['license_level']))
+        elif int(version[1]) >= int(3) :
             if parsed_output["version"]["license_package"]["network-advantage"]['license_level'] == "network-advantage" :
                 return ("{} version is compatible  and license is {} which is expected".format(parsed_output["version"]["version"],parsed_output["version"]["license_package"]["network-advantage"]['license_level']))
             else :

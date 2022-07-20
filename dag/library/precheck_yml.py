@@ -212,17 +212,25 @@ def vlan_svi_validation(parsed_yaml,debug) :
                         except KeyError:
                             mul_list_dict['svis_ipv6_lst'].append("ipv6 address not found under svis {}".format(vlans))
                             
-                        try:
-                            if parsed_yaml['svis'][vlans]['mac'] : 
-                                mac = parsed_yaml['svis'][vlans]['mac']
-                                mac_pattren = re.compile("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})|([0-9a-fA-F]{4}\\.[0-9a-fA-F]{4}\\.[0-9a-fA-F]{4})$")
-                                if(re.search(mac_pattren, mac)):
-                                    mul_list_dict['svis_mac_lst'].append("Mac address {0} for {1} vlan of svi with access are valid".format(mac,vlans))
-                                else :
-                                    mul_list_dict['vlan_svi_validation_error_lst'].append("Mac address {0} for {1} vlan of SVI with access is Invalid".format(mac,vlans))
-                        except KeyError:
-                            mul_list_dict['svis_mac_lst'].append("Mac address not found under svis {} is expected".format(vlans))
-                
+                        if parsed_yaml['l2vpn_global']['default_gw'] == "no" :
+                            try:
+                                if parsed_yaml['svis'][vlans]['mac'] : 
+                                    mac = parsed_yaml['svis'][vlans]['mac']
+                                    mac_pattren = re.compile("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})|([0-9a-fA-F]{4}\\.[0-9a-fA-F]{4}\\.[0-9a-fA-F]{4})$")
+                                    if(re.search(mac_pattren, mac)):
+                                        mul_list_dict['svis_mac_lst'].append("Mac address {0} for {1} vlan of svi with access are valid".format(mac,vlans))
+                                    else :
+                                        mul_list_dict['vlan_svi_validation_error_lst'].append("Mac address {0} for {1} vlan of SVI with access is Invalid".format(mac,vlans))
+                            except KeyError:
+                                mul_list_dict['vlan_svi_validation_error_lst'].append("Mac address not found under svis {}".format(vlans))
+                                
+                        if parsed_yaml['l2vpn_global']['default_gw'] == "yes" :
+                            try:
+                                if parsed_yaml['svis'][vlans]['mac'] : 
+                                    mul_list_dict['svis_mac_lst'].append("warning: mac_address found under svis {} is not required ".format(vlans))
+                            except :
+                                mul_list_dict['svis_mac_lst'].append("mac address not found under svis {} is expected ".format(vlans))
+                            
                 except KeyError as e :
                     mul_list_dict['vlan_svi_validation_error_lst'].append("mandatory parameter {} not found under access SVIS {}".format(e,vlans))
                     

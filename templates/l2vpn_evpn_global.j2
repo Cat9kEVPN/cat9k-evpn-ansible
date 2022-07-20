@@ -18,6 +18,6 @@ l2vpn evpn
     {% endif %}
 
     {# configure default-gateway advertise #}
-    {% if l2vpn_global.default_gw is defined %}
+    {% if l2vpn_global.default_gw is defined and l2vpn_global.default_gw == "yes"%}
         default-gateway advertise
     {% endif %}

@@ -21,13 +21,13 @@ short_description: This module is used for getting the extra values  by comparin
                    configurations and return the modified dictionary
 '''
 
-def compare(userinput:dict,parsed_output:dict, tocompare:dict , overlay_intf:dict)->dict:
+def compare(userinput:dict,parsed_output:dict,parsed_sec_output:dict ,access_input:dict , tocompare:dict , overlay_intf:dict)->dict:
 
     for dag in userinput['dag'] :
         try :
           if dag in tocompare['vrfs'].keys() and "vrf" not in parsed_output :
             mul_list_dict['vrf'].append(dag)
-          elif dag in tocompare['vrfs'].keys() and dag not in parsed_output['vrf']:
+          elif dag in tocompare['vrfs'].keys() :
             mul_list_dict['vrf'].append(dag)
         except :
             pass
@@ -48,9 +48,29 @@ def compare(userinput:dict,parsed_output:dict, tocompare:dict , overlay_intf:dic
       if tocompare['svis'][svi]['vrf'] in mul_list_dict['vrf'] :
         mul_list_dict['vlan_svi'].append(int(svi))
     
-    for access_vlan in mul_list_dict['vlan_svi'] :
-      if tocompare['vlans'][str(access_vlan)]['vlan_type'] == "access" :
-        mul_list_dict['access_vlan'].append(int(access_vlan))
+    for svi in tocompare['svis'] :
+      if tocompare['svis'][svi]['svi_type'] == "access" and tocompare['svis'][svi]['vrf'] in mul_list_dict['vrf'] :
+        mul_list_dict['tocompare_vlan'].append(svi)
+    for intf in access_input['access_interfaces']['trunks']:
+      if 'switchport_trunk_vlans' in parsed_sec_output['interfaces'][intf].keys() :
+        if parsed_sec_output['interfaces'][intf]['switchport_trunk_vlans'] != "none" :
+          mul_list_dict['sec_output_vlan'].append(parsed_sec_output['interfaces'][intf]['switchport_trunk_vlans'])
+    
+    if mul_list_dict['sec_output_vlan'] :
+      for trunk_vlan in mul_list_dict['sec_output_vlan'] :
+        diff = list(set(mul_list_dict['tocompare_vlan']) - set(trunk_vlan.split(',')))
+    else :
+      diff = list(set(mul_list_dict['tocompare_vlan']) - set(mul_list_dict['sec_output_vlan']))  
+    
+    for access_vlan in diff :
+      mul_list_dict['access_vlan'].append(int(access_vlan)) 
+            
+    
+    for dag in mul_list_dict['vrf'] :
+      if mul_list_dict['vlan_svi'] :
+        pass
+      else :
+        mul_list_dict['vrf'].clear() 
     
     yml_dict_output =  {'vrf_cli' : mul_list_dict['vrf'] , 'vlan_cli' : mul_list_dict['vlan_svi'] , 'svi_cli' : mul_list_dict['vlan_svi'] , 'access_inft_cli' : mul_list_dict['access_vlan'] , 'ovrl_intf_cli' : mul_list_dict['overlay_inft']  }
     
@@ -69,6 +89,8 @@ def run_module():
         argument_spec=dict(
             userinput=dict(required=False,type='dict'),
             hostvars=dict(required=False,type='list'),
+            access_input=dict(required=False,type='dict'),
+            sec_output=dict(required=False,type='list'),
             tocompare=dict(required=False,type='dict'),
             overlay_intf=dict(required=False,type='dict'),
             
@@ -79,13 +101,15 @@ def run_module():
     result = {}
 
     show_run_nve = '\n'.join(module.params['hostvars'])
+    show_run_int = '\n'.join(module.params['sec_output'])
     
     device = Device("Switch", os="iosxe")
     device.custom.abstraction = {'order':["os"]}
     parsed_output = device.parse('show run nve', output=show_run_nve)
+    parsed_sec_output = device.parse('show run | sec ^int', output=show_run_int)
     
 
-    result['yaml'] = compare(module.params['userinput'],parsed_output, module.params['tocompare'], module.params['overlay_intf'])
+    result['yaml'] = compare(module.params['userinput'],parsed_output,parsed_sec_output,module.params['access_input'], module.params['tocompare'], module.params['overlay_intf'])
     module.exit_json(**result)
 
 

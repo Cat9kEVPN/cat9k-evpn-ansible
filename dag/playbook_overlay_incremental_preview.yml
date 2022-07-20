@@ -29,10 +29,17 @@
       '../templates/bgp_global.j2': 'bgp global block'
       '../templates/bgp_l2vpn_evpn_af.j2': 'bgp l2vpn evpn af block'
       
-  tasks:
-          - name: Load variables from files under host_vars/inc_vars folder
-            when: inventory_hostname in groups['leaf']
-            include_vars: host_vars/inc_vars/{{ inventory_hostname }}.yml
+  tasks:  
+          - name: Check whether host_vars/inc_vars/{{ inventory_hostname }}.yml is present
+            local_action: stat path=./host_vars/inc_vars/{{ inventory_hostname }}.yml
+            register: file_state
+            become: no 
+
+          - name: Executing tasks if host_vars/inc_vars/{{ inventory_hostname }}.yml is present
+            when: file_state.stat.exists and inventory_hostname in groups['leaf']
+            block:
+            - name: Load variables from files under host_vars/inc_vars folder
+              include_vars: host_vars/inc_vars/{{ inventory_hostname }}.yml
 
           - name: Check if full execution is needed
             set_fact: 
@@ -40,40 +47,40 @@
             when: (vrf_cli is defined) or (vlan_cli is defined) or (svi_cli is defined) or (ovrl_intf_cli is defined)
 
           - name: Read VRF related template files
-            when: (inventory_hostname in groups['leaf']) and ((incremental_run == true and vrf_cli is defined) or (incremental_run == false))
+            when: (inventory_hostname in groups['leaf']) and ((incremental_run == true and vrf_cli is defined))
             set_fact:
               whole_block: "{{ whole_block }} ! {{ vrf_dict[item.key] }} {{ lookup('template', item.key) }}"
             with_dict: "{{ vrf_dict }}"
 
           - name: Read VLAN related template files
-            when: (inventory_hostname in groups['leaf']) and ((incremental_run == true and vlan_cli is defined) or (incremental_run == false)) 
+            when: (inventory_hostname in groups['leaf']) and ((incremental_run == true and vlan_cli is defined)) 
             set_fact:
               whole_block: "{{ whole_block }} ! {{ vlan_dict[item.key] }} {{ lookup('template', item.key) }}"
             with_dict: "{{ vlan_dict }}"
 
           - name: Read SVI related template files
-            when: (inventory_hostname in groups['leaf']) and ((incremental_run == true and svi_cli is defined) or (incremental_run == false)) 
+            when: (inventory_hostname in groups['leaf']) and ((incremental_run == true and svi_cli is defined)) 
             set_fact:
               whole_block: "{{ whole_block }} ! {{ svi_dict[item.key] }} {{ lookup('template', item.key) }}"
             with_dict: "{{ svi_dict }}"
 
           - name: Read overlay interface related template files
-            when: (inventory_hostname in groups['leaf']) and ((incremental_run == true and ovrl_intf_cli is defined) or (incremental_run == false)) 
+            when: (inventory_hostname in groups['leaf']) and ((incremental_run == true and ovrl_intf_cli is defined)) 
             set_fact:
               whole_block: "{{ whole_block }} ! {{ overlay_intf_dict[item.key] }} {{ lookup('template', item.key) }}"
             with_dict: "{{ overlay_intf_dict }}"
 
-          - name: Read global L2VPN EVPN related template files
-            when: (inventory_hostname in groups['leaf']) and (incremental_run == false)
-            set_fact:
-              whole_block: "{{ whole_block }} ! {{ l2vpn_evpn_global_dict[item.key] }} {{ lookup('template', item.key) }}"
-            with_dict: "{{ l2vpn_evpn_global_dict }}"
-
-          - name: Read BGP neighbors related template files
-            when: incremental_run == false
-            set_fact:
-              whole_block: "{{ whole_block }} ! {{ common_dict[item.key] }} {{ lookup('template', item.key) }}"
-            with_dict: "{{ common_dict }}"
+#          - name: Read global L2VPN EVPN related template files
+#            when: (inventory_hostname in groups['leaf']) and (incremental_run == false)
+#            set_fact:
+#              whole_block: "{{ whole_block }} ! {{ l2vpn_evpn_global_dict[item.key] }} {{ lookup('template', item.key) }}"
+#            with_dict: "{{ l2vpn_evpn_global_dict }}"
+#
+#          - name: Read BGP neighbors related template files
+#            when: incremental_run == false
+#            set_fact:
+#              whole_block: "{{ whole_block }} ! {{ common_dict[item.key] }} {{ lookup('template', item.key) }}"
+#            with_dict: "{{ common_dict }}"
 
           - name: Render template files output
             set_fact:
@@ -83,6 +90,12 @@
             copy:
               dest: preview_files/{{inventory_hostname}}-inc.txt
               content: "{{ rendered }}"
+              
+          - name: Clearing configurations in preview_files/<hostname>-inc.txt if device config is skipped
+            when: not file_state.stat.exists
+            copy:
+              dest: preview_files/{{inventory_hostname}}-inc.txt
+              content: ""
 
 - name: Display output file info
   hosts: localhost

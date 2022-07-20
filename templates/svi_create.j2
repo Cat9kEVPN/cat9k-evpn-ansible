@@ -10,9 +10,11 @@ If action is not set in the configurations, it is "add" by default.
         {% if ( (svi_cli is defined and svi in svi_cli) or (svi_cli is not defined) ) %}
             {% set action = svis[svi].action | default ('add') %}
             {% if action == 'delete' %}
+                !
                 no interface Vlan{{svi}}
             {% elif action == 'add' %}
                 {% if svis[svi].svi_type == 'access' %}
+                    !
                     interface Vlan{{svi}}
                     vrf forwarding {{ svis[svi].vrf }}
                     ip address {{svis[svi].ipv4}}
@@ -23,15 +25,17 @@ If action is not set in the configurations, it is "add" by default.
                     {% endif %}
                     no shut
                 {% elif svis[svi].svi_type == 'core' %}
+                    !
                     interface Vlan{{svi}}
                     vrf forwarding {{ svis[svi].vrf }}
                     ip unnumbered  {{ svis[svi].src_intf }}
-                    {% if svis[svi].ipv6_enable == 'yes' %}
+                    {% if svis[svi].ipv6_enable is defined %}
                         ipv6 enable
                     {% endif %}
                     no autostate
                     no shut        
                 {% elif svis[svi].svi_type == 'non_vxlan' %}
+                    !
                     interface Vlan{{svi}}
                     vrf forwarding {{ svis[svi].vrf }}
                     ip address {{svis[svi].ipv4}}
@@ -52,7 +56,7 @@ If action is not set in the configurations, it is "add" by default.
                 {% endif %}
 
                 {# Check if static MAC configuration is needed on the SVI #}
-                {% if svis[svi].mac is defined %}
+                {% if svis[svi].mac is defined and l2vpn_global.default_gw == "no" %}
                     mac-address {{ svis[svi].mac }}
                 {% endif %}
 
