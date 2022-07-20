@@ -1,0 +1,9 @@
+- name: Initialising variable for leaf-s
+  hosts: leaf
+  gather_facts: no
+  tasks:    
+          - set_fact:
+              action: 'delete'
+
+- name: Import tasks from playbook_dhcp_add_preview.yml
+  import_playbook: playbook_dhcp_add_preview.yml

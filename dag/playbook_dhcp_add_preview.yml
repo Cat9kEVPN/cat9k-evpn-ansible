@@ -1,0 +1,100 @@
+---
+
+- name: Enable DHCP for EVPN overlay
+  hosts: leaf
+  gather_facts: no
+  vars_files:
+    - "group_vars/dhcp_vars.yml"
+
+  tasks:  
+
+          - name: Load vars from host_vars/<inventory_hostname>.yml
+            include_vars: 
+              file: host_vars/{{ inventory_hostname }}.yml
+              name: host_vars_vars
+
+          - name: Process dhcp_vars.yml content
+            run_once: True
+            block:
+            - name: Call python module to process dhcp_vars.yml content
+              dhcp_src_addr_info:
+                dhcp_info: "{{ dhcp }}"
+              register: dhcp_config_info
+
+            - name: Check for any error msg from python module for relay source interface processing
+              when: dhcp_config_info['dhcp_ret_dict']['global_src_err'] != False
+              fail:
+                msg: "Relay source interface for '{{ dhcp_config_info['dhcp_ret_dict']['global_src_err'] }}' is not defined in group_vars/dhcp_vars.yml"
+              any_errors_fatal: True
+
+            - set_fact: 
+                dhcp_src_dict: "{{ dhcp_config_info.dhcp_ret_dict }}"
+
+          - name: Run and parse show run nve
+            ansible.utils.cli_parse:
+              command: "show run nve"
+              parser:
+                name: ansible.netcommon.pyats
+              set_fact: show_run_nve
+
+          - name: Collect VRFs from show run nve output if key is 'all'
+            when: '"all" in dhcp.vrfs.keys()'
+            set_fact: 
+              all_vrfs: "{{ show_run_nve.vrf.keys() }}"
+
+          - name: Collect VRFs from dhcp_vars.yml if key is not 'all'
+            when: '"all" not in dhcp.vrfs.keys()'
+            set_fact: 
+              all_vrfs: "{{ dhcp.vrfs.keys() }}"
+
+          - name: Get relay src interface for VRFs from host_vars/<inventory>.yml
+            block:
+            - name: Call python module to assign relay src interface from host_vars/<inventory>.yml for VRFs if not defined already
+              dhcp_src_addr_info:
+                ovrly_intf_info: "{{ ovrly_intf_info | default({}) | combine ( {'all_vrfs': all_vrfs}, {'overlay_intf': host_vars_vars['overlay_interfaces']}, {'no_src_vrf': dhcp_src_dict['no_src_vrf']} ) }}"
+              register: ovrly_intf_output
+
+            - name: Check for any error msg from python module for relay source interface processing 
+              when: ovrly_intf_output['dhcp_ret_dict']['intf_err'] != False
+              fail:
+                msg: "Relay source interface for {{ ovrly_intf_output['dhcp_ret_dict']['intf_err'] }} is not defined and cannot be found in hostvars/{{inventory_hostname}}.yml"
+              any_errors_fatal: True
+
+            - set_fact: 
+                ovrly_intf_output: "{{ ovrly_intf_output.dhcp_ret_dict }}"
+
+          - name: Collect SVIs from show run nve output
+            block:
+            - name: Initialise svi dictionary
+              set_fact: 
+                svis: "{{ svis | default({}) | combine ({ item : [] }) }}"
+              loop: "{{ all_vrfs }}"
+
+            - name: Populate svi dictionary with show run nve output
+              set_fact: 
+                svis: "{{ svis | combine ({ item.value.vrf : svis[item.value.vrf]+[item.key] }) }}"
+              with_dict: "{{ show_run_nve.svis }}"
+              when: item.value.vrf in all_vrfs and item.value.svi_type == 'access'
+
+          - name: Read DHCP configuration template
+            set_fact:
+              dhcp_block: "! dhcp block\n!{{ lookup('template', '../templates/dhcp_overlay.j2') }}"
+
+          - name: Render template files output
+            set_fact:
+              rendered: "{{  dhcp_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') }}"
+
+          - name: Copy configurations to respective file ( <hostname>-dhcp.txt ) under 'preview_files' folder
+            copy:
+              dest: preview_files/{{inventory_hostname}}-dhcp.txt
+              content: "{{ rendered }}"
+
+
+- name: Display output info
+  hosts: localhost
+  gather_facts: no
+  run_once: True
+
+  tasks:
+    - debug:
+        msg: Please refer to <hostname>-dhcp.txt in 'preview_files' folder
