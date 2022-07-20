@@ -338,6 +338,24 @@ inputs from ``playbook_overlay_delete_preview.yml``
 
 * the playbook is used for provisioning configuration for incremental changes for the access interfaces to the remote devices
 
+## DHCP incremental provisioning ##
+
+**playbook_dhcp_add_preview.yml**
+
+* the playbook generates config for DHCP service to be added for preview
+
+**playbook_dhcp_add_commit.yml**
+
+* the playbook is used for provisioning configuration of DHCP to the remote devices
+
+**playbook_dhcp_delete_preview.yml**
+
+* the playbook generates config for DHCP service to be deleted for preview
+
+**playbook_dhcp_delete_commit.yml**
+
+* the playbook is used for unprovisioning configuration of DHCP to the remote devices
+
 ## Special playbooks ##
 
 **playbook_cleanup.yml:**
