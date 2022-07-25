@@ -26,11 +26,13 @@
         {% endif %}
     
         {# processing global parameters #}
+
+        {# option_82 #}
+        {{ prefix }} ip dhcp relay information option
+        {# option_82_vrf 82[151] #}
+        {{ prefix }} ip dhcp relay information option vpn
+        
         {% if dhcp.dhcp_options is defined %}
-            {# option_82 #}
-            {{ prefix }} ip dhcp relay information option
-            {# option_82_vrf 82[151] #}
-            {{ prefix }} ip dhcp relay information option vpn
             {% for option in dhcp.dhcp_options %}
                 {# option_82_link_selection_standart 82[150] -> 82[5] #}
                 {% if option == 'option_82_link_selection_standard' and dhcp.dhcp_options[option] == 'standard' %}
