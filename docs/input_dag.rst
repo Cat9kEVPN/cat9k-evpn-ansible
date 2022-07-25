@@ -459,7 +459,7 @@ NVE section
    ================================================ ==========================================================================
    **nve_interfaces** / :red:`mandatory`            This option defines the NVE section.
 
-   **nve_id>** / :red:`mandatory`                   This option defines the NVE ID.
+   **nve_id** / :red:`mandatory`                   This option defines the NVE ID.
 
    **source_interface** / :red:`mandatory`          This option defines the source interface for the corresponding NVE interface. 
 
@@ -482,6 +482,23 @@ In this file inforrmation about DHCP configuration is stored.
                 helper_address: 
                     - 10.1.1.1
 
+.. table::
+   :widths: auto
+
+   ========================================================= ==========================================================================
+     **Parameter**                                                            **Comments**
+   ========================================================= ==========================================================================
+   **dhcp** / :red:`mandatory`                               This option defines the DHCP section.
+
+   **dhcp_options** / :orange:`optional`                     This option defines DHCP options.
+
+   **option_82_link_selection_standard** / :red:`mandatory`  This option defines the if cisco dhcp option/suboption 82[150] --> 82[5]
+       
+   **option_82_server_id_override** / :red:`mandatory`       This option defines the if cisco dhcp option/suboption 82[151] --> 82[11]  
+   
+   **vrfs** / :red:`mandatory`                               This option defines the VRF section
+   ========================================================= ==========================================================================
+
 Examples
 --------
 
@@ -493,12 +510,14 @@ DHCP Server is in the Layer 3 Default VRF and the DHCP Client is in the Tenant V
 .. code-block:: yaml
 
     vrfs:  
-      all:                                             <--------- Applies config to all DAGs
-        helper_address:                                <--------- configs 'ip helper-address global 10.1.1.1' for all SVIs
+      all:                                             
+        helper_address:                                
           - 10.1.1.1                       
-        helper_vrf: global                             <--------- Specifies the server tenant location
-        relay_src_intf: Loopback1                      <--------- configs 'Loopback1' as DHCP relay source for all SVIs
-  
+        helper_vrf: global                             
+        relay_src_intf: Loopback1                     
+
+As a result on **ALL** L2 SVIs for **ALL** VRFs ``helper-address`` **10.1.1.1** which is reachible over ``global`` VRF with **source-interface** ``Loopback1` will be configured.
+
 Example 2 
 ^^^^^^^^^ 
 
