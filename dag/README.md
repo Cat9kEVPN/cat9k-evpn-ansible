@@ -4,7 +4,7 @@ In this directory there are playbooks for provisioning DAG (Distributed Anycast 
 
 # Topology #
 
-Below you can find a topology which is used in the automation scenario.
+Below you can find a topology which is used in the automation scenario
 
 <img width="737" alt="ansible_lab_topology" src="https://user-images.githubusercontent.com/99259970/155182099-7e5d98f4-8e4e-4b01-96a8-30b9badc5be2.png">
 
