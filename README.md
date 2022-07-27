@@ -18,7 +18,7 @@ Project has a modular structure which gives an ability to introduce new features
 
 It is recommended to run the project in the virtual environment.
 
-Below you can find installation steps for Linux (ubuntu) server
+Below you can find installation steps for Linux (ubuntu) server:
 
 * Install python3
 ```
