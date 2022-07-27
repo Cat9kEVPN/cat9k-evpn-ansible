@@ -249,6 +249,16 @@ ansible-playbook -i inventory.yml playbook_access_add_commit.yml
 
 Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/playbooks_dag.html#access-interfaces-provisioning)
 
+# Playbook usage #
+
+## Initial provisioning ##
+
+<img width="1215" alt="day0" src="https://user-images.githubusercontent.com/99259970/176646266-1ad9773c-fe88-4beb-bda0-9ed3b6585913.png">
+
+## Incremental provisioning ##
+
+<img width="1220" alt="day1" src="https://user-images.githubusercontent.com/99259970/176646640-c05b3b5a-d756-4118-a960-ebcef83a9a39.png">
+
 # Playbooks description #
 
 ## Underlay provisioning ##
@@ -365,16 +375,6 @@ inputs from ``playbook_overlay_delete_preview.yml``
 **playbook_output.yml:**
 
 * the playbook is used for collecting outputs from the remote devices
-
-# Playbook usage #
-
-## Initial provisioning ##
-
-<img width="1215" alt="day0" src="https://user-images.githubusercontent.com/99259970/176646266-1ad9773c-fe88-4beb-bda0-9ed3b6585913.png">
-
-## Incremental provisioning ##
-
-<img width="1220" alt="day1" src="https://user-images.githubusercontent.com/99259970/176646640-c05b3b5a-d756-4118-a960-ebcef83a9a39.png">
 
 # Documentation #
 
