@@ -40,7 +40,7 @@ Inventory.yml
 ``Leaf-1`` , ``Spine-01`` are the hostnames (nodes). Keep in mind that the names should be with the name of the configuration files 
 in the directory ``host_vars``.
 
-``ansible_host`` is the ip address of the management interface.
+``ansible_host`` is the IP address of the management interface.
 
 group_vars
 **********
