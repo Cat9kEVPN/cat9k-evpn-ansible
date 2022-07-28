@@ -4,6 +4,8 @@
   hosts: all
   gather_facts: no
   connection: network_cli
+  vars_files:
+    - "group_vars/overlay_db.yml"
   tasks:  
 
           - name: construct show commands from host var file for leafs
