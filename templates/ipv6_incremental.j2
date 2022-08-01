@@ -20,7 +20,7 @@ This module incrementally adding/removing ipv6 configuration to the fabric.
         
         {# Global ipv6 unicast routing enable/disable #}
         {% if vrfs[vrf].ipv6_routing is defined %}
-            {{ prefix }} ipv6 unicast-routing
+            ipv6 unicast-routing
         {% endif %}
 
         vrf definition {{ vrf }}
@@ -30,7 +30,7 @@ This module incrementally adding/removing ipv6 configuration to the fabric.
             {% for af in vrfs[vrf].afs %}
                 {% set action = vrfs[vrf].afs[af].action | default ('add') %}
                 {% if action == 'delete' %}
-                    no address-family {{ af }}
+                    no address-family {{ af }}       
                 {% elif action == 'add' %}
                     address-family {{ af }}
                     {# RT import section #}
@@ -57,8 +57,9 @@ This module incrementally adding/removing ipv6 configuration to the fabric.
         {% if svis[svi].ipv6 is defined %}
             {% for ipv6_addr in svis[svi].ipv6 %}
                 {{prefix}} ipv6 address {{ipv6_addr}}
+                {{ prefix }} ipv6 enable
             {% endfor %}
-        {% elif svis[svi].ipv6_enable == 'yes' %}
+        {% elif svis[svi].ipv6_enable is defined %}
             {{ prefix }} ipv6 enable
         {% endif %}
 

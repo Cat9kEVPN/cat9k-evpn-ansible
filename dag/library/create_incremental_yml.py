@@ -43,29 +43,42 @@ def compare(userinput:dict,parsed_output:dict,parsed_sec_output:dict ,access_inp
         filtered_svis = list( set(tocompare['svis'].keys()) - set(parsed_output['svis'].keys()) )
     else :
         filtered_svis = list( set(tocompare['svis'].keys()))
-
+        
     for svi in filtered_svis :
       if tocompare['svis'][svi]['vrf'] in mul_list_dict['vrf'] :
         mul_list_dict['vlan_svi'].append(int(svi))
     
     for svi in tocompare['svis'] :
       if tocompare['svis'][svi]['svi_type'] == "access" and tocompare['svis'][svi]['vrf'] in mul_list_dict['vrf'] :
-        mul_list_dict['tocompare_vlan'].append(svi)
+        mul_list_dict['tocompare_vlan'].append(int(svi))
     for intf in access_input['access_interfaces']['trunks']:
       if 'switchport_trunk_vlans' in parsed_sec_output['interfaces'][intf].keys() :
         if parsed_sec_output['interfaces'][intf]['switchport_trunk_vlans'] != "none" :
-          mul_list_dict['sec_output_vlan'].append(parsed_sec_output['interfaces'][intf]['switchport_trunk_vlans'])
-    
+          mul_list_dict['sec_output_vlan'].append(parsed_sec_output['interfaces'][intf]['switchport_trunk_vlans']) 
+          
     if mul_list_dict['sec_output_vlan'] :
       for trunk_vlan in mul_list_dict['sec_output_vlan'] :
-        diff = list(set(mul_list_dict['tocompare_vlan']) - set(trunk_vlan.split(',')))
+        svis_lst = trunk_vlan.split(',')
+        
+      for svi_split in svis_lst :
+        if "-" in svi_split :
+          svis_after_split = svi_split.split("-")
+          for range_svi in range(int(svis_after_split[0]),int(svis_after_split[1]) + 1) :
+            mul_list_dict['range'].append(range_svi)
+        else :
+            mul_list_dict['range'].append(int(svi_split))
+
+    if mul_list_dict['range'] :
+      diff = list(set(mul_list_dict['tocompare_vlan']) - set(mul_list_dict['range']))
     else :
-      diff = list(set(mul_list_dict['tocompare_vlan']) - set(mul_list_dict['sec_output_vlan']))  
-    
+      for svi in tocompare['svis'] :
+        if tocompare['svis'][svi]['svi_type'] == "access"  :
+          mul_list_dict['trunk_none'].append(svi)
+      diff =  mul_list_dict['trunk_none']
+
     for access_vlan in diff :
-      mul_list_dict['access_vlan'].append(int(access_vlan)) 
-            
-    
+      mul_list_dict['access_vlan'].append(int(access_vlan))
+         
     for dag in mul_list_dict['vrf'] :
       if mul_list_dict['vlan_svi'] :
         pass
@@ -83,7 +96,8 @@ def compare(userinput:dict,parsed_output:dict,parsed_sec_output:dict ,access_inp
     compare_op = json.loads(json.dumps(yml_dict))
 
     return yaml.dump(json.loads(json.dumps(compare_op)), sort_keys=True, default_flow_style=False)
-
+    
+  
 def run_module():
     module = AnsibleModule(
         argument_spec=dict(

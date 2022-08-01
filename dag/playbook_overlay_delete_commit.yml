@@ -51,3 +51,8 @@
                 config: "{{ lookup('template', '../templates/access_interfaces.j2' ) }}"
                 diff_match: none
               register: result
+
+            - name: Pause for 30 seconds for convergence  
+              wait_for:
+                delay: 30
+                timeout: 0
