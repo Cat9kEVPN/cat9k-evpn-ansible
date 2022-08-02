@@ -13,15 +13,15 @@ This module incrementally adding/removing ipv6 configuration to the fabric.
     {% set prefix = '' %}
 {% endif %}
 
+{# Global ipv6 unicast routing enable/disable #}
+{% if ipv6_routing is defined %}
+  ipv6 unicast-routing
+{% endif %}
+
 {# vrf configuration #}
 
 {% if vrfs is defined %}
     {% for vrf in vrfs %}
-        
-        {# Global ipv6 unicast routing enable/disable #}
-        {% if vrfs[vrf].ipv6_routing is defined %}
-            ipv6 unicast-routing
-        {% endif %}
 
         vrf definition {{ vrf }}
 

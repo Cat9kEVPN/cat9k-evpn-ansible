@@ -5,7 +5,6 @@ l2vpn_global:
 
 vrfs:
   green:
-    ipv6_unicast: 'enable'
     description: 'green VRF defn'
     rd: '1:1'
     afs:
@@ -26,6 +25,7 @@ vrfs:
           - '1:1 stitching'
 
   blue:
+    description: 'blue VRF defn'
     rd: '2:2'
     afs:
       ipv4:
@@ -72,7 +72,7 @@ vlans:
 #vrf blue vlans
  201:
   vlan_type: 'access'
-  description: 'Access_VLAN_101'
+  description: 'Access_VLAN_201'
   vni: '10201'
   evi: '201'
   type: 'vlan-based'
@@ -82,7 +82,7 @@ vlans:
 
  202:
   vlan_type: 'access'
-  description: 'Access_VLAN_102'
+  description: 'Access_VLAN_202'
   vni: '10202'
   evi: '202'
   type: 'vlan-based'

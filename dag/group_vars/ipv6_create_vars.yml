@@ -31,7 +31,9 @@
 #      .            ipv6_action : 'delete'      .
 #      ..........................................
 dag:
-   white : 
+   green : 
+     ipv6_action : 'add'
+   blue :
      ipv6_action : 'add'
    
 

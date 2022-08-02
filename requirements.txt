@@ -1,5 +1,5 @@
 ansible
-ansible-pylibss
+ansible-pylibssh
 paramiko
 pyats
 genie

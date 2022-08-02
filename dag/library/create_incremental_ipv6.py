@@ -34,13 +34,13 @@ def compare(userinput:dict,parsed_output:dict, overlay_db:dict, leaf_data:dict )
         if 'ipv6' in overlay_db['vrfs'][vrf]['afs'].keys() and 'ipv6' in parsed_output['vrf'][vrf]['address_family'].keys():
           pass
         elif 'ipv6' in overlay_db['vrfs'][vrf]['afs'].keys() and 'ipv6' not in parsed_output['vrf'][vrf]['address_family'].keys() :
-          vrfs_dict[vrf] = {'ipv6_routing':userinput['dag'][vrf]['ipv6_action'] , 'afs' : {'ipv6' : overlay_db['vrfs'][vrf]['afs']['ipv6']}}
+          vrfs_dict[vrf] = {'afs' : {'ipv6' : overlay_db['vrfs'][vrf]['afs']['ipv6']}}
           
     elif userinput['dag'][vrf]['ipv6_action'] == "delete" :
       if vrf in overlay_db['vrfs'].keys() :
         if 'ipv6' in overlay_db['vrfs'][vrf]['afs'].keys() and 'ipv6' in parsed_output['vrf'][vrf]['address_family'].keys():
           overlay_db['vrfs'][vrf]['afs']['ipv6']['action']= 'delete'
-          vrfs_dict[vrf] = {'ipv6_routing':userinput['dag'][vrf]['ipv6_action'] , 'afs' : {'ipv6' : overlay_db['vrfs'][vrf]['afs']['ipv6']}}
+          vrfs_dict[vrf] = {'afs' : {'ipv6' : overlay_db['vrfs'][vrf]['afs']['ipv6']}}
       
     
   for svis in overlay_db['svis'] :
@@ -61,7 +61,7 @@ def compare(userinput:dict,parsed_output:dict, overlay_db:dict, leaf_data:dict )
           svis_dict[int(svis)] = {'ipv6_enable' : overlay_db['svis'][svis]['ipv6_enable']}     
          
   if vrfs_dict and svis_dict :  
-    yml_dict =  {'ipv6_action': str(vrfs_dict[vrf]['ipv6_routing']) ,'vrfs' : vrfs_dict, 'bgp' : {'as_number' : int(leaf_data['bgp']['as_number'])} , 'svis' : svis_dict }
+    yml_dict =  {'ipv6_action': str(userinput['dag'][vrf]['ipv6_action']) ,'ipv6_routing' : 'yes' , 'vrfs' : vrfs_dict, 'bgp' : {'as_number' : int(leaf_data['bgp']['as_number'])} , 'svis' : svis_dict }
   else :
     yml_dict = {}
     

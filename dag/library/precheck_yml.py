@@ -321,7 +321,7 @@ def vrf_validation(parsed_yaml,debug) :
                     if vrf == parsed_yaml['svis'][svi]['vrf']:
                         try :
                             if parsed_yaml['vrfs'][vrf]['afs']['ipv6'] :
-                                mul_list_dict['ipv6_vrf_lst'].append("ipv6 key not found under svi {}".format(svi,vrf))
+                                mul_list_dict['vrf_validation_error_lst'].append("ipv6 key not found under svi {}".format(svi,vrf))
                         except :
                             mul_list_dict['ipv6_vrf_lst'].append("ipv6 not found under vrf {} and svi {} which is expected".format(parsed_yaml['svis'][svi]['vrf'],svi)) 
             except KeyError as e : 
