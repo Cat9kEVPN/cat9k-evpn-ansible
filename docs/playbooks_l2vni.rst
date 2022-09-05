@@ -7,24 +7,24 @@ In this section every playbook function will be described. Playbooks for L2VNI p
 
     ~/cat9k-evpn-ansible/l2vni$ ls | grep playbook
 
-playbook_access_add_commit.yml
-playbook_access_add_preview.yml
-playbook_access_incremental_commit.yml
-playbook_access_incremental_preview.yml
-playbook_cleanup.yml
-playbook_output.yml
-playbook_overlay_commit.yml
-playbook_overlay_delete_commit.yml
-playbook_overlay_delete_generate.yml
-playbook_overlay_delete_preview.yml
-playbook_overlay_incremental_commit.yml
-playbook_overlay_incremental_generate.yml
-playbook_overlay_incremental_preview.yml
-playbook_overlay_precheck.yml
-playbook_overlay_preview.yml
-playbook_underlay_commit.yml
-playbook_underlay_preview.yml
-playbook_yml_validation.yml
+    playbook_access_add_commit.yml
+    playbook_access_add_preview.yml
+    playbook_access_incremental_commit.yml
+    playbook_access_incremental_preview.yml
+    playbook_cleanup.yml
+    playbook_output.yml
+    playbook_overlay_commit.yml
+    playbook_overlay_delete_commit.yml
+    playbook_overlay_delete_generate.yml
+    playbook_overlay_delete_preview.yml
+    playbook_overlay_incremental_commit.yml
+    playbook_overlay_incremental_generate.yml
+    playbook_overlay_incremental_preview.yml
+    playbook_overlay_precheck.yml
+    playbook_overlay_preview.yml
+    playbook_underlay_commit.yml
+    playbook_underlay_preview.yml
+    playbook_yml_validation.yml
 
 Underlay provisioning
 =====================
