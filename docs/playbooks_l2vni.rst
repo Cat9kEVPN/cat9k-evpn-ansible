@@ -48,7 +48,7 @@ Output files could be found in ``preview_files`` directory.
 
 .. code-block::
 
-    ~/cat9k-evpn-ansible/dag/preview_files$ ls | grep underlay
+    ~/cat9k-evpn-ansible/l2vni/preview_files$ ls | grep underlay
     
     Leaf-01-underlay.txt
     Leaf-02-underlay.txt
