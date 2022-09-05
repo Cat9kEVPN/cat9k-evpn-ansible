@@ -24,6 +24,13 @@ WORK in progress. Content could be changed!
    input_dag
    playbooks_dag
 
+.. toctree::
+   :maxdepth: 3
+   :caption: L2VNI
+
+   input_l2vni
+   playbooks_l2vni
+
 .. Indices and tables
 .. ==================
 
