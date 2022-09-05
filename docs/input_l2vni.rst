@@ -1,12 +1,7 @@
-DAG (Distributed Anycast Gateway)
+L2VNI
 #################################
 
-Distributed anycast gateway feature for EVPN VXLAN is a default gateway addressing mechanism that enables the use of the same gateway IP addresses 
-across all the leaf switches that are part of a VXLAN network.
-
-.. warning::
-
-    The same subnet mask and IP address must be configured on all the switch virtual interfaces (SVIs) that act as a distributed anycast gateway (DAG).
+VXLAN/EVPN Fabric could be used for stretching L2 segement only with L3 termination on external routers or firewalls.
 
 Inputs
 ######
@@ -179,73 +174,6 @@ This section defines global L2VPN EVPN parameters.
                                                     * **default_gw: 'yes'**
    ================================================ ==========================================================================
 
-VRF definition
---------------
-
-This section defines vrf parameters. Lets review parameters for unicast first.
-
-.. code-block:: yaml
-
-    vrfs:
-      green:
-        rd: '1:1'
-          afs:
-            ipv4:
-              rt_import: 
-                - '1:1'
-                - '1:1 stitching'
-              rt_export: 
-                - '1:1'
-                - '1:1 stitching'
-            ipv6:
-              rt_import:
-                - '1:1'
-                - '1:1 stitching'
-              rt_export:
-                - '1:1'
-                - '1:1 stitching'
-    <...skip...>
-
-=============================================== ========================================================================== 
-**Parameter**                                                            **Comments**
-=============================================== ==========================================================================
-**vrfs** / :red:`mandatory`                     This option defines the vrf section.
-
-**<vrf_name>** / :red:`mandatory`               This option defines the vrf name.
-
-**rd** / :red:`mandatory`                       This option defines the **route distinguisher** of the vrf.
-
-**afs** / :red:`mandatory`                      | This option defines the address families which will be activated for the vrf.
-
-                                                Option **ipv4** defines ipv4 address family.
-
-                                                | Option **ipv6** defines ipv6 address family.
-
-                                                **Choices:**
-
-                                                * ipv4
-
-                                                * ipv6
-
-**rt_import** / :red:`mandatory`                This option defines the  **Route Target Import** per VRF/AF. This option allows 
-                                                more than one RT to be defined. For EVPN AF additional key is used - **"stitching".**
-
-                                                | In this project next parameter are set by default for both AFs(IPv4 and IPv6):
-
-                                                * 1:1
-
-                                                * 1:1 stitching (L2VPN EVPN AF)
-
-**rt_export** / :red:`mandatory`                This option defines the **Route Target Export** per VRF/AF. This option allows
-                                                more than one RT to be defined. For EVPN AF, additional key  **"stitching"** is used.
-
-                                                | In this project below parameters are set by default for both AFs(IPv4 and IPv6):
-
-                                                * 1:1
-
-                                                * 1:1 stitching (L2VPN EVPN AF)
-=============================================== ==========================================================================
-
 VLANs section
 -------------
 
@@ -274,12 +202,6 @@ This section defines the VLANs and their stitching with EVIs (EVPN instance) and
         encapsulation: 'vxlan'
         replication_type: 'ingress'
     
-      901:
-        vlan_type: 'core'
-        description: 'Core_VLAN_VRF_green'
-        vni: '50901'
-        vrf: 'green'
-
     <...snip...>
 
 .. table::
@@ -298,7 +220,6 @@ This section defines the VLANs and their stitching with EVIs (EVPN instance) and
 
                                                     Option **access** is used for L2VNIs.
 
-                                                    Option **core** is used for L3VNIs.
 
                                                     | Option **non-vxlan** is used for VLANs, which are not extended over Fabric.
 
@@ -306,10 +227,7 @@ This section defines the VLANs and their stitching with EVIs (EVPN instance) and
 
                                                     * access
 
-                                                    * core
-
-                                                    * non-vxlan
-   
+ 
    **description** / :orange:`optional`             This option defines the VLAN description.
 
    **vni** / :red:`mandatory`                       This option defines the VNI which is stitched with the VLAN ID on the switch.
@@ -345,97 +263,6 @@ This section defines the VLANs and their stitching with EVIs (EVPN instance) and
 
                                                     This parameter is  **mandatory for L2VNIs only.**
 
-   **vrf** / :red:`mandatory`                       This option defines the VRF that uses the VLAN’s L3VNI for encapsulating
-                                                    the routed traffic in the core.
-                                                    
-                                                    For this option, **vlan_type** must be **core**.
-
-                                                    This parameter is  **mandatory for L3VNIs only.**
-   ================================================ ==========================================================================
-
-SVIs section
-------------
-
-This section defines SVIs configuration.
-
-.. code-block:: yaml
-
-    svis:
-
-      101:
-        svi_type: 'access'
-        vrf: 'green'
-        ipv4: '10.1.101.1 255.255.255.0'
-        ipv6:
-          - '2001:101::1/64'
-        mac: 'dead.beef.abcd'
-
-      102:
-        svi_type: 'access'
-        vrf: 'green'
-        ipv4: '10.1.102.1 255.255.255.0'
-        ipv6:
-          - '2001:102::1/64'
-        mac: 'dead.beef.abcd'
-    
-      901:
-        svi_type: 'core'
-        vrf: 'green'
-        src_intf: 'Loopback1'
-        ipv6_enable: 'yes
-
-    <...snip...>
-
-.. table::
-   :widths: auto
-
-   ================================================ ==========================================================================
-     **Parameter**                                                            **Comments**
-   ================================================ ==========================================================================
-   **svis** / :red:`mandatory`                      This option defines SVIs section.
-
-   **<svi_id>** / :red:`mandatory`                  This option defines the SVI ID on the switch. In this example, there are **101,**
-
-                                                    **102, 901**.
-
-   **svi_type** / :red:`mandatory`                  | This option defines the SVI type. 
-
-                                                    Option **access** is used when the VLAN associated with an SVI is stitched to L2VNIs.
-
-                                                    Option **core** is used when the VLAN associated with an SVI is stitched to L3VNIs.
-
-                                                    | Option **non-vxlan** is used when the VLAN associated with an SVI are not extended over Fabric.
-
-                                                    **Choices**
-
-                                                    * access
-
-                                                    * core
-
-                                                    * non-vxlan
-   
-   **vrf** / :red:`mandatory`                       This option defines the vrf which SVI belongs to.
-
-   **ipv4** / :red:`mandatory`                      This option defines the IPv4 address configured on the SVI. 
-   
-                                                    This parameter is applicable **for L2VNI SVIs only.**
-
-   **ipv6** / :orange:`optional`                    This option defines the IPv6 addresses configured on the SVI.
-
-                                                    This parameter is applicable **for L2VNI SVIs only.**
-
-   **mac** / :orange:`optional`                     This option defines the MAC which is to be configured on the SVI.
-
-                                                    This parameter is applicable **for L2VNI SVIs only.**
-
-   **src_intf** / :red:`mandatory`                  This option defines thee source Interface for the SVI for L3VNI.
-
-                                                    This parameter is applicable **for L3VNI SVIs only.**
-                                                    
-   **ipv6_enable** / :orange:`optional`             This option defines enables IPv6 on the SVI.
-
-                                                    This parameter is applicable **for L3VNI SVIs only.**
-                                                    
    ================================================ ==========================================================================
 
 NVE section
@@ -464,133 +291,7 @@ NVE section
    **source_interface** / :red:`mandatory`          This option defines the source interface for the corresponding NVE interface. 
 
    ================================================ ==========================================================================
-
-dhcp_vars.yml
-============
-
-In this file inforrmation about DHCP configuration is stored.
-
-.. code-block:: yaml
-
-   dhcp:
-        dhcp_options:
-            option_82_link_selection_standard: standard
-            option_82_server_id_override: standard
-    
-        vrfs:
-            all:                   
-                helper_address: 
-                    - 10.1.1.1
-
-.. table::
-   :widths: auto
-
-   ========================================================= ==========================================================================
-     **Parameter**                                                            **Comments**
-   ========================================================= ==========================================================================
-   **dhcp** / :red:`mandatory`                               This option defines the DHCP section.
-
-   **dhcp_options** / :orange:`optional`                     This option defines DHCP options.
-
-   **option_82_link_selection_standard** / :red:`mandatory`  This option defines the if cisco dhcp option/suboption 82[150] --> 82[5]
-       
-   **option_82_server_id_override** / :red:`mandatory`       This option defines the if cisco dhcp option/suboption 82[151] --> 82[11]  
-   
-   **vrfs** / :red:`mandatory`                               This option defines the VRF section
-   ========================================================= ==========================================================================
-
-Examples
---------
-
-Example 1
-^^^^^^^^^
-
-DHCP Server is in the Layer 3 Default VRF and the DHCP Client is in the Tenant VRF
-
-.. code-block:: yaml
-
-    vrfs:  
-      all:                                             
-        helper_address:                                
-          - 10.1.1.1                       
-        helper_vrf: global                             
-        relay_src_intf: Loopback1                     
-
-As a result on **ALL** L2 SVIs for **ALL** VRFs ``helper-address`` **10.1.1.1** which is reachible over ``global`` VRF with **source-interface** ``Loopback1` will be configured.
-
-Example 2 
-^^^^^^^^^ 
-
-DHCP Server is in the Layer 3 Default VRF and the DHCP Client is in the Tenant VRF
-
-.. code-block:: yaml
-
-    vrfs:  
-      all:                                             <--------- Applies configs to all except 'green' DAG 
-        helper_address:                                <--------- configs 'ip helper-address global 10.1.1.1' for all SVIs except green's
-          - 10.1.1.1   
-        helper_vrf: global                     
-        relay_src_intf: Loopback1                      <--------- configs 'Loopback1' as DHCP relay source for all SVIs except green's
   
-      green:                                           <--------- Applies configs to 'green' DAG 
-        helper_address:                                <--------- configs 'ip helper-address global 10.1.1.2' for all 'green' DAG SVIs
-          - 10.1.1.2                       
-        helper_vrf: global  
-        relay_src_intf: Loopback1                      <--------- configs 'Loopback1' as DHCP relay source for 'green' SVIs
-
-Example 3 
-^^^^^^^^^
-
-DHCP Client and DHCP Server are in Different Tenant VRFs
-
-.. code-block:: yaml
-
-    vrfs:
-      all:
-        helper_address: 
-          - 10.1.1.1
-        helper_vrf: green                               <--------- Specifies the server tenant location
-        relay_src_intf: Loopback1
-
-
-Example 4
-^^^^^^^^^
-
-DHCP Server and DHCP Client are in the Same Tenant VRF
-
-.. code-block:: yaml
-
-    vrfs:
-      all:                                              <--------- Applies configs to all DAGs
-        helper_address:                                 <--------- configs 'ip helper-address 10.1.1.1' and 'ip helper-address 10.1.1.2' ll SVIs
-          - 10.1.1.1
-          - 10.1.1.2
-
-
-Example 5
-^^^^^^^^^
-
-Repective DAG's interface from the overlay_interface section of host_vars/<inventory>.yml file is set as DHCP relay source interface for SVIs
-
-.. code-block:: yaml
-
-    vrfs:
-      green:                                            <--------- Applies configs to 'green' DAG 
-        helper_address:                                 <--------- configs 'ip helper-address 10.1.1.1' and 'ip helper-address 10.1.1.2' ll 'green' SVIs
-          - 10.1.1.1
-          - 10.1.1.2
-        helper_vrf: green
-        relay_src_intf: Loopback1                       <--------- configs 'Loopback1' as DHCP relay source for all 'green' SVIs
-      blue:                                             <--------- Applies configs to 'blue' DAG 
-        helper_address:                                 <--------- configs 'ip helper-address 10.1.1.3' for 'blue' SVIs
-          - 10.1.1.3 
-        helper_vrf: blue 
-        relay_src_intf: Loopback2                       <--------- configs 'Loopback2' as DHCP relay source for all 'blue' SVIs
-
-Since ``relay_src_intf`` key is explicitly mentioned in this case, Loopback1 is set as DHCP relay source interface for all :green:`green` SVIs and
-Loopback2 is set as DHCP relay source interface for all :blue:`blue` SVIs.
-
-   
 host_vars
 *********
 
