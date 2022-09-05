@@ -464,9 +464,9 @@ Then VLANs `201,202` should be provisioned. Respectful config is added for VLANs
  
     <...snip...>
 
-Now in the file ``group_vars/overlay_db.yml`` stored config for **already provisioned** VLANs ``101,102,103,104``
+Now in the file ``group_vars/overlay_db.yml`` stored config for **already provisioned** VLANs 
 
-**AND** for **to be provisioned** VLANs ``201,202``.
+``101,102,103,104`` **AND** for **to be provisioned** VLANs ``201,202``.
 
 But it is needed to avoid re-provisioning of the configuration related to the new VLANs.
 
