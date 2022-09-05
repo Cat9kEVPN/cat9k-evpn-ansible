@@ -165,7 +165,6 @@ Playbook output:
 				[
 					"replication_mcast ip is present of VLAN 102 for replication_type ingress is not expected "
 				],
-				"vrf validation is done successfully"
 			]
 		}
 
