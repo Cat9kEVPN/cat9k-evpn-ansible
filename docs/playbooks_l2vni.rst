@@ -131,8 +131,7 @@ Mandatory parameters ``evi``, ``vni`` are missed under ``vlans`` section and for
 .. code-block:: yaml
 
   vlans:
-  #vrf green vlans
-    101:
+     101:
       vlan_type: 'access'
       description: 'Access_VLAN_101'
       #vni: '10101'
