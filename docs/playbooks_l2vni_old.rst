@@ -7,24 +7,24 @@ In this section every playbook function will be described. Playbooks for L2VNI p
 
     ~/cat9k-evpn-ansible/l2vni$ ls | grep playbook
 
-    playbook_access_add_commit.yml
-    playbook_access_add_preview.yml
-    playbook_access_incremental_commit.yml
-    playbook_access_incremental_preview.yml
-    playbook_cleanup.yml
-    playbook_output.yml
-    playbook_overlay_commit.yml
-    playbook_overlay_delete_commit.yml
-    playbook_overlay_delete_generate.yml
-    playbook_overlay_delete_preview.yml
-    playbook_overlay_incremental_commit.yml
-    playbook_overlay_incremental_generate.yml
-    playbook_overlay_incremental_preview.yml
-    playbook_overlay_precheck.yml
-    playbook_overlay_preview.yml
-    playbook_underlay_commit.yml
-    playbook_underlay_preview.yml
-    playbook_yml_validation.yml
+playbook_access_add_commit.yml
+playbook_access_add_preview.yml
+playbook_access_incremental_commit.yml
+playbook_access_incremental_preview.yml
+playbook_cleanup.yml
+playbook_output.yml
+playbook_overlay_commit.yml
+playbook_overlay_delete_commit.yml
+playbook_overlay_delete_generate.yml
+playbook_overlay_delete_preview.yml
+playbook_overlay_incremental_commit.yml
+playbook_overlay_incremental_generate.yml
+playbook_overlay_incremental_preview.yml
+playbook_overlay_precheck.yml
+playbook_overlay_preview.yml
+playbook_underlay_commit.yml
+playbook_underlay_preview.yml
+playbook_yml_validation.yml
 
 Underlay provisioning
 =====================
@@ -48,7 +48,7 @@ Output files could be found in ``preview_files`` directory.
 
 .. code-block::
 
-    ~/cat9k-evpn-ansible/l2vni/preview_files$ ls | grep underlay
+    ~/cat9k-evpn-ansible/dag/preview_files$ ls | grep underlay
     
     Leaf-01-underlay.txt
     Leaf-02-underlay.txt
@@ -131,7 +131,8 @@ Mandatory parameters ``evi``, ``vni`` are missed under ``vlans`` section and for
 .. code-block:: yaml
 
   vlans:
-     101:
+  #vrf green vlans
+    101:
       vlan_type: 'access'
       description: 'Access_VLAN_101'
       #vni: '10101'
@@ -165,6 +166,7 @@ Playbook output:
 				[
 					"replication_mcast ip is present of VLAN 102 for replication_type ingress is not expected "
 				],
+				"vrf validation is done successfully"
 			]
 		}
 
@@ -464,9 +466,9 @@ Then VLANs `201,202` should be provisioned. Respectful config is added for VLANs
  
     <...snip...>
 
-Now in the file ``group_vars/overlay_db.yml`` stored config for **already provisioned** VLANs 
+Now in the file ``group_vars/overlay_db.yml`` stored config for **already provisioned** VLANs ``101,102,103,104``
 
-``101,102,103,104`` **AND** for **to be provisioned** VLANs ``201,202``.
+**AND** for **to be provisioned** VLANs ``201,202``.
 
 But it is needed to avoid re-provisioning of the configuration related to the new VLANs.
 
@@ -599,17 +601,55 @@ It is possible not only to add but also delete the configuration incrementally.
 
 For avoiding full reprovisioning of the network incremental update could be used.
 
-``L2VNI`` configuration includes VNI/EVI/NVI configuration and respective VLANs.
+``DAG`` configuration includes VRF configuration and respective VLANs/SVIs/Overlay interfaces.
 
-Full L2VNI tenants configuration is present in the file ``group_vars/overlay_db.yml``.
+Full DAG tenants configuration is present in the file ``group_vars/overlay_db.yml``.
+
+Two VRFs :green:`green` and :blue:`blue` with respectful VLANs/SVIs :green:`101,102,901` and :blue:`201,202,902`` are provisioned.
 
 .. code-block:: yaml
 
-    l2vpn_global:
-      replication_type: 'static'
-      router_id: 'Loopback1'
+    vrfs:
+      green:
+        ipv6_unicast: 'enable'
+        description: 'green VRF defn'
+        rd: '1:1'
+        afs:
+          ipv4:
+            rt_import: 
+              - '1:1'
+              - '1:1 stitching'
+            rt_export: 
+              - '1:1'
+              - '1:1 stitching'
+
+          ipv6:
+            rt_import:
+              - '1:1'
+              - '1:1 stitching'
+            rt_export:
+              - '1:1'
+              - '1:1 stitching'
+
+      blue:
+        rd: '2:2'
+        afs:
+          ipv4:
+            rt_import: 
+              - '2:2'
+              - '2:2 stitching'
+            rt_export: 
+              - '2:2'
+              - '2:2 stitching'
+          ipv6:
+            rt_import: 
+              - '2:2'
+              - '2:2 stitching'
+            rt_export: 
+              - '2:2'
     
     vlans:
+    #vrf green vlans
      101:
       vlan_type: 'access'
       description: 'Access_VLAN_101'
@@ -629,65 +669,101 @@ Full L2VNI tenants configuration is present in the file ``group_vars/overlay_db.
       encapsulation: 'vxlan'
       replication_type: 'ingress'
     
-     103:
-      vlan_type: 'access'
-      description: 'Access_VLAN_103'
-      vni: '10103'
-      evi: '103'
-      type: 'vlan-based'
-      encapsulation: 'vxlan'
-      replication_type: 'static'
-      replication_mcast: '225.0.0.101'
+     901:
+      vlan_type: 'core'
+      description: 'Core_VLAN_VRF_green'
+      vni: '50901'
+      vrf: 'green'
     
-     104:
-      vlan_type: 'access'
-      description: 'Access_VLAN_104'
-      vni: '10104'
-      evi: '104'
-      type: 'vlan-based'
-      encapsulation: 'vxlan'
-      replication_type: 'ingress'
-    
+    #vrf blue vlans
      201:
       vlan_type: 'access'
-      description: 'Access_VLAN_201'
+      description: 'Access_VLAN_101'
       vni: '10201'
       evi: '201'
       type: 'vlan-based'
       encapsulation: 'vxlan'
       replication_type: 'static'
       replication_mcast: '225.0.0.101'
-    
+
      202:
       vlan_type: 'access'
-      description: 'Access_VLAN_202'
+      description: 'Access_VLAN_102'
       vni: '10202'
       evi: '202'
       type: 'vlan-based'
       encapsulation: 'vxlan'
       replication_type: 'ingress'
+    
+     902:
+      vlan_type: 'core'
+      description: 'Core_VLAN_VRF_blue'
+      vni: '50902'
+      vrf: 'blue'
 
-    nve_interfaces:
-      1:
-        source_interface: 'Loopback1'
+    svis:
+    #vrf green svi's
+     101:
+      svi_type: 'access'
+      vrf: 'green'
+      ipv4: '10.1.101.1 255.255.255.0'
+      ipv6:
+        - '2001:101::1/64'
+      mac: 'dead.beef.abcd'
 
-``L2VNI`` for VLANs ``201,202`` has to be deleted.
+     102:
+      svi_type: 'access'
+      vrf: 'green'
+      ipv4: '10.1.102.1 255.255.255.0'
+      ipv6:
+        - '2001:102::1/64'
+      mac: 'dead.beef.abcd'
+    
+     901:
+      svi_type: 'core'
+      vrf: 'green'
+      src_intf: 'Loopback1'
+      ipv6_enable: 'yes'
+    
+    #vrf blue svi's
+     201:
+      svi_type: 'access'
+      vrf: 'blue'
+      ipv4: '10.1.201.1 255.255.255.0'
+      ipv6:
+        - '2001:201::1/64'
 
-To achive this you should edit ``group_vars/delete_vars.yml`` and choose which ``VLAN`` to provision.
+     202:
+      svi_type: 'access'
+      vrf: 'blue'
+      ipv4: '10.1.202.1 255.255.255.0'
+      ipv6:
+        - '2001:202::1/64'
+
+     902:
+      svi_type: 'core'
+      vrf: 'blue'
+      src_intf: 'Loopback1'
+      ipv6_enable: 'yes'
+    
+    <...snip...>
+
+``DAG`` :blue:`blue` has to be deleted.
+
+To achive this you should edit ``group_vars/create_vars.yml`` and choose which ``dag`` to provision.
 
 .. code-block:: yaml
 
-    vlans:
-    - 201
-    - 202
+    dag:
+    - blue
 
     <...snip...>
 
-If **ALL** ``VLANs`` have to be deleted, next config has to be used
+If **ALL** ``DAGs`` have to be deleted, next config has to be used
 
 .. code-block:: yaml
 
-    vlans:
+    dag:
     - all
 
     <...snip...>
@@ -702,9 +778,8 @@ Option `update_access` is used for this:
 
 .. code-block:: yaml
 
-    vlans:
-    - 201
-    - 202
+    dag:
+    - blue
 
     update_access: false
 
@@ -731,32 +806,23 @@ Output is generated to the files ``host_vars/delete_vars/<hostname>.yml``
 
 .. code-block:: yaml
 
-    ~/cat9k-evpn-ansible/l2vni$ cat host_vars/delete_vars/Leaf-01.yml 
+    ~/cat9k-evpn-ansible/dag$ cat host_vars/delete_vars/Leaf-01.yml 
 
-    access_interfaces:
-      trunks:
-        GigabitEthernet1/0/7:
-          action: delete
-          vlans:
-          - '202'
-          - '201'
-    nve_interfaces:
-      '1':
-        source_interface: Loopback1
-    vlans:
-      '201':
-        action: delete
-        evi: '201'
-        replication_mcast: 225.0.0.101
-        replication_type: static
-        vlan_type: access
-        vni: '10201'
-      '202':
-        action: delete
-        evi: '202'
-        replication_type: ingress-replication
-        vlan_type: access
-        vni: '10202'
+    access_inft_cli:
+    - 202
+    - 201
+    ovrl_intf_cli:
+    - Loopback12
+    svi_cli:
+    - 202
+    - 902
+    - 201
+    vlan_cli:
+    - 202
+    - 902
+    - 201
+    vrf_cli:
+    - blue
 
 This output is an input for the next playbook.
 
@@ -779,40 +845,36 @@ Output could be checked in ``preview_files/<hostname>-delete.txt``.
 
 .. code-block::
 
-    :~/cat9k-evpn-ansible/l2vni$ cat preview_files/Leaf-01-delete.txt 
+    :~/cat9k-evpn-ansible/dag$ cat preview_files/Leaf-01-delete.txt 
+
+    ! svi block 
+    no interface Vlan201
+    no interface Vlan202
+    no interface Vlan902
 
     ! nve block 
-    !
     interface nve1
     no ip address
     source-interface Loopback1
     host-reachability protocol bgp
     no member vni 10201 mcast-group 225.0.0.101
     no member vni 10202 ingress-replication
+    no member vni 50902 vrf blue
 
     ! vlan block 
-    !
     no vlan 201
     no vlan configuration 201
-    !
     no vlan 202
     no vlan configuration 202
+    no vlan 902
+    no vlan configuration 902
 
     ! l2vpn evpn evi block 
-    !
     no l2vpn evpn instance 201
-    !
     no l2vpn evpn instance 202
 
     ! vrf block 
-
-    ! access interfaces block     
-    !
-    interface GigabitEthernet1/0/7
-    description host interface
-    switchport mode trunk
-    switchport trunk allowed vlan remove 202,201
-    no shutdown
+    no vrf definition blue
 
     <...snip...>
 
@@ -826,6 +888,23 @@ The playbook can be used separtely from previous two.
 .. code-block::
     
     ansible-playbook -i inventory.yml playbook_overlay_delete_commit.yml  
+
+Access interfaces provisioning
+==============================
+
+Playbooks described in this section are used for provisioning access interfaces.
+
+Detailed description for the configuration file you can find `here <https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html#access-interface-configuration>`_
+
+For provisioning access interfaces next playbook could be used:
+
+* playbook_access_add_preview.yml
+
+* playbook_access_add_commit.yml
+
+* playbook_access_incremental_preview.yml
+
+* playbook_access_incremental_commit.yml
 
 playbook_access_add_preview.yml
 -------------------------------
@@ -857,10 +936,10 @@ Outputs will be written to files ``preview_files/<hostname>-add-intf.txt``.
 
     ! access interface block 
     interface GigabitEthernet1/0/8
-    switchport trunk allowed vlan 101,102,103,104
+    switchport trunk allowed vlan 101,102,201,202
     switchport mode trunk
     interface GigabitEthernet1/0/7
-    switchport trunk allowed vlan 101,102,103,104
+    switchport trunk allowed vlan 101,102,201,202
 
 playbook_access_add_commit.yml
 ------------------------------
@@ -964,9 +1043,9 @@ Output collected:
         - ''
         - Interface  VNI      Type Peer-IP          RMAC/Num_RTs   eVNI     state
             flags UP time
-        - nve1       10101    L2CP 172.16.254.4     6              10101      UP   N/A
-            00:00:05
-        - nve1       10102    L2CP 172.16.254.4     7              10102      UP   N/A
-            00:00:04
+        - nve1       50901    L3CP 172.16.254.4     7c21.0dbd.9548 50901      UP  A/M/4
+            00:19:04
+        - nve1       50902    L3CP 172.16.254.4     7c21.0dbd.957e 50902      UP  A/M/4
+            00:19:04
   
   <...snip...>
