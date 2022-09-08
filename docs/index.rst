@@ -26,7 +26,7 @@ WORK in progress. Content could be changed!
 
 .. toctree::
    :maxdepth: 3
-   :caption: L2VNI
+   :caption: L2 Overlay (L2VNI)
 
    input_l2vni
    playbooks_l2vni
