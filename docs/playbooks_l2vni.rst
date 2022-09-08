@@ -827,6 +827,20 @@ The playbook can be used separtely from previous two.
     
     ansible-playbook -i inventory.yml playbook_overlay_delete_commit.yml  
 
+Access interfaces provisioning
+==============================
+
+Playbooks described in this section are used for provisioning access interfaces.
+
+Detailed description for the configuration file you can find here
+
+For provisioning access interfaces next playbook could be used:
+
+- playbook_access_add_preview.yml
+- playbook_access_add_commit.yml
+- playbook_access_incremental_preview.yml
+- playbook_access_incremental_commit.yml
+
 playbook_access_add_preview.yml
 -------------------------------
 
