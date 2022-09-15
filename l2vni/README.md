@@ -1,6 +1,6 @@
 # General description #
 
-In this directory there are playbooks for provisioning DAG (Distributed Anycast Gateway) for Campus EVPN Fabric.
+In this directory there are playbooks for provisioning L2VNI (L2 Overlay) for Campus EVPN Fabric.
 
 # Topology #
 
@@ -30,7 +30,7 @@ all:
 
 <...snip...>
 ```
-Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html#inventory-yml)
+Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_l2vni.html#inventory-yml)
 
 ### Step 1b ###
 
@@ -52,7 +52,7 @@ username cisco privilege 15 password 0 cisco123
 
 If enable password should be used, check the [Enable Mode](https://docs.ansible.com/ansible/latest/network/user_guide/platform_ios.html) documentation.
 
-Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html#all-yml)
+Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_l2vni.html#all-yml)
 
 ### Step 1c ###
 
@@ -78,7 +78,7 @@ interfaces:
 <...snip...>
 ```
 
-Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html#host-vars).
+Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_l2vni.html#host-vars).
 
 ### Step 1d ###
 
@@ -113,7 +113,7 @@ Run the underlay provisioning playbook. It is possible to see in terminal logs a
 ansible-playbook -i inventory.yml playbook_underlay_commit.yml
 ```
 
-Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/playbooks_dag.html#underlay-provisioning).
+Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/playbooks_l2vni.html#underlay-provisioning).
 
 ## Step 2 ##
 
@@ -132,7 +132,7 @@ l2vpn_global:
 <...skip...>
 ```
 
-Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html#overlay-db-yml)
+Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_l2vni.html#overlay-db-yml)
 
 ### Step 2b ###
 
