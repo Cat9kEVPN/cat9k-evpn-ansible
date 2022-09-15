@@ -1,12 +1,7 @@
-DAG (Distributed Anycast Gateway)
+L3 Overlay (L3VNI)
 #################################
 
-Distributed anycast gateway feature for EVPN VXLAN is a default gateway addressing mechanism that enables the use of the same gateway IP addresses 
-across all the leaf switches that are part of a VXLAN network.
-
-.. warning::
-
-    The same subnet mask and IP address must be configured on all the switch virtual interfaces (SVIs) that act as a distributed anycast gateway (DAG).
+L3 Overlay is L3 network only without L2 stretching over the fabric.
 
 Inputs
 ######
@@ -24,16 +19,16 @@ Inventory.yml
         leaf:
           hosts:
             Leaf-01:
-              ansible_host: 10.62.149.179
+              ansible_host: 10.1.1.1
             Leaf-02:
-              ansible_host: 10.62.149.182
+              ansible_host: 10.1.1.2
             
         spine:
           hosts:
             Spine-01:
-              ansible_host: 10.62.149.180
+              ansible_host: 10.1.1.3
             Spine-02:
-              ansible_host: 10.62.149.181
+              ansible_host: 10.1.1.3
 
 ``leaf`` and ``spine`` are two roles. Each node should be placed under one of these roles.
 
@@ -133,9 +128,7 @@ This section defines global L2VPN EVPN parameters.
 .. code-block:: yaml
     
     l2vpn_global:
-      replication_type: 'static'
       router_id: 'Loopback1'
-      default_gw: 'yes'
     
     <...skip...>
 
@@ -147,24 +140,6 @@ This section defines global L2VPN EVPN parameters.
    ================================================ ==========================================================================
    **l2vpn_global** / :red:`mandatory`              This option defines L2VPN EVPN globally.
 
-   **replication_type** / :orange:`optional`        This option defines the type of repliction for the L2 BUM traffic globally.
-
-                                                    Could be overwritten per vlan by "vlans" -> "vlan_id" -> "replication_type"
-
-                                                    | section. 
-                                                    
-                                                    Option **static** enables to use multicast for the BUM replication.
-
-                                                    Option **ingress** enables to use Ingress-replication (unicast) for
-
-                                                    | BUM replication.
-
-                                                    **Choices**:
-
-                                                    * static
-                                                    
-                                                    * ingress
-   
    **router_id** / :orange:`optional`               This option defines the interface whose IP address will be used for defining
                                                     router-id of L2VPN.The  interface **Loopback1** is used for the router-id of L2VPN.
                                                     
@@ -172,11 +147,6 @@ This section defines global L2VPN EVPN parameters.
 
                                                     * **Loopback1**
    
-   **default_gw** / :orange:`optional`              This option defines if Default GW will be advertised or not. In this project
-
-                                                    it is defined by defualt:
-
-                                                    * **default_gw: 'yes'**
    ================================================ ==========================================================================
 
 VRF definition
@@ -255,25 +225,6 @@ This section defines the VLANs and their stitching with EVIs (EVPN instance) and
 
     vlans:
 
-      101:
-        vlan_type: 'access'
-        description: 'Access_VLAN_101'
-        vni: '10101'
-        evi: '101'
-        type: 'vlan-based'
-        encapsulation: 'vxlan'
-        replication_type: 'static'
-        replication_mcast: '225.0.0.101'
-    
-      102:
-        vlan_type: 'access'
-        description: 'Access_VLAN_102'
-        vni: '10102'
-        evi: '102'
-        type: 'vlan-based'
-        encapsulation: 'vxlan'
-        replication_type: 'ingress'
-    
       901:
         vlan_type: 'core'
         description: 'Core_VLAN_VRF_green'
@@ -296,54 +247,15 @@ This section defines the VLANs and their stitching with EVIs (EVPN instance) and
 
    **vlan_type** / :red:`mandatory`                 | This option defines the VLAN type. 
 
-                                                    Option **access** is used for L2VNIs.
-
                                                     Option **core** is used for L3VNIs.
-
-                                                    | Option **non-vxlan** is used for VLANs, which are not extended over Fabric.
 
                                                     **Choices**
 
-                                                    * access
-
                                                     * core
 
-                                                    * non-vxlan
-   
    **description** / :orange:`optional`             This option defines the VLAN description.
 
    **vni** / :red:`mandatory`                       This option defines the VNI which is stitched with the VLAN ID on the switch.
-
-   **evi** / :red:`mandatory`                       This option defines the EVI which is stitched with the VLAN ID on the switch.
-
-                                                    This parameter is **mandatory for L2VNIs only.**
-
-   **type** / :red:`mandatory`                      This option defines the EVI type. For Cat9k **vlan-based** is only supported
-                                                    EVI type presently. 
-                                                    
-                                                    This parameter is  **mandatory for L2VNIs only.**
-
-   **encapsulation** / :red:`mandatory`             This option defines encapsulation for the packet is the core. 
-   
-                                                    This parameter is  **mandatory for L2VNIs only.**
-
-                                                    In the example shown, it is set to vxlan.
-                                                    
-   **replication_type** / :red:`mandatory`          | This option defines the replication type for the BUM for L2VNI.
-                                                    
-                                                    Option **static** is used for multicast replication. In this case, 
-
-                                                    **replication_mcast** parameter is needed.
-
-                                                    | Option **ingress** is used for ingress-replication (unicast).
-
-                                                    **Choices:**
-
-                                                    * static
-
-                                                    * ingress
-
-                                                    This parameter is  **mandatory for L2VNIs only.**
 
    **vrf** / :red:`mandatory`                       This option defines the VRF that uses the VLAN’s L3VNI for encapsulating
                                                     the routed traffic in the core.
@@ -361,22 +273,6 @@ This section defines SVIs configuration.
 .. code-block:: yaml
 
     svis:
-
-      101:
-        svi_type: 'access'
-        vrf: 'green'
-        ipv4: '10.1.101.1 255.255.255.0'
-        ipv6:
-          - '2001:101::1/64'
-        mac: 'dead.beef.abcd'
-
-      102:
-        svi_type: 'access'
-        vrf: 'green'
-        ipv4: '10.1.102.1 255.255.255.0'
-        ipv6:
-          - '2001:102::1/64'
-        mac: 'dead.beef.abcd'
     
       901:
         svi_type: 'core'
@@ -400,33 +296,13 @@ This section defines SVIs configuration.
 
    **svi_type** / :red:`mandatory`                  | This option defines the SVI type. 
 
-                                                    Option **access** is used when the VLAN associated with an SVI is stitched to L2VNIs.
-
                                                     Option **core** is used when the VLAN associated with an SVI is stitched to L3VNIs.
-
-                                                    | Option **non-vxlan** is used when the VLAN associated with an SVI are not extended over Fabric.
 
                                                     **Choices**
 
-                                                    * access
-
                                                     * core
 
-                                                    * non-vxlan
-   
    **vrf** / :red:`mandatory`                       This option defines the vrf which SVI belongs to.
-
-   **ipv4** / :red:`mandatory`                      This option defines the IPv4 address configured on the SVI. 
-   
-                                                    This parameter is applicable **for L2VNI SVIs only.**
-
-   **ipv6** / :orange:`optional`                    This option defines the IPv6 addresses configured on the SVI.
-
-                                                    This parameter is applicable **for L2VNI SVIs only.**
-
-   **mac** / :orange:`optional`                     This option defines the MAC which is to be configured on the SVI.
-
-                                                    This parameter is applicable **for L2VNI SVIs only.**
 
    **src_intf** / :red:`mandatory`                  This option defines thee source Interface for the SVI for L3VNI.
 
@@ -464,131 +340,6 @@ NVE section
    **source_interface** / :red:`mandatory`          This option defines the source interface for the corresponding NVE interface. 
 
    ================================================ ==========================================================================
-
-dhcp_vars.yml
-============
-
-In this file inforrmation about DHCP configuration is stored.
-
-.. code-block:: yaml
-
-   dhcp:
-        dhcp_options:
-            option_82_link_selection_standard: standard
-            option_82_server_id_override: standard
-    
-        vrfs:
-            all:                   
-                helper_address: 
-                    - 10.1.1.1
-
-.. table::
-   :widths: auto
-
-   ========================================================= ==========================================================================
-     **Parameter**                                                            **Comments**
-   ========================================================= ==========================================================================
-   **dhcp** / :red:`mandatory`                               This option defines the DHCP section.
-
-   **dhcp_options** / :orange:`optional`                     This option defines DHCP options.
-
-   **option_82_link_selection_standard** / :red:`mandatory`  This option defines the if cisco dhcp option/suboption 82[150] --> 82[5]
-       
-   **option_82_server_id_override** / :red:`mandatory`       This option defines the if cisco dhcp option/suboption 82[151] --> 82[11]  
-   
-   **vrfs** / :red:`mandatory`                               This option defines the VRF section
-   ========================================================= ==========================================================================
-
-Examples
---------
-
-Example 1
-^^^^^^^^^
-
-DHCP Server is in the Layer 3 Default VRF and the DHCP Client is in the Tenant VRF
-
-.. code-block:: yaml
-
-    vrfs:  
-      all:                                             
-        helper_address:                                
-          - 10.1.1.1                       
-        helper_vrf: global                             
-        relay_src_intf: Loopback1                     
-
-As a result on **ALL** L2 SVIs for **ALL** VRFs ``helper-address`` **10.1.1.1** which is reachible over ``global`` VRF with **source-interface** ``Loopback1` will be configured.
-
-Example 2 
-^^^^^^^^^ 
-
-DHCP Server is in the Layer 3 Default VRF and the DHCP Client is in the Tenant VRF
-
-.. code-block:: yaml
-
-    vrfs:  
-      all:                                             <--------- Applies configs to all except 'green' DAG 
-        helper_address:                                <--------- configs 'ip helper-address global 10.1.1.1' for all SVIs except green's
-          - 10.1.1.1   
-        helper_vrf: global                     
-        relay_src_intf: Loopback1                      <--------- configs 'Loopback1' as DHCP relay source for all SVIs except green's
-  
-      green:                                           <--------- Applies configs to 'green' DAG 
-        helper_address:                                <--------- configs 'ip helper-address global 10.1.1.2' for all 'green' DAG SVIs
-          - 10.1.1.2                       
-        helper_vrf: global  
-        relay_src_intf: Loopback1                      <--------- configs 'Loopback1' as DHCP relay source for 'green' SVIs
-
-Example 3 
-^^^^^^^^^
-
-DHCP Client and DHCP Server are in Different Tenant VRFs
-
-.. code-block:: yaml
-
-    vrfs:
-      all:
-        helper_address: 
-          - 10.1.1.1
-        helper_vrf: green                               <--------- Specifies the server tenant location
-        relay_src_intf: Loopback1
-
-
-Example 4
-^^^^^^^^^
-
-DHCP Server and DHCP Client are in the Same Tenant VRF
-
-.. code-block:: yaml
-
-    vrfs:
-      all:                                              <--------- Applies configs to all DAGs
-        helper_address:                                 <--------- configs 'ip helper-address 10.1.1.1' and 'ip helper-address 10.1.1.2' ll SVIs
-          - 10.1.1.1
-          - 10.1.1.2
-
-
-Example 5
-^^^^^^^^^
-
-Repective DAG's interface from the overlay_interface section of host_vars/<inventory>.yml file is set as DHCP relay source interface for SVIs
-
-.. code-block:: yaml
-
-    vrfs:
-      green:                                            <--------- Applies configs to 'green' DAG 
-        helper_address:                                 <--------- configs 'ip helper-address 10.1.1.1' and 'ip helper-address 10.1.1.2' ll 'green' SVIs
-          - 10.1.1.1
-          - 10.1.1.2
-        helper_vrf: green
-        relay_src_intf: Loopback1                       <--------- configs 'Loopback1' as DHCP relay source for all 'green' SVIs
-      blue:                                             <--------- Applies configs to 'blue' DAG 
-        helper_address:                                 <--------- configs 'ip helper-address 10.1.1.3' for 'blue' SVIs
-          - 10.1.1.3 
-        helper_vrf: blue 
-        relay_src_intf: Loopback2                       <--------- configs 'Loopback2' as DHCP relay source for all 'blue' SVIs
-
-Since ``relay_src_intf`` key is explicitly mentioned in this case, Loopback1 is set as DHCP relay source interface for all :green:`green` SVIs and
-Loopback2 is set as DHCP relay source interface for all :blue:`blue` SVIs.
 
    
 host_vars
@@ -872,242 +623,6 @@ By default next design assumption are made:
 
     **rrc** / :orange:`optional`                    This option defines the peer like a BGP route-reflector client.
     =============================================== ==========================================================================
-
-Access interface configuration
-==============================
-
-This section defines configuration for the customer-facing access interfaces.
-
-By default all access interfaces will be configured like trunks with all L2VNI vlans that are mentioned in ``group_vars/overlay_db.yml``
-
-Trunk configuration
--------------------
-
-Vlans to be assigned to an interace are taken from the following in increasing **order of priority (3 > 2 > 1).**
-
-.. note::
-
-    **Trunk configuration order of priority (3 > 2 > 1)**
- 
-1. ``vlans`` in ``group_vars/overlay_db.yml`` (for ``playbook_access_add_commit/preview.yml``) or ``access_intf_cli`` in ``host_vars/inc_vars/<hostname>.yml`` 
-
-(for ``playbook_access_incremental_commit/preview.yml``)
- 
-.. code-block:: yaml
-    
-    access_interfaces:              
-      trunks:                       
-        - GigabitEthernet1/0/6     
-
-    <...snip...>
-
-
-2. ``trunk_vlan_list`` in ``access_interfaces`` dictionary
-
-.. code-block:: yaml
-    
-    access_interfaces:                
-      trunk_vlan_list: 101,102,201     
-      trunks:                         
-        - GigabitEthernet1/0/6       
-    
-    <...snip...>
-
-3. ``trunk_vlan_list`` in specific interface dictionary
-
-.. code-block:: yaml
-
-    access_interfaces:                 
-      trunks:                          
-        - GigabitEthernet1/0/6:        
-          trunk_vlan_list: 101,102   
-    
-    <...snip...>
-
-
-Access configuration
---------------------
-
-Vlan to be assigned to an interace are taken from the following in increasing **order of priority (2 > 1).**
-
-.. note::
-
-    **Access configuration order of priority (2 > 1)**
-
-1. ``access_vlan`` in ``access_interfaces`` dictionary
-
-.. code-block:: yaml
-
-    access_interfaces:               
-        access_vlan: 101 
-        access:                        
-            - GigabitEthernet1/0/6       
-        
-    <...snip...>
-    
-
-2. ``access_vlan`` in specific interface dictionary
-
-.. code-block:: yaml
-
-    access_interfaces:               
-      access:                        
-        - GigabitEthernet1/0/6:      
-          access_vlan: 102         
-
-    <...snip...>
-
-
-
-Examples
---------
-
-There is an assumption, that in ``group_vars/overlay_db.yml`` defined next vlans: :green:`101,102,201,202`
-
-Example 1
-^^^^^^^^^
-
-Content of ``host_vars/access_intf/<hostname>.yml``
-
-.. code-block:: yaml
-
-    access_interfaces:
-      trunks:
-        - GigabitEthernet1/0/7
-        - GigabitEthernet1/0/8
-
-Vlans assigned after execution:
-
-**GigabitEthernet1/0/7** - :green:`101,102,201,202` (from ``group_vars/overlay_db.yml`` or ``host_vars/inc_vars/<hostname>.yml``)
-
-**GigabitEthernet1/0/8** - :green:`101,102,201,202` (from ``group_vars/overlay_db.yml`` or ``host_vars/inc_vars/<hostname>.yml``)
-
-Example 2
-^^^^^^^^^
-
-Content of ``host_vars/access_intf/<hostname>.yml``
-
-.. code-block:: yaml
-
-    access_interfaces:
-      access_vlan: 202
-      access:
-        - GigabitEthernet1/0/7
-        - GigabitEthernet1/0/8
-
-Vlans assigned after execution:
-
-**GigabitEthernet1/0/7** - :green:`202`
-
-**GigabitEthernet1/0/8** - :green:`202`
-
-Example 3
-^^^^^^^^^
-
-Content of ``host_vars/access_intf/<hostname>.yml``
-
-.. code-block:: yaml
-
-    access_interfaces:
-      trunks:
-        - GigabitEthernet1/0/6
-        - GigabitEthernet1/0/7:
-          trunk_vlan_list: 101,102,201
-      access:
-        - GigabitEthernet1/0/8
-        - GigabitEthernet1/0/9
-      access_vlan: 202
-
-Vlans assigned after execution:
-
-**GigabitEthernet1/0/6** - :green:`101,102,201,202` (from ``all.yml`` or ``host_vars/inc_vars/<hostname>.yml``)
-
-**GigabitEthernet1/0/7** - :green:`101,102,201`
-
-**GigabitEthernet1/0/8** - :green:`202`
-
-**GigabitEthernet1/0/9** - :green:`202`
-
-Example 4
-^^^^^^^^^
-
-Content of ``host_vars/access_intf/<hostname>.yml``
-
-.. code-block:: yaml
-
-    access_interfaces:
-      trunks:
-        - GigabitEthernet1/0/6
-        - GigabitEthernet1/0/7:
-          trunk_vlan_list: 101,102,201
-      trunk_vlan_list: 101,201
-      access:
-        - GigabitEthernet1/0/8
-        - GigabitEthernet1/0/9:
-          access_vlan: 102
-      access_vlan: 202
-
-Vlans assigned after execution:
-
-**GigabitEthernet1/0/6** - :green:`101,201`
-
-**GigabitEthernet1/0/7** - :green:`101,102,201`
-
-**GigabitEthernet1/0/8** - :green:`202`
-
-**GigabitEthernet1/0/9** - :green:`102`
-
-Example 5
-^^^^^^^^^
-
-Content of ``host_vars/access_intf/<hostname>.yml``
-
-.. code-block:: yaml
-
-    access_interfaces:
-      trunks:
-        - GigabitEthernet1/0/5
-        - GigabitEthernet1/0/6:
-          trunk_vlan_list: 101,102,201
-        - GigabitEthernet1/0/7
-      access:
-        - GigabitEthernet1/0/8:
-          access_vlan: 201
-        - GigabitEthernet1/0/9:
-          access_vlan: 102
-      access_vlan: 202
-
-Vlans assigned after execution:
-
-**GigabitEthernet1/0/5** - :green:`101,102,201,202` (from ``group_vars/overlay_db.yml`` or ``host_vars/inc_vars/<hostname>.yml``)
-
-**GigabitEthernet1/0/6** - :green:`101,102,201`
-
-**GigabitEthernet1/0/7** - :green:`101,102,201,202` (from ``group_vars/overlay_db.yml`` or ``host_vars/inc_vars/<hostname>.yml``)
-
-**GigabitEthernet1/0/8** - :green:`201`
-
-**GigabitEthernet1/0/9** - :green:`102`
-
-Example 6
-^^^^^^^^^
-
-Content of ``host_vars/access_intf/<hostname>.yml``
-
-.. code-block:: yaml
-
-    access_interfaces:
-      trunks:
-        - GigabitEthernet1/0/7
-    access:
-        - GigabitEthernet1/0/8:
-          access_vlan: 201
-
-Vlans assigned after execution:
-
-**GigabitEthernet1/0/7** - :green:`101,102,201,202` (from ``group_vars/overlay_db.yml`` or ``host_vars/inc_vars/<hostname>.yml``)
-
-**GigabitEthernet1/0/8** - :green:`201`
 
 
 
