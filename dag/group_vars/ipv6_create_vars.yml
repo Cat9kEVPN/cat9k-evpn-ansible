@@ -1,39 +1,22 @@
 # ipv6_incremental:
 # ==================
-# ipv6_action can be performed for both 'add' or 'delete' with the help of playbook_overlay_incremental_ipv6_commit.py
-#Please find below the examples of declaring the respective dag's for ipv6_incremental
-# 1) with single dag and action "add"
+#Please find below the examples of declaring the respective vrf's under dag where it is used as input file to playbook_overlay_incremental_ipv6_generate.py and playbook_overlay_incremental_ipv6_commit.py
+# 1) with single vrf under dag
 #      ..........................................
 #      .        dag:              .
-#      .          orange:                       .
-#      .            ipv6_action : 'add'      .
+#      .          - green      ------------> add ipv6 to the green vrf                 .    .
 #      ..........................................
-# 2) with two dag's and action "add"
-#      ..........................................
-#      .        dag:              .
-#      .          red:                       .
-#      .            ipv6_action : 'add'      .
-#      .          orange:                       .
-#      .            ipv6_action : 'add'      .
-#      ..........................................
-# 3) with single dag and action "delete"
+# 2) with two vrf's under dag's
 #      ..........................................
 #      .        dag:              .
-#      .          orange:                       .
-#      .            ipv6_action : 'delete'      .
+#      .          - green      ------------> adds ipv6 to the blue and green vrfs                 .     .
+#      .          - blue                      .     .
 #      ..........................................
-# 4) with two dag's and action "delete"
+# 3) with all vrf's under dag's
 #      ..........................................
 #      .        dag:              .
-#      .          red:                       .
-#      .            ipv6_action : 'delete'      .
-#      .          orange:                       .
-#      .            ipv6_action : 'delete'      .
+#      .          - all        -------------> adds ipv6 to all the vrfs which are not provisoned           .     .
 #      ..........................................
-dag:
-   green : 
-     ipv6_action : 'add'
-   blue :
-     ipv6_action : 'add'
-   
 
+dag:
+   - all

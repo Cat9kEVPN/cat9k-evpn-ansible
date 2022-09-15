@@ -1,0 +1,71 @@
+---
+- name: Write l3vni delete info to files in host_vars/delete_vars folder
+  import_playbook: playbook_overlay_delete_generate.yml
+
+- name: Automated VXLAN deployment with BGP EVPN L3 underlay w/ Spine
+  hosts: leaf
+  gather_facts: no
+  vars: 
+    whole_block: ""
+    update_acc_intf: false
+    block_dict:
+      '../templates/svi_create.j2': 'svi block'
+      '../templates/nve_create.j2': 'nve block'
+      '../templates/vlan_create.j2': 'vlan block' 
+      '../templates/vrf_definition.j2': 'vrf block'
+
+  tasks:
+
+          - name: Load variables from group_vars/delete_vars.yml file
+            run_once: true
+            include_vars: group_vars/delete_vars.yml
+          
+          - name: Load variables from group_vars/delete_vars.yml file and appending to dag keyword
+            when: l3vni is defined
+            set_fact:
+              dag: "{{ l3vni }}"
+
+          - name: Get "update_access" value if present in group_vars/delete_vars.yml
+            run_once: true
+            when: update_access is defined
+            set_fact:
+              update_acc_intf: "{{ update_access }}"
+
+          - name: Check whether host_vars/delete_vars/<hostname>.yml is present
+            local_action: stat path=./host_vars/delete_vars/{{ inventory_hostname }}.yml
+            register: file_state
+            become: no 
+
+          - name: Executing tasks if host_vars/delete_vars/<hostname>.yml is present
+            when: file_state.stat.exists
+            block:
+            - name: Load variables from files under host_vars/delete_vars folder
+              include_vars: host_vars/delete_vars/{{ inventory_hostname }}.yml
+
+            - name: Read template files
+              set_fact:
+                whole_block: "{{ whole_block }} ! {{ block_dict[item.key] }} {{ lookup('template', item.key) }}"
+              with_dict: "{{ block_dict }}"
+
+            - name: Read access interface template files
+              when: update_acc_intf == true
+              set_fact:
+                whole_block: "{{ whole_block }} ! access interfaces block {{ lookup('template', '../templates/access_interfaces.j2' ) }}"
+
+            - name: Render template files output
+              set_fact:
+                rendered: "{{  whole_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n! ') }}"
+
+            - name: Copy configurations to the respective file ( <hostname>-delete.txt ) under 'preview_files' folder
+              copy:
+                dest: preview_files/{{inventory_hostname}}-delete.txt
+                content: "{{ rendered }}"
+
+- name: Display output file info
+  hosts: localhost
+  gather_facts: no
+  run_once: True
+
+  tasks:
+    - debug:
+        msg: Please refer to <hostname>-delete.txt in 'preview_files' folder

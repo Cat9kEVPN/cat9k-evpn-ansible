@@ -29,6 +29,19 @@
       '../templates/bgp_l2vpn_evpn_af.j2': 'bgp l2vpn evpn af block'
 
   tasks:
+          # Set db file path and load overlay_inc vars
+          - name: Load and process underlay input file
+            run_once: true
+            block:
+            - name: set underlay vars input file path if not already set
+              when: input_vars_path is not defined
+              set_fact: 
+                input_vars_path: "./"
+
+          - name: Load vars from node_vars/<host>.yml input file
+            include_vars: 
+              file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
+              
           - name: Check whether host_vars/inc_vars/{{ inventory_hostname }}.yml is present
             local_action: stat path=./host_vars/inc_vars/{{ inventory_hostname }}.yml
             register: file_state

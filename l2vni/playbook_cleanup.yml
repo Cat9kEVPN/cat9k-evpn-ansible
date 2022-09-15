@@ -1,0 +1,23 @@
+---
+
+- name: Clean up the config
+  hosts: all
+  gather_facts: no
+  connection: network_cli
+  tasks:  
+
+          - name: replace base config
+            when: inventory_hostname in groups['leaf']
+            ios_command:
+                commands: 
+                  - show run
+                  - configure replace bootflash:default_config.txt force 
+                  - show run
+
+          - name: replace base config
+            when: inventory_hostname in groups['spine']
+            ios_command:
+                commands: 
+                  - show run
+                  - configure replace bootflash:default_config.txt force 
+                  - show run

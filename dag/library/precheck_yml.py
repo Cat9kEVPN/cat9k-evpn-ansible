@@ -60,7 +60,7 @@ def yaml_error_validation(parsed_yaml,debug):
         value_vni_result = [values for key, values in vni_dup_dict.items()
               if len(values) > 1]
         if  key_vni_result and value_vni_result :
-            mul_list_dict['yaml_error_validation_error_lst'].append("{} VNI found under VLANS {}".format(key_vni_result,value_vni_result))
+            mul_list_dict['yaml_error_validation_error_lst'].append("Failed due to {} VNI found under VLANS {}".format(key_vni_result,value_vni_result))
     except  KeyError as e :
         mul_list_dict['yaml_error_validation_error_lst'].append("mandatory parameter {} not found under vlan {}".format(e,vlan)) 
         
@@ -76,7 +76,7 @@ def yaml_error_validation(parsed_yaml,debug):
         value_evi_result = [values for key, values in evi_dup_dict.items()
               if len(values) > 1]
         if  key_evi_result and value_evi_result :
-            mul_list_dict['yaml_error_validation_error_lst'].append("{} EVI found under VLANS {}".format(key_evi_result,value_evi_result))
+            mul_list_dict['yaml_error_validation_error_lst'].append("Failed due to {} EVI found under VLANS {}".format(key_evi_result,value_evi_result))
     except  KeyError as e :
         mul_list_dict['yaml_error_validation_error_lst'].append("mandatory parameter {} not found under vlan {}".format(e,vlan))
         

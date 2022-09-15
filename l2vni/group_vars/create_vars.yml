@@ -1,0 +1,42 @@
+# This is the input file for playbook_overlay_incremental_preview.yml and playbook_overlay_incremental_commit.yml
+#
+# If there are multiple vlans in the overlay_db.yml and if you want to provision only selective vlans then declare the respective vlans as shown below 
+#
+# List the vlans to be added under 'vlans' keyword
+#
+#
+# ______________________________________________
+# __________ EXAMPLE SCENARIO : 1 _________________
+# ______________________________________________
+#
+# Example: Adds 101 and 102 vlans present in overlay_db.yml 
+# 
+#   vlans:
+#      - 101             <--------- adds 101 and 102 vlans
+#      - 102
+#
+# ______________________________________________
+# ______________________________________________
+# ______________________________________________
+#
+# If there are multiple vlans in the overlay_db.yml and if you want to provision all the vlans then declare the "all" keyword under "vlans" as shown below 
+#
+# List the vlans to be added under 'vlans' keyword
+#
+#
+# ______________________________________________
+# __________ EXAMPLE SCENARIO : 2 _________________
+# ______________________________________________
+#
+# Example: Adds all the vlans present in overlay_db.yml 
+# 
+#   vlans:
+#      - all             <--------- adds all the vlans which are not provisioned
+#
+# ______________________________________________
+# ______________________________________________
+# ______________________________________________
+
+vlans:
+  - all
+

@@ -24,6 +24,7 @@ Three types of actions are supported:
                     {% endif %}
 
                     {# initial interface config #}
+                    !
                     interface {{ intf }}
                     description host interface
                     switchport mode trunk
@@ -40,6 +41,7 @@ Three types of actions are supported:
         
             {% if (access_inft_cli is not defined)  %}
                 {# initial interface config #}
+                !
                 interface {{ intf }}
                 description host interface
                 switchport mode trunk
@@ -81,6 +83,7 @@ Three types of actions are supported:
                     {% endif %}
 
                     {# initial interface config #}
+                    !
                     interface {{ intf }}
                     description host interface
                     switchport mode access
@@ -98,6 +101,7 @@ Three types of actions are supported:
             {% if (access_inft_cli is not defined)  %}
 
                 {# initial interface config #}
+                !
                 interface {{ intf }}
                 description host interface
                 switchport mode access

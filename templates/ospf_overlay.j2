@@ -8,6 +8,7 @@ This module configures overlay OSPF process and interfaces
 {% if ospf_overlay is defined -%}
     {% for vrf in ospf_overlay.vrf -%}
         {% for id in ospf_overlay.vrf[vrf].id -%}
+            !
             router ospf {{ id }} vrf {{ vrf }}
             
             {# Check if redistribution is configured #}
@@ -19,6 +20,7 @@ This module configures overlay OSPF process and interfaces
             {# Configuring interfaces. Must be last section -> leaving router ospf <> configuration#}
             {% if ospf_overlay.vrf[vrf].id[id].interfaces is defined %}
                 {% for intf in ospf_overlay.vrf[vrf].id[id].interfaces %}
+                    !
                     interface {{intf}}
                         {% set intf_type = ospf_overlay.vrf[vrf].id[id].interfaces[intf].type | default ('broadcast') %}
                         {% set intf_area = ospf_overlay.vrf[vrf].id[id].interfaces[intf].area | default ('0') %}

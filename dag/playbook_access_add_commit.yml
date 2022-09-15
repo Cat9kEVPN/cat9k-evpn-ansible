@@ -18,18 +18,23 @@
             set_fact:
               playbook_mode: inc
 
-          - name: Load variables from file under host_vars/access_intf folder if present
-            block:
-              - name: Check whether host_vars/access_intf/<hostname>.yml is present
-                local_action: stat path=./host_vars/access_intf/{{ inventory_hostname }}.yml
-                register: file_state
-                become: no 
+          - name: set access interface input folder path if not already set
+            when: input_vars_path is not defined
+            set_fact: 
+              input_vars_path: "./"
 
-              - name: Load variables from host_vars/access_intf/<hostname>.yml if present
-                include_vars:
-                  file: host_vars/access_intf/{{ inventory_hostname }}.yml
-                  name: get_Leaf_vars
-                when: file_state.stat.exists
+          - name: Load variables from access interface input file if present
+            block:
+            - name: Check whether host_vars/access_intf/<hostname>.yml is present
+              local_action: stat path="{{ input_vars_path }}host_vars/access_intf/{{ inventory_hostname }}.yml"
+              register: file_state
+              become: no 
+              
+            - name: Load variables from host_vars/access_intf/<hostname>.yml if present
+              include_vars:
+                file: "{{ input_vars_path }}host_vars/access_intf/{{ inventory_hostname }}.yml"
+                name: get_Leaf_vars
+              when: file_state.stat.exists
 
           # Following tasks are skippped if host_vars/access_intf/<hostname>.yml is not present
 

@@ -1,0 +1,18 @@
+# ipv6_delete:
+# ==================
+# This is the input file for playbook_overlay_delete_ipv6_preview.py and playbook_overlay_delete_ipv6_commit.py
+#Please find below the examples of declaring the respective dag's for ipv6_delete
+# 1) with all vrf's under dag 
+#      ..........................................
+#      .        dag:              .
+#      .          - all     -------------> deletes ipv6 from all the vrfs which are provisioned                   .    .
+#      ..........................................
+# 2) with two vrf's under dag 
+#      ..........................................
+#      .        dag:              .
+#      .          - green  --------------> deletes ipv6 from green and blue vrfs
+#      .          - blue                       .    .
+#      ..........................................
+#
+dag:
+   - all

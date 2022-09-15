@@ -7,10 +7,12 @@ If action is not set in the configurations, it is "add" by default.
 
 {# Configure BGP AF for VRF #}
 {% if vrfs is defined -%}
+    !
     router bgp {{ bgp.as_number }}
     {% for vrf in vrfs -%}
         {% if ( (vrf_cli is defined and vrf in vrf_cli) or (vrf_cli is not defined) ) %}
             {% for af in vrfs[vrf].afs -%}
+                !
                 address-family {{ af }} vrf {{ vrf }}
                 advertise l2vpn evpn
                 redistribute connected
@@ -27,4 +29,3 @@ If action is not set in the configurations, it is "add" by default.
         {% endif %}
     {% endfor %}
 {% endif %}
-

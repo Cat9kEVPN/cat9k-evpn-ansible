@@ -1,0 +1,18 @@
+# ipv6_incremental:
+# ==================
+# This is the input file for playbook_overlay_incremental_ipv6_preview.py and playbook_overlay_incremental_ipv6_commit.py
+#Please find below the examples of declaring the respective vrf's under l3vni for ipv6_incremental
+# 1) with all vrf's 
+#      ..........................................
+#      .        l3vni:              .
+#      .          - all    ---------------->adds ipv6 for all the vrf's .    .
+#      ..........................................
+# 2) with two vrf's 
+#      ..........................................
+#      .        l3vni:              .
+#      .          - green  ---------------->adds ipv6 for green and blue vrf's  .   .
+#      .          - blue                       .    .
+#      ..........................................
+#
+l3vni:
+   - all

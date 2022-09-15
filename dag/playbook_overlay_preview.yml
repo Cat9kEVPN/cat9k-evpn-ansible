@@ -3,8 +3,6 @@
 - name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
   hosts: all
   gather_facts: no
-  vars_files:
-    - "group_vars/overlay_db.yml"
   vars: 
     overlay_block: ""
     leaf_ol_dict:
@@ -24,6 +22,34 @@
 
   tasks:
 
+          # Set db file path and load overlay_db
+          - name: Load and process overlay input file
+            run_once: true
+            block:
+            - name: set overlay db input file path if not already set
+              when: input_vars_path is not defined
+              set_fact: 
+                input_vars_path: "./"
+
+            - name: Load vars from overlay input file
+              include_vars: 
+                file: "{{ input_vars_path }}group_vars/overlay_db.yml"
+
+            - name: Check for IPv6 config under VRFs
+              set_fact: 
+                ipv6_unicast: 'enable'
+              when: '"ipv6" in item.value.afs and ipv6_unicast is not defined'
+              with_dict: "{{ vrfs }}"
+
+          - name: Load vars from node_vars/<host>.yml input file
+            include_vars: 
+              file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
+
+          - name: Read template files
+            when: ipv6_unicast is defined
+            set_fact:
+              overlay_block: "{{ overlay_block }} ! routing block\nipv6 unicast-routing"
+
           - name: Read template files
             when: inventory_hostname in groups['leaf']
             set_fact:
@@ -37,7 +63,7 @@
 
           - name: Render template files output
             set_fact:
-              rendered: "{{  overlay_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n! ') }}"
+              rendered: "{{  overlay_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n\n! ') }}"
 
           - name: Copy configurations to respective file ( <hostname>-overlay.txt ) under 'preview_files' folder
             copy:

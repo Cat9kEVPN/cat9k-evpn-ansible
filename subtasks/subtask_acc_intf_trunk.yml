@@ -13,13 +13,22 @@
       - name: Assign VLANs from host_vars/inc_vars/<hostname>.yml
         when: playbook_mode == 'inc'
         block:
-          - name: Load variables from host_vars/inc_vars/<hostname>.yml
+        - name: Load variables from access interface input file if present
+          block:
+          - name: Check whether host_vars/inc_vars/{{ inventory_hostname }}.yml" is present
+            local_action: stat path="{{ input_vars_path }}host_vars/inc_vars/{{ inventory_hostname }}.yml"
+            register: file_state
+            become: no 
+            
+          - name: Load variables from host_vars/inc_vars/{{ inventory_hostname }}.yml if present
             include_vars:
-              file: host_vars/inc_vars/{{ inventory_hostname }}.yml
+              file: "{{ input_vars_path }}host_vars/inc_vars/{{ inventory_hostname }}.yml"
               name: inc_vars_data
+            when: file_state.stat.exists
 
           - set_fact: 
               vlan_id_common: "{{ inc_vars_data['access_inft_cli'] }}"
+            when: file_state.stat.exists
 
       - name: Assign VLANs from group_vars/overlay_db.yml
         when: playbook_mode == 'add'
@@ -32,6 +41,7 @@
               vlan_id_common: "{{ vlan_id_all }}"
 
   - name: Loop through interfaces
+    when: vlan_id_common is defined 
     include_tasks: "{{ execute_task }}"
     loop: "{{ get_Leaf_vars['access_interfaces']['trunks'] }}"
     loop_control:

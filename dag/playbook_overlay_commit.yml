@@ -5,10 +5,37 @@
   gather_facts: no
   vars:
     save_configuration: false
-  vars_files:
-    - "group_vars/overlay_db.yml"
-  tasks:  
-  
+
+  tasks:
+
+          # Set db file path and load overlay_db
+          - name: Load and process overlay input file
+            run_once: true
+            block:
+            - name: set overlay db input file path if not already set
+              when: input_vars_path is not defined
+              set_fact: 
+                input_vars_path: "./"
+
+            - name: Load vars from overlay input file
+              include_vars: 
+                file: "{{ input_vars_path }}group_vars/overlay_db.yml"
+
+            - name: Check for IPv6 config under VRFs
+              set_fact: 
+                ipv6_unicast: 'enable'
+              when: '"ipv6" in item.value.afs and ipv6_unicast is not defined'
+              with_dict: "{{ vrfs }}"
+
+          - name: Load vars from node_vars/<host>.yml input file
+            include_vars: 
+              file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
+
+          - name: Enabling IPv6 Unicast routing
+            when: ipv6_unicast is defined and ipv6_unicast == 'enable'
+            cisco.ios.ios_config:
+              lines: ipv6 unicast-routing
+
           - name: Configure vrf definition
             when: inventory_hostname in groups['leaf']
             cli_config:

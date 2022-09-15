@@ -1,0 +1,5 @@
+ansible_connection: ansible.netcommon.network_cli
+ansible_network_os: cisco.ios.ios
+ansible_python_interpreter: "python"
+ansible_user: cisco
+ansible_ssh_pass: cisco123

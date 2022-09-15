@@ -1,0 +1,56 @@
+---
+
+- name: Write l2vni delete info to files in host_vars/delete_vars folder
+  import_playbook: playbook_overlay_delete_generate.yml
+
+- name: Automated VXLAN deployment with BGP EVPN L2 underlay w/ Spine
+  hosts: leaf
+  gather_facts: no
+  vars: 
+    update_acc_intf: false
+    block_dict:
+      '../templates/nve_create.j2': 'nve block'
+      '../templates/vlan_create.j2': 'vlan block' 
+      '../templates/l2vpn_evpn_evi_create.j2': 'l2vpn evpn evi block'
+
+  tasks:
+
+          - name: Load variables from group_vars/delete_vars.yml file
+            run_once: true
+            include_vars: group_vars/delete_vars.yml
+
+          - name: Get "update_access" value if present in group_vars/delete_vars.yml
+            run_once: true
+            when: update_access is defined
+            set_fact:
+              update_acc_intf: "{{ update_access }}"
+
+          - name: Check whether host_vars/delete_vars/<hostname>.yml is present
+            local_action: stat path=./host_vars/delete_vars/{{ inventory_hostname }}.yml
+            register: file_state
+            become: no 
+
+          - name: Executing tasks if host_vars/delete_vars/<hostname>.yml is present
+            when: file_state.stat.exists
+            block:
+            - name: Load variables from files under host_vars/delete_vars folder
+              include_vars: host_vars/delete_vars/{{inventory_hostname}}.yml
+
+            - name: Applying configurations
+              cli_config:
+                config: "{{ lookup('template', item.key) }}"
+                diff_match: none
+              register: result
+              with_dict: "{{ block_dict }}"
+               
+            - name: Applying configurations on access interfaces
+              when: update_acc_intf == true
+              cli_config:
+                config: "{{ lookup('template', '../templates/access_interfaces.j2' ) }}"
+                diff_match: none
+              register: result
+
+            - name: Pause for 30 seconds for convergence  
+              wait_for:
+                delay: 30
+                timeout: 0

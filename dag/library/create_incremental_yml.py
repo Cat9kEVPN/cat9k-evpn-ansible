@@ -25,7 +25,13 @@ def compare(userinput:dict,parsed_output:dict,parsed_sec_output:dict ,access_inp
 
     for dag in userinput['dag'] :
         try :
-          if dag in tocompare['vrfs'].keys() and "vrf" not in parsed_output :
+          if dag == "all" :
+              for vrf in tocompare['vrfs'].keys() :
+                  if "vrf" not in parsed_output :
+                      mul_list_dict['vrf'].append(vrf)
+                  elif vrf not in parsed_output['vrf'].keys() :
+                      mul_list_dict['vrf'].append(vrf)
+          elif dag in tocompare['vrfs'].keys() and "vrf" not in parsed_output :
             mul_list_dict['vrf'].append(dag)
           elif dag in tocompare['vrfs'].keys() :
             mul_list_dict['vrf'].append(dag)
@@ -52,9 +58,10 @@ def compare(userinput:dict,parsed_output:dict,parsed_sec_output:dict ,access_inp
       if tocompare['svis'][svi]['svi_type'] == "access" and tocompare['svis'][svi]['vrf'] in mul_list_dict['vrf'] :
         mul_list_dict['tocompare_vlan'].append(int(svi))
     for intf in access_input['access_interfaces']['trunks']:
-      if 'switchport_trunk_vlans' in parsed_sec_output['interfaces'][intf].keys() :
-        if parsed_sec_output['interfaces'][intf]['switchport_trunk_vlans'] != "none" :
-          mul_list_dict['sec_output_vlan'].append(parsed_sec_output['interfaces'][intf]['switchport_trunk_vlans']) 
+      if type(intf) != dict :
+        if 'switchport_trunk_vlans' in parsed_sec_output['interfaces'][intf].keys() :
+          if parsed_sec_output['interfaces'][intf]['switchport_trunk_vlans'] != "none" :
+            mul_list_dict['sec_output_vlan'].append(parsed_sec_output['interfaces'][intf]['switchport_trunk_vlans']) 
           
     if mul_list_dict['sec_output_vlan'] :
       for trunk_vlan in mul_list_dict['sec_output_vlan'] :

@@ -1,0 +1,20 @@
+---
+
+- name: Initialising variable for nodes
+  hosts: all
+  gather_facts: no
+  tasks:    
+          - set_fact:
+              trm_inc: true
+            run_once: true
+
+- name: Initialising variable for localhost
+  hosts: localhost
+  gather_facts: no
+  run_once: true
+  tasks:    
+          - set_fact:
+              trm_inc: true
+
+- name: Import tasks from playbook_trm_overlay_commit.yml
+  import_playbook: playbook_trm_overlay_commit.yml

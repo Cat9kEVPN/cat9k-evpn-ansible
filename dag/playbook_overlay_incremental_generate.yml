@@ -37,7 +37,7 @@
           - name: Collect vars from hostvars leafs
             run_once: true
             include_vars:
-              file: host_vars/{{ inventory_hostname }}.yml
+              file: host_vars/node_vars/{{ inventory_hostname }}.yml
               name: hostvars_leaf_data
 
           - name: Collect "show run nve"

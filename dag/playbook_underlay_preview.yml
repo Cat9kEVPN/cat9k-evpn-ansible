@@ -15,6 +15,19 @@
 
   tasks:
 
+          # Set db file path and load underlay vars
+          - name: Load and process underlay input file
+            run_once: true
+            block:
+            - name: set underlay vars input file path if not already set
+              when: input_vars_path is not defined
+              set_fact: 
+                input_vars_path: "./"
+
+          - name: Load vars from node_vars/<host>.yml input file
+            include_vars: 
+              file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
+
           - name: Read template files
             set_fact:
               underlay_block: "{{ underlay_block }} ! {{ underlay_dict[item.key] }} {{ lookup('template', item.key ) }}"
@@ -27,7 +40,7 @@
 
           - name: Render template files output
             set_fact:
-              rendered: "{{ underlay_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n! ') }}"
+              rendered: "{{ underlay_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n\n! ') }}"
 
           - name: Copy configurations to the respective file ( <hostname>-underlay.txt ) under 'preview_files' folder
             copy:

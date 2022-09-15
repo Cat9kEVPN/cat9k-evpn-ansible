@@ -1,0 +1,73 @@
+#l3vni overlay_db.yml
+l2vpn_global:
+  router_id: 'Loopback1'
+
+vrfs:
+  green:
+    ipv6_unicast: 'enable'
+    rd: '1:1'
+    afs:
+      ipv4:
+        rt_import: 
+          - '1:1'
+          - '1:1 stitching'
+        rt_export: 
+          - '1:1'
+          - '1:1 stitching'
+
+      ipv6:
+        rt_import:
+          - '1:1'
+          - '1:1 stitching'
+        rt_export:
+          - '1:1'
+          - '1:1 stitching'
+
+  blue:
+    rd: '2:2'
+    afs:
+      ipv4:
+        rt_import: 
+          - '2:2'
+          - '2:2 stitching'
+        rt_export: 
+          - '2:2'
+          - '2:2 stitching'
+      ipv6:
+        rt_import: 
+          - '2:2'
+          - '2:2 stitching'
+        rt_export: 
+          - '2:2'
+          
+vlans:
+ 
+ 901:
+  vlan_type: 'core'
+  description: 'Core_VLAN_VRF_green'
+  vni: '50901'
+  vrf: 'green'
+ 
+ 902:
+  vlan_type: 'core'
+  description: 'Core_VLAN_VRF_blue'
+  vni: '50902'
+  vrf: 'blue'
+
+svis:
+
+ 901:
+  svi_type: 'core'
+  vrf: 'green'
+  src_intf: 'Loopback1'
+  ipv6_enable: 'yes'
+
+ 902:
+  svi_type: 'core'
+  vrf: 'blue'
+  src_intf: 'Loopback1'
+  ipv6_enable: 'yes'
+
+nve_interfaces:
+  1:
+    source_interface: 'Loopback1'

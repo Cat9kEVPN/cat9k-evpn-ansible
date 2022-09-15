@@ -31,6 +31,13 @@ WORK in progress. Content could be changed!
    input_l2vni
    playbooks_l2vni
 
+.. toctree::
+   :maxdepth: 3
+   :caption: L3 Overlay (L3VNI)
+
+   input_l3vni
+   playbooks_l3vni
+
 .. Indices and tables
 .. ==================
 

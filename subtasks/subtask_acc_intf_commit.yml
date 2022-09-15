@@ -1,3 +1,4 @@
+
   - name: Set inteface detail
     when: " intf_item | type_debug != 'dict' "
     set_fact:
@@ -34,3 +35,9 @@
         access:
           vlan: "{{ vlan_id }}"
       state: merged
+
+  - name: Apply no shutdown on interfaces
+    cisco.ios.ios_config:
+      lines:
+      - no shutdown
+      parents: interface {{ intf_name }}

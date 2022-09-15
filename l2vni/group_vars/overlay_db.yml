@@ -1,0 +1,46 @@
+l2vpn_global:
+  replication_type: 'static'
+  router_id: 'Loopback1'
+  
+vlans:
+ 101:
+  vlan_type: 'access'
+  description: 'Access_VLAN_101'
+  vni: '10101'
+  evi: '101'
+  type: 'vlan-based'
+  encapsulation: 'vxlan'
+  replication_type: 'static'
+  replication_mcast: '225.0.0.101'
+ 
+ 102:
+  vlan_type: 'access'
+  description: 'Access_VLAN_102'
+  vni: '10102'
+  evi: '102'
+  type: 'vlan-based'
+  encapsulation: 'vxlan'
+  replication_type: 'ingress'
+ 
+ 103:
+  vlan_type: 'access'
+  description: 'Access_VLAN_103'
+  vni: '10103'
+  evi: '103'
+  type: 'vlan-based'
+  encapsulation: 'vxlan'
+  replication_type: 'static'
+  replication_mcast: '225.0.0.101'
+ 
+ 104:
+  vlan_type: 'access'
+  description: 'Access_VLAN_104'
+  vni: '10104'
+  evi: '104'
+  type: 'vlan-based'
+  encapsulation: 'vxlan'
+  replication_type: 'ingress'
+
+nve_interfaces:
+  1:
+    source_interface: 'Loopback1'

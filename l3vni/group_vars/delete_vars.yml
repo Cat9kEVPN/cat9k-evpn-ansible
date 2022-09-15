@@ -1,0 +1,26 @@
+# This is the input file for playbook_overlay_delete_preview.yml and playbook_overlay_delete_commit.yml
+#
+# List the VRFs to be deleted under 'l3vni' keyword
+# ______________________________________________
+# __________ EXAMPLE SCENARIOS _________________
+# ______________________________________________
+#
+# Example 1: Deletes blue and green VRFs 
+# 
+#   l3vni:
+#      - blue             <--------- deletes blue and green VRFs
+#      - green
+#
+#
+# Example 2: Deletes all the VRFs
+#
+#   l3vni:
+#      - all               <--------- deletes all the VRFs
+#
+# ______________________________________________
+# ______________________________________________
+# ______________________________________________
+
+
+ l3vni:
+    - all

@@ -1,0 +1,62 @@
+---
+
+- name: Automated VXLAN deployment with BGP EVPN L2 underlay w/ Spine
+  hosts: all
+  gather_facts: no
+  connection: network_cli
+  tasks:  
+          # Set db file path and load underlay vars
+          - name: Load and process underlay input file
+            run_once: true
+            block:
+            - name: set underlay vars input file path if not already set
+              when: input_vars_path is not defined
+              set_fact: 
+                input_vars_path: "./"
+
+          - name: Load vars from node_vars/<host>.yml input file
+            include_vars: 
+              file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
+              
+          - name: Configuring hostnames
+            cli_config:
+              config: "{{ lookup('template', '../templates/hostname.j2') }}"
+              diff_match: none 
+            register: result
+
+          - name: Enabling Unicast/Multicast routing
+            cli_config:
+              config: "{{ lookup('template', '../templates/global_routing.j2') }}"
+              diff_match: none 
+            register: result
+          
+          - name: Configuring ip addresses
+            cli_config:
+              config: "{{ lookup('template', '../templates/underlay_interfaces.j2') }}"
+              diff_match: none 
+            register: result
+
+          - name: Configuring OSPF
+            cli_config:
+              config: "{{ lookup('template', '../templates/ospf_interfaces.j2') }}"
+              diff_match: none 
+            register: result
+
+          - name: Configuring PIM on interfaces
+            cli_config:
+              config: "{{ lookup('template', '../templates/pim_interfaces.j2') }}"
+              diff_match: none 
+            register: result
+
+          - name: Configuring RP
+            cli_config:
+              config: "{{ lookup('template', '../templates/pim_rp.j2') }}"
+              diff_match: none 
+            register: result
+          
+          - name: Configuring MSDP peering
+            when: inventory_hostname in groups['spine']
+            cli_config:
+              config: "{{ lookup('template', '../templates/msdp_peering.j2') }}"
+              diff_match: none 
+            register: result

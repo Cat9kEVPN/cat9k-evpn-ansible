@@ -7,6 +7,7 @@ Default OSPF network type in underlay is P2P for speeding up the convergence tim
 
 {# configure ospf under interface and set ospf interface P2P if not loopback #}
 {% for interface in interfaces%}
+    !
     interface  {{ interface }}
     {% if interfaces[interface].loopback == 'no'%}
         ip ospf network point-to-point
@@ -15,5 +16,6 @@ Default OSPF network type in underlay is P2P for speeding up the convergence tim
 {% endfor %}
 
 {# configure ospf process and ospf router-id #}
+!
 router ospf 1
     router-id {{ ospf.router_id }}

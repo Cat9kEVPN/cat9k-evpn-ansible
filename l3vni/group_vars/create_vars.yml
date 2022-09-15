@@ -1,0 +1,27 @@
+# This is the input file for playbook_overlay_incremental_preview.yml and playbook_overlay_incremental_commit.yml
+#
+# If there are multiple VRFs in the overlay_db.yml and if you want to provision only selective VRFs or all of VRFs,then declare the respective VRFs under L3VNI as shown below 
+#
+# List the VRFs to be added under 'l3vni' keyword
+#
+#
+# ______________________________________________
+# __________ EXAMPLE SCENARIOS _________________
+# ______________________________________________
+#
+# Example-1: Adds blue and green vrf's under DAG 
+# 
+#   l3vni:
+#      - blue             <--------- adds blue and green vrf's
+#      - green
+#
+# Example-2: Adds all the vrf's which are not provisioned in the device 
+# 
+#   l3vni:
+#      - all              <--------- adds all vrf's which are not provisioned in the device
+# ______________________________________________
+# ______________________________________________
+# ______________________________________________
+
+l3vni:
+   - all

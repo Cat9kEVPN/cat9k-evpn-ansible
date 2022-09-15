@@ -1,0 +1,25 @@
+{#
+This module configures TRM RP loopback interfaces
+#}
+
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+
+{% for intf in lpbk_to_be_configd %}
+    !
+    interface  {{ intf }}
+        description RP loopback for VRF {{ rp_intf[intf].vrf }}
+    
+        vrf forwarding {{ rp_intf[intf].vrf }}
+
+    {% if rp_intf[intf].ipv4 is defined %}
+        ip address {{ rp_intf[intf].ipv4 }}
+    {% endif %}
+
+        ip pim sparse-mode
+    
+    {% if rp_intf[intf].ipv6 is defined %}
+        ipv6 address {{ rp_intf[intf].ipv6 }}
+        ipv6 enable
+    {% endif %}
+
+{% endfor %}

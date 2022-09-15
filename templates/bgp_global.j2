@@ -5,6 +5,7 @@ This module is configuring global BGP process and neighbor parameters
 #jinja2: lstrip_blocks: "True", trim_blocks: "True"
 
 {# initial BGP process configuration #}
+!
 router bgp {{ bgp.as_number }}
 
     {# default bgp parameters configuration #}

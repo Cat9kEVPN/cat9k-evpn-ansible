@@ -4,27 +4,38 @@ This module is configuring MVPN AF for IPv4 and activates neighbors under AF
 
 #jinja2: lstrip_blocks: "True", trim_blocks: "True"
 
-{% set action = trm_action | default ('add') %}
-{% if action == 'delete' %}
-        {% set prefix = 'no' %}
-{% elif action == 'add' %}
-        {% set prefix = '' %}
+{% set action = action | default ('add') %}
+{% if action == 'add' %}
+    {% set prefix = '' %}
 {% endif %}
 
 {# Entering bgp process configuration #}
+
+!
 router bgp {{ bgp.as_number }}
-    {% for mvpn in bgp.mvpn %}
+
+{% if action == 'delete' %}
+    {% if delete_ipv4_mvpn == true %}
+        !
+        no address-family ipv4 mvpn
+    {% endif %}
+    {% if delete_ipv6_mvpn == true %}
+        !
+        no address-family ipv6 mvpn
+    {% endif %}
+
+{% else %}
+    {% for mvpn in mvpns %}
+        !
         address-family {{ mvpn }} mvpn
-        {% for neighbor in bgp.mvpn[mvpn].neighbors %}
-            {% if bgp.mvpn[mvpn].neighbors[neighbor].mvpn_peer_enable == 'yes'%}
-                {{ prefix }} neighbor {{neighbor }} activate
-                {# configuration of RR-client if needed #}
-                {% if bgp.mvpn[mvpn].neighbors[neighbor].rrc is defined and bgp.mvpn[mvpn].neighbors[neighbor].rrc == 'yes' %}
-                    {{ prefix }} neighbor {{ neighbor }} inherit peer-policy SPINE-EVPN-PEER-POLICY
-                {% else %}
-                    {{ prefix }} neighbor {{ neighbor }} inherit peer-policy LEAF-EVPN-PEER-POLICY
-                {% endif %}
+        {% for neighbor in bgp[mvpn+'_mvpn_neighbors'] %}
+            {{ prefix }} neighbor {{neighbor }} activate
+            {# configuration of RR-client if needed #}
+            {% if bgp.rrc is defined and bgp.rrc == 'true' %}
+                {{ prefix }} neighbor {{ neighbor }} inherit peer-policy SPINE-EVPN-PEER-POLICY
+            {% else %}
+                {{ prefix }} neighbor {{ neighbor }} inherit peer-policy LEAF-EVPN-PEER-POLICY
             {% endif %}
         {% endfor %}
     {% endfor %}
-
+{% endif %}

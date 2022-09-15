@@ -16,69 +16,72 @@ Immutable paramiters:
 
 #jinja2: lstrip_blocks: "True", trim_blocks: "True"
 {% if vlans is defined %}
+
     {% for vlan in vlans %}
-  {% if ( (vlan_cli is defined and vlan in vlan_cli) or (vlan_cli is not defined) ) %}
-   {% if vlans[vlan].vlan_type == 'access' %}
-    {# Checking an action for evi#}
-    {% set action = vlans[vlan].action | default ('add') %}
-    {% if action == 'delete' %}
-     no l2vpn evpn instance {{ vlan }}
-    {% elif action == 'add' %}
-     l2vpn evpn instance {{ vlan }} {{ vlans[vlan].type }}
-     encapsulation {{ vlans[vlan].encapsulation }}
+        {% if ( (vlan_cli is defined and vlan in vlan_cli) or (vlan_cli is not defined) ) %}
+            {% if vlans[vlan].vlan_type == 'access' %}
+                {# Checking an action for evi#}
+                {% set action = vlans[vlan].action | default ('add') %}
+                {% if action == 'delete' %}
+                    !
+                    no l2vpn evpn instance {{ vlan }}
+                {% elif action == 'add' %}
+                    !
+                    l2vpn evpn instance {{ vlan }} {{ vlans[vlan].type }}
+                    encapsulation {{ vlans[vlan].encapsulation }}
+                    
+                    {# Checking an action for replication type #}
+                    {% if vlans[vlan].replication_type is defined %}
+                        {% set action = vlans[vlan].replication_type.action | default ('add') %}
+                        {% if action == 'delete' %}
+                            no replication-type {{ vlans[vlan].replication_type }}
+                        {% elif action == 'add' %}
+                            replication-type {{ vlans[vlan].replication_type }}
+                        {% endif %}
+                    {% endif %}
 
-     {# Checking an action for replication type #}
-     {% if vlans[vlan].replication_type is defined %}
-      {% set action = vlans[vlan].replication_type.action | default ('add') %}
-      {% if action == 'delete' %}
-       no replication-type {{ vlans[vlan].replication_type }}
-      {% elif action == 'add' %}
-       replication-type {{ vlans[vlan].replication_type }}
-      {% endif %}
-     {% endif %}
+                    {# Default-gateway advertisement definition check #}
+                    {% if vlans[vlan].default_gateway is defined %}
+                        {# Check an action for default-gateway advertisement. Should be enable/disable #}
+                        {% set action = vlans[vlan].default_gateway %}
+                        default-gateway advertise {{action}}
+                    {% endif %}
 
-     {# Default-gateway advertisement definition check #}
-     {% if vlans[vlan].default_gateway is defined %}
-      {# Check an action for default-gateway advertisement. Should be enable/disable #}
-      {% set action = vlans[vlan].default_gateway %}
-      default-gateway advertise {{action}}
-     {% endif %}
+                    {# auto-route-target enable/disable. Should be enable/disable#}
+                    {% if vlans[vlan].auto_route_target is defined %}
+                        {% if vlans[vlan].auto_route_target == 'enable' %}
+                            auto-route-target
+                        {% elif vlans[vlan].auto_route_target == 'disable' %}
+                            no auto-route-target
+                        {% endif %}
+                    {% endif %}
 
-     {# auto-route-target enable/disable. Should be enable/disable#}
-     {% if vlans[vlan].auto_route_target is defined %}
-      {% if vlans[vlan].auto_route_target == 'enable' %}
-       auto-route-target
-      {% elif vlans[vlan].auto_route_target == 'disable' %}
-       no auto-route-target
-      {% endif %}
-     {% endif %}
+                    {# RT import/export for EVI section #}
+                    {# RT import section #}
+                    {% if vlans[vlan].rt_import is defined %}
+                        {% for rti in vlans[vlan].rt_import.rts %}
+                            {% set action = vlans[vlan].rt_import.action | default ('add') %}
+                            {% if action == 'delete' %}
+                                no route-target import {{ rti }}
+                            {% elif action == 'add' %}
+                                route-target import {{ rti }}
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
 
-     {# RT import/export for EVI section #}
-     {# RT import section #}
-     {% if vlans[vlan].rt_import is defined %}
-      {% for rti in vlans[vlan].rt_import.rts %}
-       {% set action = vlans[vlan].rt_import.action | default ('add') %}
-       {% if action == 'delete' %}
-         no route-target import {{ rti }}
-       {% elif action == 'add' %}
-         route-target import {{ rti }}
-       {% endif %}
-      {% endfor %}
-     {% endif %}
-     {# RT export section #}
-     {% if vlans[vlan].rt_export is defined %}
-      {% for rte in vlans[vlan].rt_export.rts %}
-       {% set action = vlans[vlan].rt_export.action | default ('add') %}
-       {% if action == 'delete' %}
-         no route-target export {{ rte }}
-       {% elif action == 'add' %}
-         route-target export {{ rte }}
-       {% endif %}
-      {% endfor %}
-     {% endif %}
-
-    {% endif %}
-   {% endif %}
+                    {# RT export section #}
+                    {% if vlans[vlan].rt_export is defined %}
+                        {% for rte in vlans[vlan].rt_export.rts %}
+                            {% set action = vlans[vlan].rt_export.action | default ('add') %}
+                            {% if action == 'delete' %}
+                                no route-target export {{ rte }}
+                            {% elif action == 'add' %}
+                                route-target export {{ rte }}
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                {% endif %}
+            {% endif %}
         {% endif %}
     {% endfor %}
 {% endif %}

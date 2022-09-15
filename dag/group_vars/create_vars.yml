@@ -9,16 +9,20 @@
 # __________ EXAMPLE SCENARIOS _________________
 # ______________________________________________
 #
-# Example: Adds blue and green DAGs 
+# Example: Adds blue and green vrf's under DAGs 
 # 
 #   dag:
 #      - blue             <--------- adds blue and green DAGs
 #      - green
 #
+# Example: Adds all the vrf's under DAGs which are not provisioned 
+# 
+#   dag:
+#      - all             <--------- adds all the vrf's under DAGs which are not provisioned 
 # ______________________________________________
 # ______________________________________________
 # ______________________________________________
 
 dag:
-   - blue
+   - all
 

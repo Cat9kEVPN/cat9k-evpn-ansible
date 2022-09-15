@@ -7,7 +7,8 @@ This module configures pim under interfaces in underlay
 {% for interface in interfaces %}
     {% set pim_enable = interfaces[interface].pim_enable | default ('no')%}
     {% if pim_enable == 'yes' %}
+        !
         interface  {{ interface }}
-        ip pim sparse-mode
+            ip pim sparse-mode
     {% endif %}
 {% endfor %}

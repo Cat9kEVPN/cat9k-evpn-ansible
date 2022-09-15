@@ -1,0 +1,36 @@
+---
+- name: Write l3vni ipv6 incremental info to files in host_vars/ipv6_inc_vars folder 
+  import_playbook: playbook_overlay_incremental_ipv6_generate.yml
+
+- name: Automated VXLAN deployment with BGP EVPN L3 underlay w/ Spine
+  hosts: leaf
+  gather_facts: no
+#  vars_files:
+#    - "group_vars/overlay_db.yml"
+  vars:
+    svi_ipv6_dict:
+      '../templates/ipv6_incremental.j2': 'svi ipv6 block'
+  tasks:
+          - name: Check whether host_vars/ipv6_inc_vars/{{ inventory_hostname }}.yml is present
+            local_action: stat path=./host_vars/ipv6_inc_vars/{{ inventory_hostname }}.yml
+            register: file_state
+            become: no 
+
+          - name: Executing tasks if host_vars/ipv6_inc_vars/{{ inventory_hostname }}.yml is present
+            when: file_state.stat.exists and inventory_hostname in groups['leaf']
+            block:
+            - name: Load variables from files under host_vars/ipv6_inc_vars folder
+              include_vars: host_vars/ipv6_inc_vars/{{ inventory_hostname }}.yml
+          
+          - name: SVI configuration
+            when: inventory_hostname in groups['leaf']
+            cli_config:
+              config: " {{ lookup('template', item.key) }} "
+              diff_match: none 
+            register: result
+            with_dict: "{{ svi_ipv6_dict }}"
+            
+          - name: Pause for 20 seconds for convergence  
+            wait_for:
+              delay: 20
+              timeout: 0

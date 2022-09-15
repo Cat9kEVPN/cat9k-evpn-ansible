@@ -52,6 +52,10 @@
     set_fact:
       intf_conf_unit: "{{ intf_conf_unit | regex_replace('trunk allowed vlan', 'trunk allowed vlan add') }}"
 
+  - name: Rendering output - no shutdown
+    set_fact:
+      intf_conf_unit: "{{ [ '!'] + intf_conf_unit.rendered + [ '!\ninterface ' +intf_name + '\nno shutdown'] }}"
+
   - name: Appending output
     set_fact:
-      intf_conf: "{{ intf_conf_unit.rendered + intf_conf }}"
+      intf_conf: "{{ intf_conf_unit + intf_conf }}"
