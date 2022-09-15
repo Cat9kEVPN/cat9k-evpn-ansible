@@ -197,7 +197,7 @@ Run the overlay provisioning playbook. It is possible to see in terminal logs al
 ansible-playbook -i inventory.yml playbook_overlay_commit.yml
 ```
 
-Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/playbooks_dag.html#overlay-provisioning)
+Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/playbooks_l2vni.html#overlay-provisioning)
 
 ## Step 3 ##
 
@@ -226,7 +226,7 @@ Run the access interfaces preview playbook. This playbook generates the configur
 ansible-playbook -i inventory.yml playbook_access_add_preview.yml
 ```
 
-The files ``<hostname>-add-intf.txt`` could be found in the directory ``cat9k-evpn-ansible/dag/preview_files``
+The files ``<hostname>-add-intf.txt`` could be found in the directory ``cat9k-evpn-ansible/l2vni/preview_files``
 
 ```
 #cat preview_files/Leaf-01-add-intf.txt
@@ -248,7 +248,7 @@ Run the Access Interfaces provisioning playbook. It is possible to see in termin
 ansible-playbook -i inventory.yml playbook_access_add_commit.yml
 ```
 
-Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/playbooks_dag.html#access-interfaces-provisioning)
+Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/playbooks_l2vni.html#access-interfaces-provisioning)
 
 # Playbook usage #
 
@@ -361,4 +361,4 @@ inputs from ``playbook_overlay_delete_preview.yml``
 
 # Documentation #
 
-Detailed documentation could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html)
+Detailed documentation could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_l2vni.html)
