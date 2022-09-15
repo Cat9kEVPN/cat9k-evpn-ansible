@@ -15,7 +15,7 @@ Project has a modular structure which gives an ability to introduce new features
   * [L2VNI documentation](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_l2vni.html)
   
 * L3 Overlay (L3VNI)
-  * [L3VNI github](https://github.com/Cat9kEVPN/cat9k-evpn-ansible/tree/main/dag)
+  * [L3VNI github](https://github.com/Cat9kEVPN/cat9k-evpn-ansible/tree/main/l3vni)
   * [L3VNI documentation](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_l3vni.html) 
 
 # General description #
