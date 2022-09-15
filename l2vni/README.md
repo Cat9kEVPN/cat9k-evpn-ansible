@@ -10,7 +10,7 @@ Below you can find a topology which is used in the automation scenario
 
 # Quick start #
 
-For the quick start with DAG provisioning next steps have to be executed:
+For the quick start with L2VNI provisioning next steps have to be executed:
  
 ## Step 1 ## 
 
@@ -89,7 +89,7 @@ Run the underlay preview playbook. This playbook generates the configuration for
 ```
 ansible-playbook -i inventory.yml playbook_underlay_preview.yml
 ```
-The files ``<hostname>-underlay.txt`` could be found in the directory ``cat9k-evpn-ansible/dag/preview_files``
+The files ``<hostname>-underlay.txt`` could be found in the directory ``cat9k-evpn-ansible/l2vni/preview_files``
 
 ```
 #cat preview_files/Leaf-01-underlay.txt
@@ -164,7 +164,7 @@ Run the overlay preview playbook. This playbook generates the configuration for 
 ansible-playbook -i inventory.yml playbook_overlay_preview.yml
 ```
 
-The files ``<hostname>-overlay.txt`` could be found in the directory ``cat9k-evpn-ansible/dag/preview_files``
+The files ``<hostname>-overlay.txt`` could be found in the directory ``cat9k-evpn-ansible/l2vni/preview_files``
 
 ```
 #cat preview_files/Leaf-01-overlay.txt 
