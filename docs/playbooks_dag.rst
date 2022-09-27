@@ -1300,6 +1300,299 @@ This playbook is used for provisioning remote devices.
 
     ansible-playbook -i inventory.yml playbook_access_incremental_commit.yml
 
+TRM provisioning
+================
+
+Playbooks described in this section are used for provisioning access interfaces.
+
+Detailed description for the configuration file you can find `here <https://cat9k-evpn-ansible.readthedocs.io/>`_
+
+For provisioning TRM next playbooks could be used:
+
+* playbook_trm_overlay_preview.yml
+
+* playbook_trm_overlay_commit.yml
+
+* playbook_trm_overlay_incremental_preview.yml
+
+* playbook_trm_overlay_incremental_commit.yml
+
+* playbook_trm_overlay_delete_preview.yml
+
+* playbook_trm_overlay_delete_commit.yml
+
+playbook_trm_overlay_preview.yml
+--------------------------------
+
+This playbook is generating the TRM related config based on config file ``group_vars/trm_overlay_db.yml``.
+
+.. warning::
+
+    No config will be pushed to the remote devices!
+
+.. code-block:: yml
+
+  vrfs:
+    blue:                                                 
+      register_source: loopback1 
+
+      fabric_anycast_rp:                                  
+        rp_loopback: Loopback256                          
+        ipv4_rp_address: '10.2.255.255'                   
+  
+      afs:
+        ipv4:
+          default_mdt_group: '239.1.1.1' 
+
+Let's execute the playbook.
+
+.. code-block::
+    
+    ansible-playbook -i inventory.yml playbook_trm_overlay_preview.yml
+
+Outputs will be written to files ``preview_files/<hostname>-trm.txt``.
+
+.. code-block::
+
+    ! RP loopback block 
+    !
+    interface Loopback256
+    description RP loopback for VRF blue
+    vrf forwarding blue
+    ip address 10.2.255.255 255.255.255.255
+    ip pim sparse-mode
+
+
+    ! vrf block     
+    !
+    vrf definition blue
+    !
+    address-family ipv4
+    mdt auto-discovery vxlan
+    mdt default vxlan 239.1.1.1    
+    mdt overlay use-bgp spt-only
+    !
+    ip multicast-routing vrf blue
+    ip pim vrf blue register-source loopback1
+    ip pim vrf blue rp-address 10.2.255.255
+  <...snip...>
+
+playbook_trm_overlay_commit.yml
+--------------------------------
+
+This playbook pushes TRM related config based on config file ``group_vars/trm_overlay_db.yml`` to the real decices in the network.
+
+.. code-block::
+    
+    ansible-playbook -i inventory.yml playbook_trm_overlay_commit.yml
+
+playbook_trm_overlay_incremental_preview.yml
+--------------------------------------------
+
+After initial configuration (aka Day0) some incremental changes are need after some time.
+
+For avoiding full reprovisioning of the network incremental update could be used.
+
+This playbook generates list of commands that will be pushed to the remote devices without provisioning.
+
+.. warning::
+
+    No config will be pushed to the remote devices!
+
+For example it is needed to enable TRM for VRF :green:`green` additionaly to VRF :blue:`blue`.
+
+Next config is added to the file ``group_vars/trm_overlay_db.yml``:
+
+.. code-block:: yml
+
+  vrfs:
+    blue:
+
+  <...snip...>
+  
+    green:
+      register_source: Loopback2
+
+      fabric_anycast_rp:
+        rp_loopback: Loopback257
+        ipv4_rp_address: '10.1.255.255'
+
+      afs:
+        ipv4:
+          default_mdt_group: '239.2.2.2'
+
+After adding necessary configuration to the file ``group_vars/trm_overlay_db.yml``, it is needed to edit ``group_vars/trm_create_vars.yml``.
+
+In this file we define for which VRF TRM has to be configured. In our case it is VRF :green:`green`
+
+.. code-block::
+
+  dag:
+    - green  
+
+Let's execute the playbook.
+
+.. code-block::
+
+     ansible-playbook -i inventory.yml playbook_trm_overlay_incremental_preview.yml
+
+Output files could be found in ``preview_files/<hostname>-inc-intf.txt``
+
+.. code-block::
+
+  ! RP loopback block 
+  !
+  interface Loopback257
+  description RP loopback for VRF green
+  vrf forwarding green
+  ip address 10.1.255.255 255.255.255.255
+  ip pim sparse-mode
+
+
+  ! vrf block     
+  !
+  vrf definition green
+  !
+  address-family ipv4
+  mdt auto-discovery vxlan
+  mdt default vxlan 239.2.2.2    
+  mdt overlay use-bgp spt-only
+  !
+  ip multicast-routing vrf green
+  ip pim vrf green register-source Loopback2
+  ip pim vrf green rp-address 10.1.255.255
+
+
+  ! pim interface block 
+  !
+  interface Vlan101
+  ip pim sparse-mode
+  !
+  interface Vlan102
+  ip pim sparse-mode
+  !
+  interface Vlan901
+  ip pim sparse-mode
+  !
+  interface Loopback257
+  ip pim sparse-mode
+
+playbook_trm_overlay_incremental_commit.yml
+-------------------------------------------
+
+This playbook pushes incremental TRM related config based on config file to the real decices in the network.
+
+.. code-block::
+    
+    ansible-playbook -i inventory.yml playbook_trm_overlay_incremental_commit.yml
+
+playbook_trm_overlay_delete_preview.yml
+--------------------------------------------
+
+After initial configuration (aka Day0) some incremental changes are need after some time.
+
+For avoiding full reprovisioning of the network incremental update could be used.
+
+This playbook generates list of commands that will be pushed to the remote devices without provisioning.
+
+.. warning::
+
+    No config will be pushed to the remote devices!
+
+For example it is needed to disable TRM for VRF :green:`green`.
+
+For doing that we need to edit ``group_vars/trm_delete_vars.yml``.
+
+In this file we define for which VRF TRM has to be configured. In our case it is VRF :green:`green`
+
+.. code-block::
+
+  dag:
+    - green  
+
+There are two additional parameters in the file ``group_vars/trm_create_vars.yml``:
+
+* update_rp_loopbacks
+
+* update_bgp_mvpns
+
+By default, both parameters are set to ``TRUE``.
+
+If ``update_rp_loopback: true``, RP loopback will be also deleted via command:
+
+.. code-block::
+
+  no interface <RP-interface>
+
+If ``update_bgp_mvpns: true`` AND after deleting TRM configuration it will be no TRM enbabled VRFs, BGP MVPN AF config will be 
+
+removed:
+
+.. code-block::
+
+  <...snip...>
+
+  ! bgp neighbor mvpn af block 
+  !
+  router bgp 65001
+  !
+  no address-family ipv4 mvpn
+
+Let's execute the playbook.
+
+.. code-block::
+
+     ansible-playbook -i inventory.yml playbook_trm_overlay_incremental_preview.yml
+
+Output files could be found in ``preview_files/<hostname>-inc-intf.txt``
+
+.. code-block::
+
+  ! vrf block     
+  !
+  vrf definition green
+  !
+  address-family ipv4
+  no mdt auto-discovery vxlan
+  no mdt default vxlan 239.2.2.2    
+  no mdt overlay use-bgp spt-only
+  !
+  no ip multicast-routing vrf green
+  no ip pim vrf green register-source Loopback2
+  no ip pim vrf green rp-address 10.1.255.255
+
+
+  ! pim interface block 
+  !
+  interface Vlan101
+  no ip pim sparse-mode
+  !
+  interface Vlan102
+  no ip pim sparse-mode
+  !
+  interface Vlan901
+  no ip pim sparse-mode
+  !
+  interface Loopback257
+  no ip pim sparse-mode
+
+
+  ! RP loopback block 
+  !
+  no interface Loopback257
+
+
+playbook_trm_overlay_delete_commit.yml
+-------------------------------------------
+
+This playbook pushes delete TRM related config based on config file ``group_vars/trm_delete_vars.yml`` to the real decices 
+
+in the network.
+
+.. code-block::
+    
+    ansible-playbook -i inventory.yml playbook_trm_overlay_delete_commit.yml
+
 Special playbooks
 =================
 
