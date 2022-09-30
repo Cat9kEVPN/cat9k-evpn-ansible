@@ -590,8 +590,8 @@ Repective DAG's interface from the overlay_interface section of host_vars/<inven
 Since ``relay_src_intf`` key is explicitly mentioned in this case, Loopback1 is set as DHCP relay source interface for all :green:`green` SVIs and
 Loopback2 is set as DHCP relay source interface for all :blue:`blue` SVIs.
 
-TRM configuration
-=================
+trm_overlay_db.yml
+==================
 
 This section defines TRM configuration for the EVPN Fabric.
 
