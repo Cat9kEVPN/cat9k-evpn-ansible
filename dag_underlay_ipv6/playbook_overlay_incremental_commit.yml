@@ -1,0 +1,125 @@
+---
+- name: Write DAG incremental info to files in host_vars/inc_vars folder
+  import_playbook: playbook_overlay_incremental_generate.yml
+
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
+  hosts: all
+  gather_facts: no
+
+  vars_files:
+    - "group_vars/overlay_db.yml"
+
+  vars:
+    incremental_run: false
+    input_vars_path: "./"
+    
+    vrf_dict:
+      '../templates/vrf_definition.j2': 'vrf block'
+      '../templates/bgp_l2vpn_ipv46_per_vrf.j2': 'bgp l2vpn ipv46 per vrf block'
+    vlan_dict:
+      '../templates/vlan_create.j2': 'vlan block'
+      '../templates/l2vpn_evpn_evi_create.j2': 'l2vpn evpn evi create block'
+      '../templates/evi_vni_vlan_stiching.j2': 'evi vni vlan stiching block'
+      '../templates/nve_create.j2': 'nve create block'
+    svi_dict:
+      '../templates/svi_create.j2': 'svi create block'
+    overlay_intf_dict:
+      '../templates/overlay_interfaces.j2': 'overlay interfaces block'
+    l2vpn_evpn_global_dict:
+      '../templates/l2vpn_evpn_global.j2': 'l2vpn evpn global block'
+    common_dict:
+      '../templates/bgp_global.j2': 'bgp global block'
+      '../templates/bgp_l2vpn_evpn_af.j2': 'bgp l2vpn evpn af block'
+
+
+  tasks:
+
+          
+          
+          - name: Load vars from group_vars/underlay_config file
+            run_once: true
+            include_vars:
+              file: "group_vars/underlay_config.yml"
+          
+          - name: Load and process overlay incremental tasks
+            when: underlay_config_type != 'brown_field_dual_stack'
+            block:
+            - name: Load vars from node_vars/<host>.yml input file
+              include_vars: 
+                file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
+                
+            - name: Check whether host_vars/inc_vars/{{ inventory_hostname }}.yml is present
+              local_action: stat path=./host_vars/inc_vars/{{ inventory_hostname }}.yml
+              register: file_state
+              become: no 
+              
+            - name: Executing tasks if host_vars/inc_vars/{{ inventory_hostname }}.yml is present
+              when: file_state.stat.exists and inventory_hostname in groups['leaf']
+              block:
+              - name: Load variables from files under host_vars/inc_vars folder
+                include_vars: host_vars/inc_vars/{{ inventory_hostname }}.yml
+  
+            - name: Check if full execution is needed
+              set_fact: 
+                incremental_run: true
+              when: (vrf_cli is defined) or (vlan_cli is defined) or (svi_cli is defined) or (ovrl_intf_cli is defined)
+  
+            - name: VRF configuration
+              when: (inventory_hostname in groups['leaf']) and ((incremental_run == true and vrf_cli is defined))
+              cli_config:
+                config: " {{ lookup('template', item.key) }} "
+                diff_match: none 
+              register: result
+              with_dict: "{{ vrf_dict }}"
+              
+            - name: VLAN configuration
+              when: (inventory_hostname in groups['leaf']) and ((incremental_run == true and vlan_cli is defined)) 
+              cli_config:
+                config: " {{ lookup('template', item.key) }} "
+                diff_match: none 
+              register: result
+              with_dict: "{{ vlan_dict }}"
+  
+            - name: SVI configuration
+              when: (inventory_hostname in groups['leaf']) and ((incremental_run == true and svi_cli is defined)) 
+              cli_config:
+                config: " {{ lookup('template', item.key) }} "
+                diff_match: none 
+              register: result
+              with_dict: "{{ svi_dict }}"
+  
+            - name: Overlay interface configuration
+              when: (inventory_hostname in groups['leaf']) and ((incremental_run == true and ovrl_intf_cli is defined)) 
+              cli_config:
+                config: " {{ lookup('template', item.key) }} "
+                diff_match: none 
+              register: result
+              with_dict: "{{ overlay_intf_dict }}"
+  
+            - name: Global L2VPN EVPN configuration
+              when: (inventory_hostname in groups['leaf']) and (incremental_run == false)
+              cli_config:
+                config: " {{ lookup('template', item.key) }} "
+                diff_match: none 
+              register: result
+              with_dict: "{{ l2vpn_evpn_global_dict }}"
+              
+            - name: BGP neighbors configuration
+              when: incremental_run == false
+              cli_config:
+                config: " {{ lookup('template', item.key) }} "
+                diff_match: none 
+              register: result
+              with_dict: "{{ common_dict }}"
+  
+            - name: Pause for 60 seconds for convergence  
+              wait_for:
+                delay: 60
+                timeout: 0
+              when: incremental_run == false
+              
+          - name: log message for brown_field_dual_stack
+            run_once : true
+            when: underlay_config_type == 'brown_field_dual_stack'
+            debug:
+              msg: "underlay_config_type 'brown_field_dual_stack' doesn't have incremental senarios'"

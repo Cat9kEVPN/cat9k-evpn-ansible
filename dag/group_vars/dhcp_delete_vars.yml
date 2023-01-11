@@ -1,0 +1,32 @@
+# This is the input file for playbook_dhcp_delete_preview.yml and playbook_dhcp_delete_commit.yml
+# 
+# List the DAG/s where DHCP needs to be disabled under the 'dag' keyword
+#
+# Note: DHCP information for listed DAG/s are taken from the dhcp_db and the device itself
+#
+#
+# ______________________________________________
+# __________ EXAMPLE SCENARIOS _________________
+# ______________________________________________
+#
+#
+# Example 1: Disables DHCP for DAG 'blue' and 'green'
+# 
+#   dag: 
+#     - blue                          <--------- Get DHCP data for the DAG from the device itself
+#     - green     
+#     
+# ------------
+#
+# Example 2: Disables DHCP for all DAGs
+#
+#   dag:
+#     - all                           <--------- Disables DHCP on all DAG/s mentioned in dhcp_db.yml
+#
+# ______________________________________________
+# ______________________________________________
+# ______________________________________________
+
+
+dag: 
+  - all

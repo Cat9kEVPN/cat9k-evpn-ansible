@@ -4,8 +4,10 @@ This module configures MSDP peering
 
 #jinja2: lstrip_blocks: "True", trim_blocks: "True"
 
-{% for index,idata in msdp.items() %}
-    !
-    ip msdp peer {{ idata.peer_ip }} connect-source {{ idata.source_interface }} remote-as {{ idata.remote_as }}
-    ip msdp cache-sa-state
-{% endfor %}
+{% if underlay_config_type == 'green_field_ipv4' or underlay_config_type == '' or underlay_config_type == 'green_field_dual_stack' %}
+  {% for index,idata in msdp.items() %}
+      !
+      ip msdp peer {{ idata.peer_ip }} connect-source {{ idata.source_interface }} remote-as {{ idata.remote_as }}
+      ip msdp cache-sa-state
+  {% endfor %}
+{% endif %}

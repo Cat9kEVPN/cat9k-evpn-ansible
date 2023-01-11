@@ -1,0 +1,142 @@
+# This is the input file for the following playbooks,
+# playbook_trm_overlay_preview.yml, playbook_trm_overlay_commit.yml
+# playbook_trm_overlay_incremental_preview.yml, playbook_trm_overlay_incremental_commit.yml
+# playbook_trm_overlay_delete_preview.yml, playbook_trm_overlay_delete_commit.yml
+#
+#
+#   dag:
+#     blue:
+#       register_source: Loopback1
+#   
+#       fabric_anycast_rp:
+#         rp_loopback: Loopback256
+#         ipv4_rp_address: '10.2.255.255'
+#   
+#       afs:
+#         ipv4:
+#           default_mdt_group: '239.1.1.1'
+#
+# ______________________________________________
+# __________ EXAMPLE SCENARIOS _________________
+# ______________________________________________  
+#
+# Example 1) TRM v4 with anycast RP fabric for DAG 'blue'
+#
+# By default, VXLAN with BGP auto-discovery is enabled
+#
+#
+#   dag:
+#     blue:                                                 <--------- Applies config to blue DAG
+#       register_source: loopback1                          <--------- configs unique IP for the loopback
+#
+#       fabric_anycast_rp:                                  <--------- configs PIM sparse mode with anycast RP
+#         rp_loopback: Loopback256                          <--------- configs loopback (on all device) if not already configured
+#         ipv4_rp_address: '10.2.255.255'                   <--------- configs IPv4 addr as PIM RP for the multicast group, by default /32 mask is applied
+#
+#       ssm_range: default                                    <--------- configs default SSM range for TRM
+#    
+#       afs:
+#         ipv4:
+#           default_mdt_group: '239.1.1.1'                  <--------- configs mcast group address for default MDT groups
+# 
+#
+# Example 2) TRM v4 and v6 with internal RP fabric for DAG 'blue'
+#
+# By default, VXLAN with BGP auto-discovery is enabled
+#
+#   dag:   
+#     blue:
+#       register_source: loopback1
+#       ipv6_register_source: loopback1                     <--------- configs unique IP for the loopback for IPv6; if this key is missing, "register_source" is used for IPv6
+#
+#       fabric_internal_rp:                                 <--------- configs PIM sparse mode with internal RP
+#         rp_device: Leaf-02
+#         rp_loopback: Loopback256                          <--------- configs loopback (only on the mentioned device above) if not already configured
+#         ipv4_rp_address: '10.2.255.255 255.255.255.255'
+#         ipv6_rp_address: 'FC00:2:255::255'                <--------- configs IPv6 addr as PIM RP for the multicast group, by default /128 mask is applied
+#   
+#       ssm_range: 'x-y'                                    <--------- configs an SSM range for TRM      
+#
+#       afs:
+#         ipv4:
+#           default_mdt_group: '239.1.1.1'                  
+#           data_mdt_group: '225.2.2.0 0.0.0.255'           <--------- configs mcast group address for data MDT groups for IPv4
+#           data_mdt_threshold: '111'                       <--------- defines bandwidth threshold for data MDT groups
+#   
+#         ipv6:
+#           default_mdt_group: '239.1.1.1'                  <--------- configs mcast group address for default MDT groups for IPv6
+#
+#  
+# Example 3) TRM v6 with external RP fabric for DAG 'blue'
+#
+# By default, VXLAN with BGP auto-discovery is enabled
+#
+#   dag:   
+#     blue:
+#       ipv6_register_source: loopback1                     <--------- configs unique IP for the loopback for IPv6
+#
+#       fabric_external_rp:                                 <--------- configs PIM sparse mode with external RP
+#         ipv6_rp_address: 'FC00:2:255::255'                <--------- configs IPv6 addr as PIM RP for the multicast group, by default /128 mask is applied   
+#
+#       afs:
+#         ipv6:
+#           default_mdt_group: '239.1.1.1'                  <--------- configs mcast group address for default MDT groups for IPv6
+#
+#
+#
+# Example 4) TRM v4 with anycast RP fabric for DAG 'blue'
+#            TRM v4 and v6 with internal RP fabric for DAG 'green'
+#
+#   dag:
+#     blue:
+#       register_source: Loopback0
+#   
+#       fabric_anycast_rp:
+#         rp_loopback: Loopback256
+#         ipv4_rp_address: '10.2.255.255 255.255.255.255'
+#   
+#       ssm_range: 'x-y'
+#   
+#       afs:
+#         ipv4:
+#           default_mdt_group: '239.1.1.1'
+#           data_mdt_group: '225.2.2.0 0.0.0.255'
+#           data_mdt_threshold: '111'
+#   
+#     green:
+#       register_source: Loopback1
+#       ipv6_register_source: Loopback2
+#   
+#       fabric_internal_rp:
+#         rp_device: Leaf-02
+#         rp_loopback: Loopback255
+#         ipv4_rp_address: '10.3.255.255'
+#         ipv6_rp_address: 'FC00:2:255::255'
+#   
+#       afs:
+#         ipv4:
+#           default_mdt_group: '239.1.1.2'
+#           data_mdt_group: '225.2.3.0 0.0.0.255'
+#           data_mdt_threshold: '111'
+#   
+#         ipv6:
+#           default_mdt_group: '239.1.1.2'
+#
+#
+# ______________________________________________
+# ______________________________________________
+# ______________________________________________
+
+
+dag:
+  green:                                                 
+    register_source: loopback1
+                         
+    fabric_internal_rp:      
+      rp_device: Leaf-02                       
+      rp_loopback: Loopback256                          
+      ipv4_rp_address: '10.2.255.255'               
+ 
+    afs:
+      ipv4:
+        default_mdt_group: '239.1.1.1'

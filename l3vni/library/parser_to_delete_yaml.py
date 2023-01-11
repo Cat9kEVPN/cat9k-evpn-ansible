@@ -7,8 +7,6 @@ __metaclass__ = type
 
 from ansible.module_utils.basic import AnsibleModule
 
-from genie.utils import Dq
-from genie.conf.base import Device
 import yaml, json
 
 DOCUMENTATION = r'''
@@ -19,8 +17,6 @@ short_description: Get the DAG related informations from
                    'show run nve', 'show run | section ^interface' parsed CLI output
                    and add them to the dictionary
 '''
-
-import json
 
 def add_action_to_keys(value_to_del, dict_block, block, parsed_output=None):
 
@@ -131,7 +127,7 @@ def delete_action(parsed_output, interface_parsed, toDel):
     
     delete_op = json.loads(json.dumps(filtered_op))
     
-    if 'update_access' not in toDel: toDel['update_access'] = False
+    if 'update_access_intf' not in toDel: toDel['update_access_intf'] = False
     if 'update_overlay_intf' not in toDel: toDel['update_overlay_intf'] = False
 
     ret_dict = {}
@@ -143,7 +139,7 @@ def delete_action(parsed_output, interface_parsed, toDel):
                 nve_number = list((parsed_output['nve_interfaces']).keys())
                 delete_op[ele] = add_action_to_keys(value_to_del=toDel[ele], dict_block=delete_op[ele], \
                                                     block=ele, parsed_output=parsed_output['nve_interfaces'][nve_number[0]])
-                if toDel['update_access']:
+                if toDel['update_access_intf']:
                     delete_op['access_interfaces'] = access_intf_block(value_to_del=toDel['vlans'], \
                                                                        interface_parsed = interface_parsed['interfaces'])            
             else:
@@ -185,17 +181,12 @@ def run_module():
 
     hostvars = module.params['hostvars']
 
-    run_nve = '\n'.join(hostvars['run_nve'])
+    nve_parsed = hostvars['run_nve']
     
-    device = Device("Switch", os="iosxe")
-    device.custom.abstraction = {'order':["os"]}
-    nve_parsed = device.parse('show run nve', output=run_nve)
-
     intf_parsed = ''
     
     if 'intf_sec' in hostvars:
-        intf_sec = '\n'.join(hostvars['intf_sec'])
-        intf_parsed = device.parse('show run | section ^interface', output=intf_sec)
+        intf_parsed = hostvars['intf_sec']
 
     result['yaml'] = delete_action(nve_parsed, intf_parsed, module.params['toDel'])
 

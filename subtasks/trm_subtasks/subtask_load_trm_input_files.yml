@@ -1,0 +1,27 @@
+
+  - name: Load input files
+    run_once: true
+    block:
+    - name: Load vars from trm_overlay_db.yml
+      include_vars: 
+        file: "{{ input_vars_path }}group_vars/trm_overlay_db.yml"
+        name: trm_db_vars
+
+    # Get VRFs from trm_overlay_db if playbook_trm_preview.yml - already config'd VRFs are to be filtered later
+    - name: Get VRFs from trm_overlay_db.yml
+      when: trm_inc == false
+      set_fact: 
+        vrfs_unfiltered: "{{ trm_db_vars.dag }}"
+
+    # Get VRFs from trm_create_vars.yml if playbook_trm_incremental_preview.yml - already config'd VRFs are to be filtered later
+    - name: Get VRfs from trm_create_vars.yml
+      when: trm_inc == true
+      block:
+      - name: Load vars from trm_create_vars.yml
+        include_vars: 
+          file: "{{ input_vars_path }}group_vars/trm_create_vars.yml"
+          name: trm_create_vars
+
+      - name: Get desired VRFs data from trm_overlay_db.yml
+        set_fact:
+          vrfs_unfiltered: "{{ trm_create_vars.dag | get_dag_data_from_db(trm_db_vars.dag) }}"

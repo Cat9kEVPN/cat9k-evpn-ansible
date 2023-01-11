@@ -1,0 +1,59 @@
+# This is the input file for playbook_overlay_delete_preview.yml and playbook_overlay_delete_commit.yml
+#
+# List the DAG/s to be deleted under 'dag' keyword
+# List the VLANs to be deleted under 'vlans' keyword
+# The keyword 'update_access_intf' when set to true removes the related VLANs from the interfaces
+# The keyword 'update_overlay_intf' when set to true removes vrf forwarding from the overlay interfaces
+#
+# ______________________________________________
+# __________ EXAMPLE SCENARIOS _________________
+# ______________________________________________
+#
+#
+# Example 1: Deletes 'blue' and 'green' DAGs, removes the respective VLANs from the access interfaces, and remove VRF forwarding from overlay interface
+# 
+#   dag: 
+#     - blue                          <--------- deletes blue and green DAGs
+#     - green     
+#     
+#   update_access_intf: true               <--------- removes the respective VLANs from the access interfaces
+#     
+#   update_overlay_intf: true	      <--------- removes VRF forwarding from access interfaces
+#
+# ------------
+#
+# Example 2: Deletes all the DAGs, makes NO changes to the access interfaces, and does not remove VRF forwarding from overlay interface
+#
+#   dag:
+#     - all                           <--------- deletes all the DAGs
+#      
+#   update_access_intf: false              <--------- makes NO changes to the access interfaces
+#     
+#   update_overlay_intf: false	      <--------- does not remove VRF forwarding from access interfaces
+#
+# ------------
+#
+# Example 3: Deletes all the DAGs, makes NO changes to the access interfaces, and remove VRF forwarding from overlay interface
+#
+#   dag: 
+#     - blue                          <--------- deletes blue DAGs
+#     
+#   vlans:                            <--------- deletes VLAN 101 and 102; and the respective SVIs
+#     - 101
+#     - 102
+# 
+#   update_access_intf: false              <--------- makes NO changes to the access interfaces
+#
+#   update_overlay_intf: true	      <--------- removes VRF forwarding from access interfaces
+#
+# ______________________________________________
+# ______________________________________________
+# ______________________________________________
+
+
+dag: 
+  - blue
+
+update_access_intf: true
+
+update_overlay_intf: true

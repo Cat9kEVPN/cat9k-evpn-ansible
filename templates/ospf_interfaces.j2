@@ -6,16 +6,67 @@ Default OSPF network type in underlay is P2P for speeding up the convergence tim
 #jinja2: lstrip_blocks: "True", trim_blocks: "True"
 
 {# configure ospf under interface and set ospf interface P2P if not loopback #}
-{% for interface in interfaces%}
-    !
-    interface  {{ interface }}
-    {% if interfaces[interface].loopback == 'no'%}
-        ip ospf network point-to-point
-    {% endif %}
-    ip ospf 1 area 0
-{% endfor %}
+{% if underlay_config_type == 'green_field_ipv4' or underlay_config_type == ''  %}
+  {% for interface in interfaces%}
+      !
+      interface  {{ interface }}
+      {% if interfaces[interface].loopback == 'no'%}
+          ip ospf network point-to-point
+      {% endif %}
+      ip ospf 1 area 0
+  {% endfor %}
+  
+  {# configure ospf process and ospf router-id #}
+  !
+  router ospf 1
+      router-id {{ ospf.router_id }}
+      
+{% elif underlay_config_type == 'green_field_ipv6' or underlay_config_type == 'brown_field_dual_stack' %}
+  {% for interface in interfaces%}
+      !
+      interface  {{ interface }}
+      {% if interfaces[interface].loopback == 'no'%}
+          ipv6 ospf network point-to-point
+      {% endif %}
+      ipv6 ospf 1 area 0
+  {% endfor %}
+  
+  {# configure ospf process and ospf router-id #}
+  !
+  ipv6 router ospf 1
+      router-id {{ ospf_ipv6.router_id }}
+      graceful-restart
+      
+{% elif underlay_config_type == 'green_field_dual_stack' %}
+  {% for interface in interfaces%}
+      !
+      interface  {{ interface }}
+      {% if interfaces[interface].loopback == 'no'%}
+          ip ospf network point-to-point
+          ipv6 ospf network point-to-point
+      {% endif %}
+      ip ospf 1 area 0
+      ipv6 ospf 1 area 0
+  {% endfor %}
+  
+  {# configure ospf process and ospf router-id #}
+  !
+  router ospf 1
+      router-id {{ ospf.router_id }}
+  ipv6 router ospf 1
+      router-id {{ ospf_ipv6.router_id }}
 
-{# configure ospf process and ospf router-id #}
-!
-router ospf 1
-    router-id {{ ospf.router_id }}
+{% elif underlay_config_type == 'downgrade_to_ipv4' %}
+  {% for interface in interfaces%}
+      !
+      interface  {{ interface }}
+      {% if interfaces[interface].loopback == 'no'%}
+          no ipv6 ospf network point-to-point
+      {% endif %}
+      no ipv6 ospf 1 area 0
+  {% endfor %}
+  
+  {# unconfigure ospf process and ospf router-id for ipv6 #}
+  !
+  no ipv6 router ospf 1
+{% endif %}

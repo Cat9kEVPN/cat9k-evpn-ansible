@@ -3,21 +3,18 @@
 - name: Automated VXLAN deployment with BGP EVPN L2 underlay w/ Spine
   hosts: leaf
   gather_facts: no 
+
   tasks:
-          - name: Locate files in host_vars/inc_vars dir
-            find:
-              path: "host_vars/inc_vars"
-            register: cleanup
-            ignore_errors: true
-          
-          - name: Remove files from previous run
+          - name: Cleanup host_vars/inc_vars dir
+            run_once: true
             file:
-              path: "{{ item.path }}"
-              state: absent
-            with_items: "{{ cleanup.files }}"
-            ignore_errors: true
+              state: "{{ item }}"
+              path: "host_vars/inc_vars"
+            with_items:
+              - absent
+              - directory
           
-          - name: Collect vars from incremental_vars.yml
+          - name: Collect vars from create_vars.yml
             run_once: true
             include_vars:
               file: group_vars/create_vars.yml

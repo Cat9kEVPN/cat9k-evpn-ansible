@@ -1,0 +1,13 @@
+#ise config vars
+ise:
+  ise_ip: '172.19.71.10'
+  ise_auth_port: '1812'
+  ise_acct_port: '1813'
+  ise_user_name: 'user1'
+  ise_user_psswd: 'Cisco123'
+  
+site_level_fabric_auth_type : 'DefaultWiredDot1xClosedAuth'
+site_level_auth_priority: '1X_MAB'
+        
+voice_vlan : '2046' 
+auth_server_src_intf: 'GigabitEthernet0/0'

@@ -1,0 +1,12 @@
+---
+
+- name: Initialising variable for nodes
+  hosts: all
+  gather_facts: no
+  tasks:    
+          - set_fact:
+              dhcp_inc: true
+            run_once: true
+
+- name: Import tasks from playbook_dhcp_commit.yml
+  import_playbook: playbook_dhcp_commit.yml

@@ -1,7 +1,6 @@
 hostname: 'Spine-01'
 
 routing:
- ipv4_uni: 'yes'
  ipv4_multi: 'yes'
 
 interfaces:

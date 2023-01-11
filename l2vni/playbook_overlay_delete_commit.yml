@@ -6,8 +6,8 @@
 - name: Automated VXLAN deployment with BGP EVPN L2 underlay w/ Spine
   hosts: leaf
   gather_facts: no
+
   vars: 
-    update_acc_intf: false
     block_dict:
       '../templates/nve_create.j2': 'nve block'
       '../templates/vlan_create.j2': 'vlan block' 
@@ -18,13 +18,18 @@
           - name: Load variables from group_vars/delete_vars.yml file
             run_once: true
             include_vars: group_vars/delete_vars.yml
-
-          - name: Get "update_access" value if present in group_vars/delete_vars.yml
+          
+          - name: Load variables from files under group_vars/underlay_config.yml folder
             run_once: true
-            when: update_access is defined
-            set_fact:
-              update_acc_intf: "{{ update_access }}"
+            include_vars: 
+              file: group_vars/underlay_config.yml
 
+          - name: Set "update_access_intf" value if absent
+            run_once: true
+            when: update_access_intf is not defined
+            set_fact:
+              update_access_intf: false
+ 
           - name: Check whether host_vars/delete_vars/<hostname>.yml is present
             local_action: stat path=./host_vars/delete_vars/{{ inventory_hostname }}.yml
             register: file_state
@@ -36,7 +41,7 @@
             - name: Load variables from files under host_vars/delete_vars folder
               include_vars: host_vars/delete_vars/{{inventory_hostname}}.yml
 
-            - name: Applying configurations
+            - name: Applying overlay configurations
               cli_config:
                 config: "{{ lookup('template', item.key) }}"
                 diff_match: none
@@ -44,7 +49,7 @@
               with_dict: "{{ block_dict }}"
                
             - name: Applying configurations on access interfaces
-              when: update_acc_intf == true
+              when: update_access_intf == true
               cli_config:
                 config: "{{ lookup('template', '../templates/access_interfaces.j2' ) }}"
                 diff_match: none

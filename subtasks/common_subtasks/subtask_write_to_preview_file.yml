@@ -1,0 +1,27 @@
+  - set_fact:
+      playbook_block:  "{{ lookup('vars', playbook_name ~ '_block' ) }}"
+
+  - name: Render template files output
+    set_fact:
+      rendered: "{{ playbook_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | 
+      regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n\n! ') }}"
+
+  - name: Check if output is empty
+    block:
+    - set_fact:
+        check_for_empty_file: "{{ rendered | regex_replace('! [\\s\\w]+','') | regex_replace('[!\\s\\n]+','') }}"
+
+    - set_fact:
+        rendered: ""
+      when: check_for_empty_file == ''
+
+  - name: Copy configurations to respective file ( <hostname>-<playbook_name>.txt ) under 'preview_files' folder
+    copy:
+      dest: preview_files/{{inventory_hostname}}{{ playbook_mode | default('')}}-{{ playbook_name }}.txt
+      content: "{{ rendered }}"
+
+  #- name: Copy vars
+  #  run_once: True
+   # copy:
+    #  dest: preview_files/{{inventory_hostname}}-check_vars.txt
+     # content: "{{ hostvars[inventory_hostname] | to_nice_yaml( width=50, explicit_start=True, explicit_end=True) }}"

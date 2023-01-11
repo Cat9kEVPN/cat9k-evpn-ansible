@@ -1,0 +1,100 @@
+{#
+This module is configuring the AAA configuration.
+If action is not set in the configurations, it is "add" by default.
+#}
+
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+
+{% if ise is defined%}
+    {# Checking an action for the ise - action_ise. #}
+    {% if action is defined and action == 'delete' %}
+        !
+        no aaa authentication login dnac-cts-list group dnac-client-radius-group local
+        no aaa authentication login VTY_authen group dnac-network-radius-group local
+        no aaa authentication dot1x default group dnac-client-radius-group
+        no aaa authorization exec default local
+        no aaa authorization exec VTY_author group dnac-network-radius-group local if-authenticated
+        no aaa authorization network default group dnac-client-radius-group
+        no aaa authorization network dnac-cts-list group dnac-client-radius-group
+        no aaa accounting exec default start-stop group dnac-network-radius-group
+        no aaa accounting Identity default start-stop group dnac-client-radius-group
+        {#no username {{ ise.ise_user_name }} privilege 15 password 0 {{ ise.ise_user_psswd }}#}
+        !
+        no aaa server radius dynamic-author
+        !
+        no radius server dnac-radius_{{ ise.ise_ip }}
+        !
+        no aaa group server radius dnac-client-radius-group
+        !
+        no aaa group server radius dnac-network-radius-group
+        !
+        no ip radius source-interface {{ auth_server_src_intf }} vrf Mgmt-vrf
+        
+    {% else %}
+        !
+        enable password 0 cisco123
+        aaa authentication login default local
+        aaa authentication login dnac-cts-list group dnac-client-radius-group local
+        aaa authentication login VTY_authen group dnac-network-radius-group local
+        aaa authentication dot1x default group dnac-client-radius-group
+        aaa authorization exec default local 
+        aaa authorization exec VTY_author group dnac-network-radius-group local if-authenticated 
+        aaa authorization network default group dnac-client-radius-group 
+        aaa authorization network dnac-cts-list group dnac-client-radius-group 
+        aaa accounting exec default start-stop group dnac-network-radius-group
+        aaa accounting Identity default start-stop group dnac-client-radius-group
+        username {{ ise.ise_user_name }} privilege 15 password 0 {{ ise.ise_user_psswd }}
+        !
+        aaa server radius dynamic-author
+         client {{ ise.ise_ip }} server-key cisco
+        !
+        !
+        radius server dnac-radius_{{ ise.ise_ip }}
+          {# Checking an ise_auth_port and ise_account_port is defined. #}
+          {% if 'ise_auth_port' not in ise and 'ise_acct_port' not in ise %}
+            address ipv4 {{ ise.ise_ip }} auth-port 1812 acct-port 1813
+          {% elif ise.ise_auth_port and ise.ise_acct_port is defined %}
+            address ipv4 {{ ise.ise_ip }} auth-port {{ ise.ise_auth_port }} acct-port {{ ise.ise_acct_port }}
+          {% endif %}
+          timeout 2
+          retransmit 1
+          automate-tester username dummy ignore-acct-port probe-on
+          pac key cisco
+        !
+        !
+        aaa group server radius dnac-client-radius-group
+          server name dnac-radius_{{ ise.ise_ip }}
+          ip vrf forwarding Mgmt-vrf
+          {# Checking an dnac_src_intf is defined. #}
+          {% if dnac_src_intf is defined %}
+            ip radius source-interface {{ auth_server_src_intf }}
+          {% elif dnac_src_intf is not defined %}
+            ip radius source-interface GigabitEthernet0/0
+          {% endif %}
+        !
+        aaa group server radius dnac-network-radius-group
+         server name dnac-radius_{{ ise.ise_ip }}
+         ip vrf forwarding Mgmt-vrf
+         {% if dnac_src_intf is defined %}
+            ip radius source-interface {{ auth_server_src_intf }}
+         {% elif dnac_src_intf is not defined %}
+            ip radius source-interface GigabitEthernet0/0
+         {% endif %}
+        !
+        !
+        !
+        !
+        !
+        !
+        !
+        aaa new-model
+        aaa session-id common
+        !
+        !
+        {% if dnac_src_intf is defined %}
+            ip radius source-interface {{ auth_server_src_intf }} vrf Mgmt-vrf
+        {% elif dnac_src_intf is not defined %}
+            ip radius source-interface GigabitEthernet0/0 vrf Mgmt-vrf
+        {% endif %}
+    {% endif %}
+{% endif %}

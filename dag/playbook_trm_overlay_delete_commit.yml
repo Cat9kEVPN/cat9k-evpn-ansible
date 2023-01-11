@@ -1,0 +1,236 @@
+---
+
+- name: Disable TRM for EVPN overlay
+  hosts: all
+  gather_facts: no
+
+  vars:
+    input_vars_path: "./"
+
+    leaf_trm_dict:
+      '../templates/vrf_definition_trm.j2': 'vrf block'
+      '../templates/pim_interfaces_trm.j2': 'pim interface block'
+      '../templates/rp_interfaces_trm.j2': 'RP loopback block'
+
+    common_trm_dict:
+      '../templates/bgp_mvpn_af_trm.j2': 'bgp neighbor mvpn af block'
+
+    action: 'delete'
+
+
+  tasks:
+
+  ## List of tasks block
+  ##--------------------
+  # 1) Load and process input files ( trm_overlay_db.yml and trm_delete_vars.yml )
+  # 2) Get VRF and AFs from db - filter VRFs and AFs missing in the device; get SVIs from device
+  # 3) Get BGP MVPN AFs from the device
+  # 4) Deploy configs to the hosts
+  ##--------------------
+
+
+  # ------ 1) Load and process input files ( trm_overlay_db.yml and trm_delete_vars.yml ) --------
+
+            - name: Load and process TRM input file
+              run_once: True
+              block:
+
+              - name: Initialise variables
+                set_fact: 
+                  vrfs:  {}
+                  mvpns: []
+                  rp_unupdated: []
+
+              - name: Load vars from trm_overlay_db.yml
+                include_vars: 
+                  file: "{{ input_vars_path }}group_vars/trm_overlay_db.yml"
+                  name: trm_db_vars
+
+              - name: Load and process trm_delete_vars.yml
+                block:
+                - name: Load vars from trm_delete_vars.yml
+                  include_vars: 
+                    file: "{{ input_vars_path }}group_vars/trm_delete_vars.yml"
+                    name: trm_delete_vars
+
+                # Check whether to update RP loopbacks and BGP MVPNs
+                - name: Update variables with vars from trm_delete_vars.yml
+                  set_fact: 
+                    update_rp_loopbacks: "{{ trm_delete_vars.update_rp_loopbacks | default(true) }}"
+                    update_bgp_mvpns: "{{ trm_delete_vars.update_bgp_mvpns | default(true) }}"
+
+              - name: Get desired VRF data from trm_overlay_db.yml
+                set_fact: 
+                  vrfs: "{{ trm_delete_vars.dag | get_dag_data_from_db(trm_db_vars.dag) }}"
+
+              # Get RP loopbacks and VRF AFs from db for VRFs in trm_delete_vars.yml
+              - name: Collect RP loopbacks and VRFs AFs from trm_overlay_db.yml
+                block:
+                - name: Call python module to get filtered MVPN AFs
+                  trm_preprocess:
+                    vrf_trm_info: "{{ 
+                      {'vrfs': vrfs,
+                      'db_vrfs': trm_db_vars.dag,
+                      'action': 'delete',
+                      'inventory_leafs': groups['leaf'], 
+                      'no_loopback_info':true} }}"
+                  register: processed_trm_db
+
+                - set_fact:
+                    all_rp_loopbacks: "{{ processed_trm_db.rp_loopbacks }}"
+                    #vrf_mvpn: "{{ processed_trm_db.vrf_mvpn }}"
+
+  # ------ 2) Get VRF and AFs from db - filter VRFs and AFs missing in the device; get SVIs from device --------
+
+            - name: Get overlay data
+              when: inventory_hostname in groups['leaf']
+              block:
+              #- name: Run and parse show run nve
+              #  ansible.utils.cli_parse:
+              #    command: "show run nve"
+              #    parser:
+              #      name: ansible.netcommon.pyats
+              #    set_fact: overlay_dict
+
+              ########## Replace with genie parser
+
+              - name: Collect "show run nve"
+                cli_command:
+                  command: show run nve
+                register: nve_output
+
+              - name: Call python module to parse NVE output
+                sh_run_nve_parse:
+                  command_output: "{{ nve_output.stdout }}"
+
+                register: nve_parsed
+
+              - set_fact:
+                  overlay_dict: "{{ nve_parsed.parsed }}"
+                  overlay_vrf_dict: "{{ nve_parsed.parsed.vrf | default({}) }}"
+
+              ########## Replace with genie parser
+
+              # Get MVPN AFs to be deleted - filter out AFs of unselected dags
+              - name: Collect MVPN AFs 
+                set_fact:
+                  vrf_mvpn: "{{ vrfs | get_residual_mvpns(trm_db_vars.dag, overlay_vrf_dict) }}"
+
+              - name: Collect MVPN AFs for spine by comparing leaf-s' MVPN AFs
+                run_once: true
+                set_fact:
+                  vrf_mvpn_spine: "{{ hostvars[inventory_hostname]['groups']['leaf'] | get_spine_mvpns( hostvars ) }}"
+
+              # Filter out non-existing VRFs and addr families ( to avoid creating empty address family definition )
+              - name: Filter out non-existing VRFs and addr families
+                block:
+                - name: Collect VRFs
+                  trm_preprocess:
+                    filter_deleted_vrfs: "{{ 
+                      {'unfiltered_vrfs': vrfs, 'overlay_vrfs': overlay_vrf_dict} }}"
+                  register: filtered_vrfs
+
+                - set_fact:
+                    vrfs: "{{ filtered_vrfs.filtered_vrfs }}"
+
+              # Get SVIs of the desired VRFs
+              - name: Collect SVIs from host 
+                set_fact:
+                  svis: "{{ (overlay_dict.svis | default({}) ) | filter_dict_for_vrfs(vrfs) }}"
+                  
+              # Filter out RP loopbacks that are missing in the device
+              - name: Get RP loopbacks to unable PIM-Sparse mode
+                when: update_rp_loopbacks == true
+                block:
+                
+                - name: Get RP loopbacks per device
+                  when: inventory_hostname in all_rp_loopbacks
+                  set_fact:
+                    rp_loopbacks: "{{ all_rp_loopbacks[inventory_hostname] | intersect( overlay_dict.overlay_interfaces | default({}) ) }}"
+
+                # Load host_vars/node_vars/host.yml to get overlay interfaces - to issue warning
+                - name: Get to-be-deleted RP loopbacks that are not updated in host_vars/node_vars/<host>.yml
+                  when: rp_loopbacks is defined
+                  block:
+                  - name: Load vars from host_vars/node_vars/<host>.yml
+                    include_vars: 
+                      file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
+                      name: node_vars_vars
+
+                  - set_fact:
+                      rp_unupdated: "{{ rp_loopbacks | difference(node_vars_vars['overlay_interfaces']) }}"
+
+
+  # ------ 3) Get BGP MVPN AFs from the device --------
+
+            # Following tasks in the block are skippped if update_bgp_mvpns == false
+
+            - name: Get BGP details from show run | sec bgp 
+              when: update_bgp_mvpns == true
+              block:
+
+              - name: Run and parse show run | sec bgp
+                ansible.utils.cli_parse:
+                  command: "show run | sec bgp"
+                  parser:
+                    name: ansible.netcommon.pyats
+                  set_fact: bgp_parsed
+
+              # Get BGP router ASN and MVPN AFs
+              - name: Collect AS number from show run | sec bgp output
+                block:
+                - set_fact:
+                    bgp_list: "{{ bgp_parsed.bgp | dict2items }}"
+
+                - set_fact:
+                    bgp: "{{ bgp | default({}) | combine({ 'as_number': bgp_list[0].value.as_number | string }) }}"
+
+              # Get VRF AFS minus BGP MVPN AFs that are missing in the device
+              # Set delete MVPN address families for filtered MVPN AFs
+              - name: Filter MVPN AFs missing in the device
+                block:
+                - set_fact:
+                    vrf_mvpn: "{{ vrf_mvpn_spine }}"
+                  when: inventory_hostname in groups['spine']
+
+                - set_fact:
+                    mvpns: "{{ vrf_mvpn | intersect(
+                      bgp_parsed.bgp[bgp.as_number]['address_family'] | intersect(['ipv4 mvpn', 'ipv6 mvpn']) ) }}"
+
+
+  # ------ 4) Deploy configs to the hosts --------
+
+            - name: Read VRF, RP loopbacks, and SVIs template files
+              when: inventory_hostname in groups['leaf']
+              cli_config:
+                config: "{{ lookup('template', item.key) }}"
+                diff_match: none
+              register: result
+              with_dict: "{{ leaf_trm_dict }}"
+
+            # Following tasks are skipped if update_bgp_mvpns == false
+            - name: Read BGP neighbor MVPN AF template files
+              when: mvpns != []
+              cli_config:
+                config: "{{ lookup('template', item.key) }}"
+                diff_match: none
+              register: result
+              with_dict: "{{ common_trm_dict }}"
+
+
+- name: Display output info
+  hosts: localhost
+  gather_facts: no
+  run_once: True
+
+  tasks:
+
+            # Issue warning if RP loopbacks are not updated in host_vars/node_vars/<host>.yml
+            - name: Warning
+              set_fact:
+                msg: 
+                - playbook_trm_overlay_delete_commit will delete the following RP interfaces from the devices, which is/are not found in host_vars/node_vars/{{ item }}.yml
+                - "{{ hostvars[item]['rp_unupdated'] }}"
+                - Please update host_vars/node_vars/{{ item }}.yml accordingly
+              when: "hostvars[item]['rp_unupdated'] != []"
+              loop: "{{ hostvars['localhost']['groups']['leaf'] }}"

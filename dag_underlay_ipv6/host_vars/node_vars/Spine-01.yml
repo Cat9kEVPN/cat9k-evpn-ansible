@@ -1,0 +1,114 @@
+hostname: 'Spine-01'
+
+routing:
+ ipv4_multi: 'yes'
+ ipv6_multi: 'yes'
+ ipv6_uni: 'yes'
+
+interfaces:
+
+  Loopback0:
+    name: 'Routing Loopback'
+    ip_address: '172.16.255.1'
+    subnet_mask: '255.255.255.255'
+    ipv6_address: 'fd00:172:16:255::1/128'
+    loopback: 'yes'
+    pim_enable: 'no'
+
+  Loopback1:
+    name: 'MSDP Loopback'
+    ip_address: '172.16.254.1'
+    subnet_mask: '255.255.255.255'
+    ipv6_address: 'fd00:172:16:254::1/128'
+    loopback: 'yes'
+    pim_enable: 'yes'
+  
+  Loopback2:
+    name: 'AnycastRP Loopback'
+    ip_address: '172.16.255.255'
+    subnet_mask: '255.255.255.255'
+    ipv6_address: 'fd00:172:16:255::255/128'
+    loopback: 'yes'
+    pim_enable: 'yes'
+
+  TenGigabitEthernet1/0/33:
+    name: 'Backbone interface to Leaf-01'
+    ip_address: '172.16.13.1'
+    subnet_mask: '255.255.255.0'
+    ipv6_address: 'fd00:172:16:13::1/64'
+    loopback: 'no'
+    pim_enable: 'yes'
+
+  TenGigabitEthernet1/0/34:
+    name: 'Backbone interface to Leaf-02'
+    ip_address: '172.16.14.1'
+    subnet_mask: '255.255.255.0'
+    ipv6_address: 'fd00:172:16:14::1/64'
+    loopback: 'no'
+    pim_enable: 'yes' 
+
+  FortyGigabitEthernet1/1/1:
+    name: 'Backbone interface to Leaf-03'
+    ip_address: '172.16.15.1'
+    subnet_mask: '255.255.255.0'
+    ipv6_address: 'fd00:172:16:15::1/64'
+    loopback: 'no'
+    pim_enable: 'yes'
+
+ospf:
+  router_id: '172.16.255.1'
+
+ospf_ipv6:
+  router_id: '172.16.255.1'
+
+pim:
+  rp_address: '172.16.255.255'
+
+pim_ipv6:
+  rp_address: 'fd00:172:16:255::255'
+  pim_ipv6_peer_ip: 'fc00:172:16:254::2'
+
+msdp:
+ '1':
+    peer_ip: '172.16.254.2'
+    source_interface: 'Loopback1'
+    remote_as: '65001'
+    
+bgp:
+  as_number: '65001'
+  router_id: 'Loopback0'
+  neighbors:
+    '172.16.255.2':
+     peer_as_number: '65001'
+     source_interface: 'Loopback0'
+     rrc: 'yes'
+
+    '172.16.255.3':
+     peer_as_number: '65001'
+     source_interface: 'Loopback0'
+     rrc: 'yes'
+     
+    '172.16.255.4':
+     peer_as_number: '65001'
+     source_interface: 'Loopback0'
+     rrc: 'yes'
+
+bgp_ipv6:
+  as_number: '65001'
+  router_id: 'Loopback0'
+  neighbors:
+    'fd00:172:16:255::2':
+     peer_as_number: '65001'
+     source_interface: 'Loopback0'
+     rrc: 'yes'
+
+    'fd00:172:16:255::3':
+     peer_as_number: '65001'
+     source_interface: 'Loopback0'
+     rrc: 'yes'
+     
+    'fd00:172:16:255::4':
+     peer_as_number: '65001'
+     source_interface: 'Loopback0'
+     rrc: 'yes'
+

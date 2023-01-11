@@ -3,424 +3,304 @@
 - name: Enable TRM for EVPN overlay
   hosts: all
   gather_facts: no
+
   vars:
+    input_vars_path: "./"
     playbook_mode: ''
-    collect_rp_afs_once: false
-    check_vrfs_4_trm: true      # when set to false, reconfigs TRM configs under the DAGs
-    trm_block: ''
+    avoid_force_reconfig: true      # when set to false, reconfigs TRM configs under the DAGs
+
+    trm_inc: false
+    design: false
 
     leaf_trm_dict:
+      '../templates/rp_interfaces_trm.j2': 'RP loopback block'
       '../templates/vrf_definition_trm.j2': 'vrf block'
       '../templates/pim_interfaces_trm.j2': 'pim interface block'
-    # design: true
+
+    bgp_mvpn_dict:
+      '../templates/bgp_mvpn_af_trm.j2': 'bgp neighbor mvpn af block'
+
 
   tasks:
     
-# ------ load input files --------
+  ## List of tasks block
+  ##--------------------
+  # 1) load input files
+  # 2) Get RP loopbacks data from trm_overlay_db for the VRFs of interest
+  # 3) Get overlay data and filter non-existing (overlay unconfigured) VRFs
+  # 4) Filter already-TRM-enabled VRFs to avoid reconfig when avoid_force_reconfig is true
+  # 5) Get SVIs and MVPN AFs for the filtered VRFs
+  # 6) Filter out already configured RP loopbacks
+  # 7) Write MVPN AFs per leaf to temp file to get MVPN AFs for spine
+  # 8) Get L2VPN AF neighbors to configure MVPN AFs neighbors
+  # 9) Deploy configurations
+  ##--------------------
 
-            - name: Load and process TRM input file
-              run_once: True
+
+  # ------ 1) load input files --------
+
+            - name: Load and get TRM data from TRM input file
               block:
 
-              # Set db file path and load trm_overlay_db
-              - name: set TRM input file path if not already set
-                when: input_vars_path is not defined
-                set_fact: 
-                  input_vars_path: "./"
+              # leaf_group and spine_group are defined in this subtask
+              - name: Get inventory groups
+                include_tasks: ../subtasks/common_subtasks/subtask_get_inventory_group.yml
 
-              - name: Load vars from trm_overlay_db.yml
-                include_vars: 
-                  file: "{{ input_vars_path }}group_vars/trm_overlay_db.yml"
-                  name: trm_db_vars
+              - name: Initialise variables
+                run_once: true
+                set_fact: 
+                  vrfs: {}
+                  bgp: {}
+                  svis: []
+                  vrf_mvpn: []
+                  vrf_mvpn_spine: []
+                  collect_svis_af_once: false
+
+              - set_fact:
+                  collect_svis_af_once: true        # Collect svi from overlay_db once
+                  avoid_force_reconfig: false       # Do not check in the host for already-TRM-enabled VRFs
+                when: design != false
+
+              # vrfs_unfiltered, trm_db_vars, and trm_create_vars are defined in this subtask
+              - name: Load variables from trm_overlay_db.yml (and trm_create_vars.yml) input file
+                include_tasks: ../subtasks/trm_subtasks/subtask_load_trm_input_files.yml
+
+
+  # ------ 2) Get RP loopbacks data from trm_overlay_db for the VRFs of interest --------
+
+            - name: Get RP loopbacks info from trm_overlay_db for VRFs
+              when: vrfs_unfiltered != {}
+              run_once: true
+              block:
+
+              - name: Collect RP loopbacks info from trm_overlay_db.yml
+                trm_preprocess:
+                  vrf_trm_info: "{{ {'vrfs': vrfs_unfiltered, 'inventory_leafs': leaf_group } }}"
+                register: processed_trm_db
 
               - set_fact: 
-                  vrfs: {}
-
-              # Get VRFs from trm_overlay_db if playbook_trm_preview.yml - already config'd VRFs are to be filtered later
-              - name: Get VRFs from trm_overlay_db.yml
-                when: trm_inc is not defined
-                set_fact: 
-                  vrfs_unfiltered: "{{ trm_db_vars.vrfs }}"
+                  #vrf_mvpn: "{{ processed_trm_db.vrf_mvpn }}"
+                  rp_interface_dict: "{{ processed_trm_db.rp_intf }}"
+                  rp_for_hosts_dict: "{{ processed_trm_db.rp_loopbacks }}"
                   
-              # Get VRFs from trm_create_vars.yml if playbook_trm_incremental_preview.yml - already config'd VRFs are to be filtered later
-              - name: Get VRfs from trm_create_vars.yml
-                when: trm_inc is defined and trm_inc == true
+            - set_fact:
+                vrfs_unfiltered: "{{ vrfs_unfiltered.keys() | list }}"
+              run_once: true
                 
-                block:
-                - set_fact:
-                    playbook_mode: '-inc'
 
-                - name: Load vars from trm_create_vars.yml
-                  include_vars: 
-                    file: "{{ input_vars_path }}group_vars/trm_create_vars.yml"
-                    name: trm_create_vars
+  # ------ 3) Get overlay data and filter non-existing (overlay unconfigured) VRFs --------
 
-                - name: Get desired VRFs data from trm_overlay_db.yml
-                  when: "'all' not in trm_create_vars.dag"
-                  set_fact: 
-                    vrfs_unfiltered: "{{ vrfs_unfiltered | default({}) | combine ( {item: trm_db_vars.vrfs[item]} ) }}"
-                  loop: "{{ trm_create_vars.dag }}"
-
-                # Get VRFs from trm_overlay_db if key is 'all'
-                - name: Get all VRF data from trm_overlay_db.yml
-                  when: "'all' in trm_create_vars.dag"
-                  set_fact:
-                    vrfs_unfiltered: "{{ trm_db_vars.vrfs.keys() | list }}"
-                    collect_rp_afs_once: false
-
-
-# ------ Get SVIs, RP loopback, VRF addr families (from trm_overlay_db), and filter already-trm-enabled VRFs --------
-
-            # Get overlay data
-            - name: Get overlay data to collect VRFs and SVIs data
-              when: inventory_hostname in groups['leaf']
+            - name: Collect overlay data and filter unconfigured VRFs
+              when: vrfs_unfiltered != []
               block:
-              
-              # Get overlay data from device
-              - name: Get overlay data from sh_run_nve
-                when: design is not defined
-                block:
-                - name: Run and parse show run nve
-                  ansible.utils.cli_parse:
-                    command: "show run nve"
-                    parser:
-                      name: ansible.netcommon.pyats
-                    set_fact: overlay_dict
 
-                # Filter already-trm-enabled VRFs by checking whether mdt_auto_discovery is defined
-                - name: Get already-trm-enabled VRFs and filter
-                  block: 
-                  - name: Initialise list
-                    set_fact:
-                      vrf_configd: []
-
-                  - name: Collect trm-enabled VRFs from the device
-                    when: check_vrfs_4_trm == true
-                    block:
-                    - set_fact:
-                        vrf_configd: "{{ vrf_configd + [ item.key ] }}"
-                      when: ('ipv4' in item.value.address_family and 'mdt_auto_discovery' in item.value.address_family.ipv4) or ('ipv6' in item.value.address_family and 'mdt_auto_discovery' in item.value.address_family.ipv6)
-                      with_dict: "{{ overlay_dict.vrf }}"
-
-                  - name: Filter trm-enabled VRFs 
-                    set_fact:
-                      vrfs_filtered: "{{ vrfs_unfiltered | difference(vrf_configd) }}"
-
-                  - name: Get filtered(not-yet-trm-enabled) VRFs' TRM data from trm_overlay_db.yml
-                    set_fact: 
-                      vrfs:  "{{ vrfs | combine ( {item: trm_db_vars.vrfs[item]} ) }}"
-                    loop: "{{ vrfs_filtered }}"
-
-                  # Write TRM-unconfigured VRFs to temp file - to see whether VRF list is same on all device
-                  # VRFs list is filtered from host CLI output and is specific per host
-                  - name: Store TRM-unconfigured VRFs for all hosts in a variable
-                    block:
-                    - name: Create temporary file
-                      run_once: true
-                      ansible.builtin.tempfile:
-                        state: file
-                        suffix: tmp_vrf.yml
-                      register: tmp_vrf
-
-                    - name: Write TRM-unconfigured VRFs hosts to temporary file
-                      when: vrfs != {}
-                      lineinfile:
-                        dest: "{{ tmp_vrf.path }}"
-                        line: "{{ inventory_hostname }} : {{ vrfs.keys() }}"
-                        insertafter: EOF
-
-                    - name: Load vars from temporary file
-                      run_once: true
-                      include_vars: 
-                        file: "{{ tmp_vrf.path }}"
-                        name: trm_unconfig_vrf
-
-                    - name: Remove the temporary file
-                      run_once: true
-                      file:
-                        path: "{{ tmp_vrf.path }}"
-                        state: absent
-                      when: tmp_vrf.path is defined
-
-                  # Check whether VRF list is same on all device, if so, process the VRF data from trm_overlay_db only once
-                  - name: Check whether TRM-unconfigured VRFs are same in all hosts
-                    when: vrfs != {}
-                    run_once: true
-                    block:
-                    - set_fact:
-                        trm_unconfig_vrf_list: "{{ trm_unconfig_vrf.keys() | list }}"
-
-                    - set_fact:
-                        vrf_ref: "{{ trm_unconfig_vrf[trm_unconfig_vrf_list[0]] }}"
-
-                    - set_fact:
-                        collect_rp_afs_once: false
-                      when: vrf_ref != item.value and collect_rp_afs_once == true
-                      with_dict: "{{ trm_unconfig_vrf }}"
+              # ------------------ Design ----------------#
 
               # Get overlay data from overlay_db incase of sample_design
-              - name: Get overlay data from overlay_db.yml
+              - name: Collect overlay data from overlay_db.yml
+                when: design != false
                 run_once: true
-                when: design is defined
                 block:
+
                 - name: Load vars from overlay_db.yml
                   include_vars: 
                     file: "{{ input_vars_path }}group_vars/overlay_db.yml"
                     name: overlay_dict
 
-                - set_fact:
-                    vrfs: "{{ vrfs_unfiltered }}"
-                    trm_unconfig_vrf: "{{ vrfs_unfiltered }}"
-                        
-              # Following tasks in the block are skippped if all VRFs are trm-enabled
-              - name: Collect SVIs from overlay_db or device
-                when: vrfs != {}
-                block:
-                # Get SVIs from device
-                - name: Initialise svi dictionary
-                  run_once: true
-                  set_fact: 
-                    svis: []
-
-                - name: Collect SVIs from device
-                  when: design is not defined
-                  block:
-                  - name: Collect SVIs from the overlay data 
-                    set_fact:
-                      svis: "{{ svis | default([]) + [ item.key ] }}"
-                    when: item.value.vrf in vrfs
-                    with_dict: "{{ overlay_dict.svis }}"
-
-                # Get SVIs from overlay_db
-                - name: Collect SVIs from overlay_db
-                  when: design is defined
-                  run_once: true
-                  block:
-                  - name: Collect SVIs from the overlay data 
-                    set_fact:
-                      svis: "{{ svis | default([]) + [ item.key ] }}"
-                    when: item.value.vrf in vrfs
-                    with_dict: "{{ overlay_dict.svis }}"
-
-                # Get RP loopbacks and AFs from trm_overlay_db for filtered VRFs
-                # Ran once when VRFs-to-be-TRM-enabled list is same for all hosts
-                - name: Collect RP loopbacks and VRFs AFs from trm_overlay_db.yml
-                  run_once: "{{ collect_rp_afs_once }}"
-                  block:
-                  - trm_preprocess:
-                      vrf_trm_info: "{{ {'vrfs': vrfs, 'inventory_leafs': groups['leaf']} }}"
-                    register: processed_trm_db
-
-                  - set_fact: 
-                      vrf_mvpn: "{{ processed_trm_db.vrf_mvpn }}"
-                      rp_intf: "{{ processed_trm_db.rp_intf }}"
-                      all_rp_loopbacks: "{{ processed_trm_db.rp_loopbacks }}"
-
-                  # Write AFs of filtered VRFs (if VRFs list is different among the hosts) per device to temp file - for configuring MVPN AFs on spine
-                  - name: Store VRF AFs to temp file
-                    when: collect_rp_afs_once == false
-                    block:
-                    - name: Create temporary file
-                      run_once: true
-                      ansible.builtin.tempfile:
-                        state: file
-                        suffix: tmp_trm_mvpn.yml
-                      register: tmp_trm_mvpn
-
-                    - name: Write VRF AFs to temporary file
-                      lineinfile:
-                        dest: "{{ tmp_trm_mvpn.path }}"
-                        line: "{{ inventory_hostname }} : {{ vrf_mvpn }}"
-                        insertafter: EOF
-
-                    - name: Get MVPN AFs to be assigned from temporary file
-                      run_once: true
-                      block:
-                      - name: Load vars from temporary file
-                        include_vars: 
-                          file: "{{ tmp_trm_mvpn.path }}"
-                          name: trm_mvpn_all
-
-                      - name: Remove the temporary file
-                        file:
-                          path: "{{ tmp_trm_mvpn.path }}"
-                          state: absent
-                        when: tmp_trm_mvpn.path is defined
-
-                      # MVPN AFs to be configured on spine
-                      - name: Process VRFs' address families of all devices
-                        block:
-                        - set_fact:
-                            vrf_mvpn_spine: []
-
-                        - set_fact: 
-                            vrf_mvpn_spine: "{{ vrf_mvpn_spine + item.value }}"
-                          with_dict: "{{ trm_mvpn_all }}"
-
-                        # Remove duplicate entries
-                        - set_fact: 
-                            vrf_mvpn_spine: "{{ vrf_mvpn_spine | unique }}"
-
-                # Filter out already existing rp loopbacks
-                - name: Run and parse show run | sec ^interface
-                  ansible.utils.cli_parse:
-                    command: "show run | sec ^interface"
-                    parser:
-                      name: ansible.netcommon.pyats
-                    set_fact: interface_dict
-
-                - name: Get unconfigured RP loopbacks if any
-                  set_fact: 
-                    lpbk_to_be_configd: "{{ all_rp_loopbacks[inventory_hostname] | default([]) | difference(interface_dict['interfaces'].keys()) }}"
-                  
-
-# ------ Get BGP AFs detail per device to configure MVPN AF--------
-
-            # Following tasks in the block are skippped for spine if all VRFs in all devices are trm-enabled
-            # and skipped for leaf if all VRFs in that host are trm-enabled
-
-            - name: Collect BGP AFs from host_vars/node_vars/<hostname>.yml or device
-              when: (inventory_hostname in groups['leaf'] and vrfs != {}) or (inventory_hostname in groups['spine'] and trm_unconfig_vrf != {})
-              block:
-
-              # Get BGP data from device and compare l2vpn family with bgp mvpn addr family
-              - name: Get BGP AFs details
-                block:
-                # Set MVPN AFs for spine
-                - name: Get BGP AFs details
-                  when: inventory_hostname in groups['spine']
+                - name: Filter non-existing VRFs 
                   set_fact:
-                    vrf_mvpn: "{{ vrf_mvpn_spine }}"
-
-                # Get BGP data from device
-                - name: Get BGP details from show run | sec bgp 
-                  when: design is not defined
-                  block:
-
-                  - name: Run and parse show run | sec bgp
-                    ansible.utils.cli_parse:
-                      command: "show run | sec bgp"
-                      parser:
-                        name: ansible.netcommon.pyats
-                      set_fact: bgp_parsed
-
-                  # Get L2VPN addr family neighbors and set it as MVPN AF neighbors
-                  - name: Collect L2VPN addr family neighbor from show run | sec bgp output
-                    block:
-                    - set_fact: 
-                        bgp_list: "{{ bgp_parsed.bgp | dict2items }}"
-
-                    - set_fact:
-                        neighbors: "{{ bgp_list[0].value.address_family['l2vpn evpn'].address_family_neighbor.keys() | list }}"
-
-                    - name: Set L2VPN addr family neighbor as MVPN AF neighbors
-                      block:
-                      - set_fact:
-                          bgp: {}
-
-                      - set_fact:
-                          bgp: "{{ bgp | default({}) | combine({ 'as_number': bgp_list[0].value.as_number | string }) }}"
-                    
-                      - set_fact:
-                          bgp: "{{ bgp | default({}) | combine({ item+'_mvpn_neighbors': neighbors }) }}"
-                        loop: "{{ vrf_mvpn }}"
-
-                  # Initialise configured_mvpn list
-                  - set_fact:
-                      configured_mvpn: []
-                    run_once: true
-
-                  # Get MVPN addr families that are already configured on the device
-                  - name: Collect already-configured MVPN AFs
-                    set_fact:
-                      configured_mvpn: "{{ configured_mvpn | default([]) + [ item ] }}"
-                    when: "(item + ' mvpn' in bgp_parsed.bgp[bgp.as_number].address_family)"
-                    loop: "{{ vrf_mvpn }}"
-
-                  # Compare MVPN addr family with L2VPN addr family neighbors and filter out already-configured neighbors
-                  - name: Compare L2VPN AF neighbors with configured MVPN AFs neighbors for the already-configured MVPN AFs
-                    set_fact:
-                      bgp: "{{ bgp | default({}) | combine({item+'_mvpn_neighbors': (bgp[item+'_mvpn_neighbors'] | difference(bgp_parsed.bgp[bgp.as_number].address_family[item+' mvpn'].address_family_neighbor.keys() | list )) }) }}"
-                    when: "'address_family_neighbor' in bgp_parsed.bgp[bgp.as_number].address_family[item+' mvpn']"
-                    loop: "{{ configured_mvpn }}"
-
-                  # Filter already configured MVPN AFs (all neighbors from L2VPN AFs are configured)
-                  - name: Get unconfigured MVPN AFs if any
-                    set_fact:
-                      mvpns: "{{ mvpns | default([]) + [ item ] }}"
-                    when: "(bgp[item + '_mvpn_neighbors'] != [])"
-                    loop: "{{ vrf_mvpn }}"
-
-                # Get BGP data from host_vars/node_vars/<hostname>.yml incase of sample_design
-                - name: Get BGP details from host_vars/node_vars/<inventory>.yml
-                  when: design is defined
-                  block:
-                  - name: Load vars from host_vars/node_vars/<inventory>.yml
-                    include_vars:
-                      file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
-                      name: bgp_vars
-
-                  - name: Collect BGP neighbors from host_vars/node_vars/<inventory>.yml
-                    block:
-                    - set_fact:
-                        mvpns: "{{ vrf_mvpn }}"
-                        neighbors: "{{ bgp_vars.bgp.neighbors.keys() | list }}"
-
-                    - name: Set BGP neighbors host_vars/node_vars/<inventory>.yml as MVPN AF neighbors
-                      block:
-                      - set_fact:
-                          bgp: {}
-
-                      - set_fact:
-                          bgp: "{{ bgp | default({}) | combine({ 'as_number': bgp_vars.bgp.as_number }) }}"
-                          
-                      - set_fact:
-                          bgp: "{{ bgp | default({}) | combine({ item+'_mvpn_neighbors': neighbors }) }}"
-                        loop: "{{ vrf_mvpn }}"
+                    vrfs_filtered: "{{ vrfs_unfiltered | intersect(overlay_dict.vrfs | default([])) }}"
+                  
+              # ------------------------------------------#
 
 
-# ------ Deploy configs to the hosts --------
+              # -------------- Not design ----------------#
 
-            # Following tasks in the block are skippped for spine if all VRFs in all devices are trm-enabled
-            # and skipped for leaf if all VRFs in that host are trm-enabled
+              # Get overlay data from device
+              - name: Collect overlay data from device
+                when: design == false and inventory_hostname in leaf_group
+                block:
+
+                #- name: Run and parse show run nve
+                #  ansible.utils.cli_parse:
+                #    command: "show run nve"
+                #    parser:
+                #      name: ansible.netcommon.pyats
+                #    set_fact: overlay_dict
+
+                ########## Replace with genie parser
+
+                - name: Collect "show run nve"
+                  cli_command:
+                    command: show run nve
+                  register: nve_output
+
+                - name: Call python module to parse NVE output
+                  sh_run_nve_parse:
+                    command_output: "{{ nve_output.stdout }}"
+                  register: nve_parsed
+
+                - set_fact:
+                    overlay_dict: "{{ nve_parsed.parsed }}"
+
+                ########## Replace with genie parser
+
+                - name: Filter non-existing VRFs
+                  set_fact:
+                    vrfs_filtered: "{{ vrfs_unfiltered | intersect( overlay_dict.vrf | default([]) ) }}"
+
+              # ------------------------------------------#
 
 
-            - name: Activating TRM in the vrf defintion and under interfaces
-              when: vrfs != {} and inventory_hostname in groups['leaf']
+  # ------ 4) Filter already-TRM-enabled VRFs to avoid reconfig when avoid_force_reconfig is set to true ------
+
+            - name: Get TRM- VRFs dictionary from device and filter them out if TRM is already configured
+              when: inventory_hostname in leaf_group
               block:
-              - name: Configure RP Loopback interfaces
-                when: lpbk_to_be_configd != []
-                cli_config:
-                  config: "{{ lookup('template', '../templates/rp_interfaces_trm.j2') }}"
-                  diff_match: none
-                register: result
-  
-              - name: Get RP loopbacks to enable PIM-Sparse mode
+
+              # Filter the already-trm-enabled VRFs using overlay output
+              # Skipped when design != false i.e, run from config_example: avoid_force_reconfig == false
+              - name: Get not-trm-enabled VRFs from the device
+                when: avoid_force_reconfig == true
+                block:
+                - trm_preprocess:
+                    config_vrf_info: "{{ {
+                      'vrf_dict': overlay_dict.vrf, 
+                      'db_dict': trm_db_vars.dag, 
+                      'vrf_interested': vrfs_filtered } }}"
+                  register: vrfs_unconfig_dict
+
+                - set_fact:
+                    vrfs_unconfig: "{{ vrfs_unconfig_dict['vrfs_unconfig'] }}"
+
+              - name: Set all VRFs as not-trm-enabled VRFs
+                when: avoid_force_reconfig == false
                 set_fact:
-                  rp_loopbacks: "{{ all_rp_loopbacks[inventory_hostname] }}"
-                when: inventory_hostname in all_rp_loopbacks
-  
-              - cli_config:
-                  config: "{{ lookup('template', item.key) }}"
-                  diff_match: none
-                register: result
-                with_dict: "{{ leaf_trm_dict }}"
-  
-            - name: Spines-only configs
-              when: inventory_hostname in groups['spine'] and trm_unconfig_vrf != {}
+                  vrfs_unconfig: "{{ vrfs_filtered }}"
+
+
+  # ------ 5) Get SVIs and MVPN AFs for the filtered VRFs --------
+
+            # Following tasks in the block are skippped if all VRFs are trm-enabled
+            ## add new node doesn't work with design
+
+            - name: Filter MVPN AFs, SVI dictionary for filtered VRFs
+              when: inventory_hostname in leaf_group
+              run_once: "{{ collect_svis_af_once }}"
               block:
-              - name: Set spines as RRC
+
+              # Get MVPN AFs for vrfs_filtered and not vrfs_unconfig - irrespective of whether VRFs are already TRM-configured
+              - name: Get MVPN AFs
                 set_fact:
-                  bgp: "{{ bgp | default({}) | combine({ 'rrc': 'true' }) }}"
-  
-              - name: Enable IPv6 unicast routing
-                when: "'ipv6' in vrf_mvpn"
-                cisco.ios.ios_config:
-                  lines: ipv6 unicast-routing
-  
-            - name: Activating BGP neighbor under IPv4/MVPN AFI/SAFI
-              when: mvpns is defined and mvpns != []
+                  vrf_mvpn:  "{{ vrfs_filtered | get_mvpns_afs(trm_db_vars) }}"
+
+              - name: Get TRM data from db for unconfigured VRFs
+                set_fact:
+                  vrfs: "{{ vrfs_unconfig | get_dag_data_from_db(trm_db_vars.dag) }}"
+            
+              - name: Collect SVIs from overlay_db/device
+                set_fact:
+                  svis: "{{ overlay_dict.svis | filter_dict_for_vrfs(vrfs) }}"
+
+
+  # ------ 6) Filter out already configured RP loopbacks --------
+
+            - name: Collect unconfigured RP loopbacks
+              when: inventory_hostname in leaf_group
+              block:
+
+              - name: Run and parse show run | sec ^interface
+                ansible.utils.cli_parse:
+                  command: "show run | sec ^interface"
+                  parser:
+                    name: ansible.netcommon.pyats
+                  set_fact: interface_dict
+
+              - name: Get RP loopbacks for each host - filter out loopbacks of unwanted VRFs
+                set_fact:
+                  filtered_rp_loopbacks: "{{ ( rp_for_hosts_dict[inventory_hostname] | default([]) )
+                  | intersect( rp_interface_dict | filter_dict_for_vrfs(vrfs_filtered) | list ) }}" # filter out loopbacks of unwanted VRFs
+
+              - name: Get unconfigured RP loopbacks if any
+                set_fact:
+                  rp_loopbacks: "{{ 
+                    filtered_rp_loopbacks | default([]) | difference(interface_dict['interfaces'].keys()) }}"
+
+              - name: Get RP loopbacks for each host to enable PIM-Sparse mode - filter out TRM-configured VRFs and add unconfig'd RP loopbacks
+                set_fact:
+                  pim_rp_loopbacks: "{{ ( ( ( rp_for_hosts_dict[inventory_hostname] | default([]) )
+                  | intersect( rp_interface_dict | filter_dict_for_vrfs(vrfs) | list ) ) 
+                  + rp_loopbacks ) | unique }}"
+
+
+  # ------ 7) Write MVPN AFs per leaf to temp file to get MVPN AFs for spine  ------
+
+              # VRFs list is filtered with show run nve output and is specific per host, 
+              # so MVPN AFs could be different per leaf
+
+            # Skipped when design != false i.e, run from config_example
+            
+            # -------------- Not design ----------------#
+            - name: Compare MVPN AFs across device
+              when: design == false
+              block:
+
+              - name: Write MVPN data to temporary files
+                include_tasks: ../subtasks/trm_subtasks/subtask_store_hosts_vrf_data.yml
+
+              # Collect MVPN AFs on all leafs for configuring MVPN AFs on spine
+              - name: Process VRFs' address families of all devices
+                when: all_leaf_mvpn_data != {}
+                block:
+                - set_fact: 
+                    vrf_mvpn_spine: "{{ ( vrf_mvpn_spine + item.value ) | unique }}"
+                  with_dict: "{{ all_leaf_mvpn_data }}"
+
+            # ------------------ Design ----------------#
+            - name: Set MVPN AFs for spine - config-example (design != false)
+              when: design != false
+              set_fact: 
+                vrf_mvpn_spine: "{{ vrf_mvpn }}"
+
+
+ # ------ 8) Get L2VPN AF neighbors to configure MVPN AFs neighbors --------
+
+            # Following tasks in the block are skippped for 
+            # spine if all VRFs in all devices are trm-enabled
+            # and for leaf if all VRFs in that host are trm-enabled
+
+            - name: Collect BGP AFs from host_vars/node_vars/<hostname>.yml / device
+              when: (
+                inventory_hostname in leaf_group and vrf_mvpn != [] ) or (
+                inventory_hostname in groups['spine'] and vrf_mvpn_spine != [])
+              block:
+
+              # Set MVPN AFs and RRC for spine
+              - name: Get BGP AFs details
+                when: inventory_hostname in groups['spine']
+                set_fact:
+                  vrf_mvpn: "{{ vrf_mvpn_spine }}"
+                  bgp: "{{ bgp | combine({ 'rrc': 'true' }) }}"
+
+              # bgp and mvpn are defined in this subtask
+              - name: Get BGP neighbors and assign them for MVPN AFs
+                include_tasks: ../subtasks/trm_subtasks/subtask_bgp_mvpn_neighbors.yml
+
+
+  # ------ 9) Deploy configurations --------
+
+            - name: Read leaf-only config template files
+              when: inventory_hostname in leaf_group
               cli_config:
-                config: "{{ lookup('template', '../templates/bgp_mvpn_af_trm.j2') }}"
+                config: "{{ lookup('template', item.key) }}"
                 diff_match: none
               register: result
+              with_dict: "{{ leaf_trm_dict }}"
+
+            - name: Read BGP neighbor MVPN AF template files
+              when: inventory_hostname in leaf_group + spine_group
+              cli_config:
+                config: "{{ lookup('template', item.key) }}"
+                diff_match: none
+              register: result
+              with_dict: "{{ bgp_mvpn_dict }}"

@@ -10,14 +10,6 @@ Project has a modular structure which gives an ability to introduce new features
   * [DAG github](https://github.com/Cat9kEVPN/cat9k-evpn-ansible/tree/main/dag)
   * [DAG documentation](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html)
 
-* L2 Overlay (L2VNI)
-  * [L2VNI github](https://github.com/Cat9kEVPN/cat9k-evpn-ansible/tree/main/l2vni)
-  * [L2VNI documentation](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_l2vni.html)
-  
-* L3 Overlay (L3VNI)
-  * [L3VNI github](https://github.com/Cat9kEVPN/cat9k-evpn-ansible/tree/main/l3vni)
-  * [L3VNI documentation](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_l3vni.html) 
-
 # General description #
 
 <img width="1192" alt="ansible" src="https://user-images.githubusercontent.com/107021162/175528526-5d8b59ea-7f39-4d78-ac95-b08fed9ebbf6.png">
@@ -74,11 +66,6 @@ More details could be found [here](https://docs.python.org/3/library/venv.html)
 Detailed documentation could be found [here](https://cat9k-evpn-ansible.readthedocs.io)
 
 # Release notes #
-
-## 2.1.0 ##
-
-* L2VNI added
-* L3VNI added
 
 ## 2.0.0 ##
 

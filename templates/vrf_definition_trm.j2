@@ -1,86 +1,90 @@
 {#
 
-    This module is adding/deleting incrementally TRM part of the config to vrf and multicast under vrf
-    
-    #}
-    
-    #jinja2: lstrip_blocks: "True", trim_blocks: "True"
-    
-    {% set action = action | default ('add') %}
-    {% if action == 'delete' %}
-        {% set prefix = 'no' %}
-    {% elif action == 'add' %}
-        {% set prefix = '' %}
-    {% endif %}
-    
-    {% if vrfs is defined %}
-        {% for vrf in vrfs %}
+This module is adding/deleting incrementally TRM part of the config to vrf and multicast under vrf
+
+#}
+
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+
+{% set action = action | default ('add') %}
+{% if action == 'delete' %}
+    {% set prefix = 'no' %}
+{% elif action == 'add' %}
+    {% set prefix = '' %}
+{% endif %}
+
+{% if vrfs is defined %}
+    {% for vrf in vrfs %}
+        !
+        vrf definition {{ vrf }}
+
+        {% if vrfs[vrf].fabric_anycast_rp is defined %}
+            {% set fabric_type = 'fabric_anycast_rp' %}
+        {% elif vrfs[vrf].fabric_internal_rp is defined %}
+            {% set fabric_type = 'fabric_internal_rp' %}
+        {% elif vrfs[vrf].fabric_external_rp is defined %}
+            {% set fabric_type = 'fabric_external_rp' %}
+        {% endif %}
+
+        {% for af in vrfs[vrf].afs %}
             !
-            vrf definition {{ vrf }}
-
-            {% if vrfs[vrf].fabric_anycast_rp is defined %}
-                {% set fabric_type = 'fabric_anycast_rp' %}
-            {% elif vrfs[vrf].fabric_internal_rp is defined %}
-                {% set fabric_type = 'fabric_internal_rp' %}
-            {% elif vrfs[vrf].fabric_external_rp is defined %}
-                {% set fabric_type = 'fabric_external_rp' %}
-            {% endif %}
-
-            {% for af in vrfs[vrf].afs %}
-                !
-                address-family {{ af }}
-                {% if vrfs[vrf].afs[af].mdt_auto_discovery is defined %}
-                    {{ prefix }} mdt auto-discovery {{ vrfs[vrf].afs[af].mdt_auto_discovery }}
-                {% else %}
-                    {{ prefix }} mdt auto-discovery vxlan
-                {% endif %}
-
-                {% if vrfs[vrf].afs[af].default_mdt_group is defined %}
-                    {{ prefix }} mdt default vxlan {{ vrfs[vrf].afs[af].default_mdt_group }}    
-                {% endif %}
-
-                {% if vrfs[vrf].afs[af].data_mdt_group is defined and af != 'ipv6' %}
-                    {{ prefix }} mdt data vxlan {{ vrfs[vrf].afs[af].data_mdt_group }}
-                    {% if vrfs[vrf].afs[af].data_mdt_threshold is defined %}
-                        {{ prefix }} mdt data threshold {{ vrfs[vrf].afs[af].data_mdt_threshold }}
-                    {% endif %}   
-                {% endif %}
-
-                {% if fabric_type == 'fabric_anycast_rp' %}
-                    {{ prefix }} mdt overlay use-bgp spt-only
-                {% else %}
-                    {{ prefix }} mdt overlay use-bgp
-                {% endif %}
-            {% endfor %}
-
-            {% if vrfs[vrf].afs.ipv4 is defined %}
-                !
-                {{ prefix }} ip multicast-routing vrf {{ vrf }}
-                {{ prefix }} ip pim vrf {{ vrf }} register-source {{ vrfs[vrf].register_source }}
-                {% if vrfs[vrf][fabric_type].ipv4_rp_address is defined %}
-                    {{ prefix }} ip pim vrf {{ vrf }} rp-address {{ vrfs[vrf][fabric_type].ipv4_rp_address }}
-                {% endif %}
-            {% endif %}
-
-            {% if vrfs[vrf].afs.ipv6 is defined %}
-                !
-                {{ prefix }} ipv6 multicast-routing vrf {{ vrf }}
-                {% if vrfs[vrf].ipv6_register_source is defined %}
-                    {{ prefix }} ipv6 pim vrf {{ vrf }} register-source {{ vrfs[vrf].ipv6_register_source }}
-                {% else %}
-                    {{ prefix }} ipv6 pim vrf {{ vrf }} register-source {{ vrfs[vrf].register_source }}
-                {% endif %}
-                {% if vrfs[vrf][fabric_type].ipv6_rp_address is defined %}
-                    {{ prefix }} ipv6 pim vrf {{ vrf }} rp-address {{ vrfs[vrf][fabric_type].ipv6_rp_address }}
-                {% endif %}
-            {% endif %}
-
-            {% if vrfs[vrf].ssm_range is defined %}
-                !
-                {{ prefix }} ip pim vrf {{ vrf }} ssm range {{ vrfs[vrf].ssm_range }}
+            address-family {{ af }}
+            {% if vrfs[vrf].afs[af].mdt_auto_discovery is defined %}
+                {{ prefix }} mdt auto-discovery {{ vrfs[vrf].afs[af].mdt_auto_discovery }}
             {% else %}
-                !
-                {{ prefix }} ip pim vrf {{ vrf }} ssm default
+                {{ prefix }} mdt auto-discovery vxlan
+            {% endif %}
+
+            {% if vrfs[vrf].afs[af].default_mdt_group is defined %}
+                {{ prefix }} mdt default vxlan {{ vrfs[vrf].afs[af].default_mdt_group }}    
+            {% endif %}
+
+            {% if vrfs[vrf].afs[af].data_mdt_group is defined and af != 'ipv6' %}
+                {{ prefix }} mdt data vxlan {{ vrfs[vrf].afs[af].data_mdt_group }}
+                {% if vrfs[vrf].afs[af].data_mdt_threshold is defined %}
+                    {{ prefix }} mdt data threshold {{ vrfs[vrf].afs[af].data_mdt_threshold }}
+                {% endif %}   
+            {% endif %}
+
+            {% if fabric_type == 'fabric_anycast_rp' %}
+                {{ prefix }} mdt overlay use-bgp spt-only
+            {% else %}
+                {{ prefix }} mdt overlay use-bgp
             {% endif %}
         {% endfor %}
-    {% endif %}
+
+        {% if vrfs[vrf].afs.ipv4 is defined %}
+            !
+            {{ prefix }} ip multicast-routing vrf {{ vrf }}
+            {{ prefix }} ip pim vrf {{ vrf }} register-source {{ vrfs[vrf].register_source }}
+            {% if vrfs[vrf][fabric_type].ipv4_rp_address is defined %}
+                {% set ipv4_rp_addr = vrfs[vrf][fabric_type].ipv4_rp_address.split(' ') %}
+                {{ prefix }} ip pim vrf {{ vrf }} rp-address {{ ipv4_rp_addr[0] }}
+            {% endif %}
+        {% endif %}
+
+        {% if vrfs[vrf].afs.ipv6 is defined %}
+            !
+            {{ prefix }} ipv6 multicast-routing vrf {{ vrf }}
+            {% if vrfs[vrf].ipv6_register_source is defined %}
+                {{ prefix }} ipv6 pim vrf {{ vrf }} register-source {{ vrfs[vrf].ipv6_register_source }}
+            {% else %}
+                {{ prefix }} ipv6 pim vrf {{ vrf }} register-source {{ vrfs[vrf].register_source }}
+            {% endif %}
+            
+            {% if vrfs[vrf][fabric_type].ipv6_rp_address is defined %}
+                {% set ipv6_rp_addr = vrfs[vrf][fabric_type].ipv6_rp_address.split('/') %}
+                {{ prefix }} ipv6 pim vrf {{ vrf }} rp-address {{ ipv6_rp_addr[0] }}
+            {% endif %}
+        {% endif %}
+
+        {% if vrfs[vrf].ssm_range is defined %}
+            !
+            {% if vrfs[vrf].ssm_range == 'default' %}
+                {{ prefix }} ip pim vrf {{ vrf }} ssm default
+            {% else %}
+                {{ prefix }} ip pim vrf {{ vrf }} ssm range {{ vrfs[vrf].ssm_range }}
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+{% endif %}

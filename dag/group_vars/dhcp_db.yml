@@ -1,16 +1,18 @@
-# This is the input file for playbook_dhcp_add_preview.yml, playbook_dhcp_add_commit.yml,
+# This is the input file for the following playbooks,
+# playbook_dhcp_preview.yml, playbook_dhcp_commit.yml
+# playbook_dhcp_incremental_preview.yml, playbook_dhcp_incremental_commit.yml
 # playbook_dhcp_delete_preview.yml, playbook_dhcp_delete_commit.yml
+
 #
 #
-# dhcp:
 #   dhcp_options:
 #     option_82_link_selection_standard: standard       # ip dhcp compatibility suboption link-selection standard (sub-option 150 -> 5)
 #     option_82_server_id_override: standard            # ip dhcp compatibility suboption server-override standard (sub-option 152 -> 11)
-#
-#    vrfs:
-#      all:
-#        helper_address: 
-#          - 10.1.1.11
+#   
+#   dag:
+#     all:
+#       helper_address: 
+#         - 10.1.1.11
 #
 #
 # ______________________________________________
@@ -23,7 +25,7 @@
 #    Example 1:
 #    ----------
 #      
-#        vrfs:  
+#        dag:  
 #          all:                                             <--------- Applies config to all DAGs
 #            helper_address:                                <--------- configs 'ip helper-address global 10.1.1.1' for all SVIs
 #              - 10.1.1.1                       
@@ -34,7 +36,7 @@
 #    Example 2:  
 #    ----------  
 #              
-#        vrfs:  
+#        dag:  
 #          all:                                             <--------- Applies configs to all except 'green' DAG 
 #            helper_address:                                <--------- configs 'ip helper-address global 10.1.1.1' for all SVIs except green's
 #              - 10.1.1.1   
@@ -54,7 +56,7 @@
 #    Example 3: 
 #    ----------
 #            
-#        vrfs:
+#        dag:
 #          all:
 #            helper_address: 
 #              - 10.1.1.1
@@ -69,7 +71,7 @@
 #    Example 4: 
 #    ----------
 #    
-#        vrfs:
+#        dag:
 #          all:                                              <--------- Applies configs to all DAGs
 #            helper_address:                                 <--------- configs 'ip helper-address 10.1.1.1' and 'ip helper-address 10.1.1.2' for all SVIs
 #              - 10.1.1.1
@@ -81,7 +83,7 @@
 #    Example 5: 
 #    ----------
 #            
-#        vrfs:
+#        dag:
 #          green:                                            <--------- Applies configs to 'green' DAG 
 #            helper_address:                                 <--------- configs 'ip helper-address 10.1.1.1' and 'ip helper-address 10.1.1.2' for all 'green' SVIs
 #              - 10.1.1.1
@@ -104,12 +106,11 @@
 # ______________________________________________
 
 
-dhcp:
-    dhcp_options:
-        option_82_link_selection_standard: standard
-        option_82_server_id_override: standard
-    
-    vrfs:
-        all:                   
-            helper_address: 
-                - 10.1.1.1
+dhcp_options:
+    option_82_link_selection_standard: standard
+    option_82_server_id_override: standard
+
+dag:
+    all:                  
+        helper_address:
+            - 10.1.1.4

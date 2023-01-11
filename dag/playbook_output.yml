@@ -5,9 +5,14 @@
   gather_facts: no
   connection: network_cli
   vars_files:
-    - "group_vars/overlay_db.yml"
-  tasks:  
+    - "../config_examples/borderspine/group_vars/overlay_db.yml"
 
+  tasks:  
+          - name: Load vars from group_vars/underlay_config file
+            run_once: true
+            include_vars:
+              file: "group_vars/underlay_config.yml"
+              
           - name: construct show commands from host var file for leafs
             when: inventory_hostname in groups['leaf']
             copy:

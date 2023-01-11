@@ -1,0 +1,13 @@
+# List the playbooks to be run under 'playbooks_to_run' key
+# Enter the name of the playbook(excluding auth playbooks) folder under 'playbook_folder' key
+# By default, playbook_folder is set to 'dag'
+# Playbooks are executed in the same order as listed
+
+playbooks_to_run:
+  - underlay
+  - overlay
+  - access_add
+  - aaa_auth
+  - access_auth
+
+playbook_folder: 'l2vni'

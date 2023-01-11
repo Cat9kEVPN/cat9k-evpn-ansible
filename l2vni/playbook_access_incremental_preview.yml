@@ -5,14 +5,14 @@
   gather_facts: no
   tasks:    
           - set_fact:
-              incremental: true
+              playbook_mode: '-inc'
 
 - name: Initialising variable for localhost
   hosts: localhost
   gather_facts: no
   tasks:    
           - set_fact:
-              incremental: true
+              playbook_mode: '-inc'
 
 - name: Import tasks from playbook_access_add_preview.yml
   import_playbook: playbook_access_add_preview.yml

@@ -1,10 +1,13 @@
 ---
 
-- name: Automated VXLAN deployment with BGP EVPN L2 underlay w/ Spine
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
   hosts: leaf
   gather_facts: no
+
   vars:
-    playbook_mode: add
+    input_vars_path: './'
+    playbook_mode: '-add'
+    
     info_dict:
       access:
         key_name: 'access_vlan'
@@ -12,42 +15,42 @@
         key_name: 'trunk_vlan_list'
   
   tasks:
-          - name: Check playbook mode
-            run_once: true
-            when: incremental is defined
-            set_fact:
-              playbook_mode: inc
 
-          - name: set access interface input folder path if not already set
-            when: input_vars_path is not defined
-            set_fact: 
-              input_vars_path: "./"
+          # leaf_group is defined in this subtask
+          - name: Get inventory groups
+            include_tasks: ../subtasks/common_subtasks/subtask_get_inventory_group.yml
 
-          - name: Load variables from access interface input file if present
+          - name: Configure access interfaces on leaf-s
+            when: inventory_hostname in leaf_group
             block:
-            - name: Check whether host_vars/access_intf/<hostname>.yml is present
-              local_action: stat path="{{ input_vars_path }}host_vars/access_intf/{{ inventory_hostname }}.yml"
-              register: file_state
-              become: no 
-              
-            - name: Load variables from host_vars/access_intf/<hostname>.yml if present
-              include_vars:
-                file: "{{ input_vars_path }}host_vars/access_intf/{{ inventory_hostname }}.yml"
-                name: get_Leaf_vars
-              when: file_state.stat.exists
+      
+            - name: Load variables from access interface input file if present
+              block:
 
-          # Following tasks are skippped if host_vars/access_intf/<hostname>.yml is not present
+              - name: Check whether host_vars/access_intf/<hostname>.yml is present
+                local_action: stat path="{{ input_vars_path }}host_vars/access_intf/{{ inventory_hostname }}.yml"
+                register: access_intf_file_state
+                become: no 
 
-          - name: Process interfaces
-            when: (get_Leaf_vars is defined) and (get_Leaf_vars.access_interfaces is defined)
-            block:
-            - set_fact:
-                execute_task: "../subtasks/subtask_acc_intf_commit.yml"
+              - name: Load variables from host_vars/access_intf/<hostname>.yml if present
+                include_vars:
+                  file: "{{ input_vars_path }}host_vars/access_intf/{{ inventory_hostname }}.yml"
+                  name: get_Leaf_vars
+                when: access_intf_file_state.stat.exists
 
-            - name: Process trunk interfaces
-              when: get_Leaf_vars.access_interfaces.trunks is defined
-              include_tasks: ../subtasks/subtask_acc_intf_trunk.yml
+            # Following tasks are skippped if host_vars/access_intf/<hostname>.yml is not present
 
-            - name: Process access interfaces
-              when: get_Leaf_vars.access_interfaces.access is defined
-              include_tasks: ../subtasks/subtask_acc_intf_access.yml
+            - name: Process interfaces
+              when: (get_Leaf_vars is defined) and (get_Leaf_vars.access_interfaces is defined)
+              block:
+
+              - set_fact:
+                  task_to_execute: "../subtasks/access_intf_subtasks/subtask_acc_intf_commit.yml"
+
+              - name: Process trunk interfaces
+                when: get_Leaf_vars.access_interfaces.trunks is defined
+                include_tasks: ../subtasks/access_intf_subtasks/subtask_acc_intf_trunk.yml
+
+              - name: Process access interfaces
+                when: get_Leaf_vars.access_interfaces.access is defined
+                include_tasks: ../subtasks/access_intf_subtasks/subtask_acc_intf_access.yml

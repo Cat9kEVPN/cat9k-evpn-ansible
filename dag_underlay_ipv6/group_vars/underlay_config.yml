@@ -1,0 +1,33 @@
+# This is the input file for all the templates to configure which underlay_config_type
+# ______________________________________________
+# __________ EXAMPLE SCENARIOS _________________
+# ______________________________________________
+#
+#
+# Example 1: 'green_field_ipv4'
+# 
+# underlay_config_type: 'green_field_ipv4'    <--------- configures ipv4 to all leafes,spines and makes the fabric as ipv4
+#
+# ------------
+#
+# Example 2: 'green_field_ipv6'
+# 
+# underlay_config_type: 'green_field_ipv6'    <--------- configures ipv6 to all leafes,spines and makes the fabric as ipv6
+#
+# ------------
+#
+# Example 3: 'brown_field_dual_stack'
+# 
+# underlay_config_type: 'brown_field_dual_stack'    <--------- migrates the ipv4 fabric to dual_stack fabric and makes the fabric as dual_stack
+#
+# ------------
+#
+# Example 4: 'green_field_dual_stack'
+# 
+# underlay_config_type: 'green_field_dual_stack'    <--------- configures ipv4 and ipv6 to all leafes,spines and makes the fabric as dual_stack
+#
+# ______________________________________________
+# ______________________________________________
+# ______________________________________________
+
+underlay_config_type: 'green_field_dual_stack'

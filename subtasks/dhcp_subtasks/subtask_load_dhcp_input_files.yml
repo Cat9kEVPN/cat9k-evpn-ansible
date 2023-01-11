@@ -1,0 +1,29 @@
+
+  - name: Load input files
+    run_once: true
+    block:
+    - name: Load vars from DHCP input file
+      include_vars: 
+        file: "{{ input_vars_path }}group_vars/dhcp_db.yml"
+        name: dhcp_db_vars
+
+    # Get VRFs from dhcp_db.yml if playbook_dhcp_preview.yml - already config'd VRFs are to be filtered later
+    - name: Get VRFs from dhcp_db.yml
+      when: dhcp_inc == false
+      set_fact:
+        dhcp_unfiltered: "{{ { 'dag': dhcp_db_vars.dag } }}"
+
+    # Get VRFs from dhcp_create_vars.yml if playbook_dhcp_incremental_preview.yml - already config'd VRFs are to be filtered later
+    - name: Get VRFs from dhcp_create_vars.yml if playbook is run in incremental
+      when: dhcp_inc == true
+      block:
+      - name: Load vars from dhcp_create_vars.yml
+        include_vars: 
+          file: "{{ input_vars_path }}group_vars/dhcp_create_vars.yml"
+          name: dhcp_create_vars
+          
+      # Load DHCP configs of VRFs in dhcp_create_vars.yml from dhcp_db.yml and form dhcp dictionary 
+      - name: Form DHCP dictionary
+        set_fact:
+          dhcp_unfiltered: "{{ {
+            'dag': dhcp_create_vars.dag | get_dag_data_from_db(dhcp_db_vars.dag) } }}"

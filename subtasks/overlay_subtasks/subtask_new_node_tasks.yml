@@ -1,0 +1,21 @@
+  - name: Set BGP template files for spines
+    run_once: true
+    set_fact:
+      bgp_spine_overlay_dict: "{{ bgp_overlay_new_node_dict }}"
+
+  # This task run only when new node/s is added to avoid reconfiguring neighbors on Spines
+  - name: Get BGP details from show run | sec bgp - to unalready filter BGP neighbors
+    when: inventory_hostname in groups['spine']
+    block:
+    - name: Run and parse show run | sec bgp
+      ansible.utils.cli_parse:
+        command: "show run | sec bgp"
+        parser:
+          name: ansible.netcommon.pyats
+        set_fact: bgp_parsed
+        
+    - name: Filter configured interface to avoid reconfiguring
+      set_fact: 
+        bgp: "{{ bgp | combine(
+          {'neighbors': (bgp.neighbors | filter_configured_neighbors( bgp_parsed.bgp, bgp.as_number ) ) }
+          ) }}"

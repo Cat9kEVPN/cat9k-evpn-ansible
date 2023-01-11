@@ -1,0 +1,231 @@
+---
+
+- name: Enable DHCP for EVPN overlay
+  hosts: leaf
+  gather_facts: no
+
+  vars:
+    input_vars_path: './'
+    playbook_mode: ''
+
+    one_iter: false
+    config_dhcp_header: false
+    dhcp_inc: false
+    design: false
+
+
+  tasks:
+
+  ## List of tasks block
+  ##--------------------
+  # 1) load input files
+  # 2) Get VRFs with no DHCP source interface assigned from dhcp_db.yml
+  # 3) Collect overlay data ( to get VRFs and SVIs )
+  # 4) Collect and process VRFs from dhcp_db ( to extract respective SVIs from overlay_db/devices )
+  # 5) Remove VRFs that not in device/overlay_db (overlay is not configured) from the 'dhcp' dictionary
+  # 6) Assign DHCP src intf for VRFs (from step 2) from host_vars/node_vars/<host>.yml or device
+  # 7) Collect SVIs ( avoid reconfig for inc playbook - through 'check_svis_reconfig' key)
+  # 8) Apply configurations
+  ##--------------------
+
+
+  # ------ 1) load input files --------
+
+            - name: Load and process DHCP input file
+              run_once: true
+              block:
+
+              - name: Initialise dhcp dictionary
+                set_fact:
+                  dhcp_unfiltered: {}
+                  svis: {}
+                  dhcp: {}
+
+              # leaf_group is defined in subtask
+              - name: Get inventory groups
+                include_tasks: ../subtasks/common_subtasks/subtask_get_inventory_group.yml 
+
+              # dhcp_unfiltered, dhcp_db_vars, and dhcp_create_vars are defined in this subtask
+              - name: Load variables from dhcp_db.yml (and dhcp_create_vars.yml) input file
+                include_tasks: ../subtasks/dhcp_subtasks/subtask_load_dhcp_input_files.yml
+
+
+  # ------ 2) Get VRFs with no dhcp source interface assigned from dhcp_db.yml --------
+
+              - name: Get VRFs with no dhcp source interface assigned from dhcp_db.yml
+                block:
+                - name: Call python module to process dhcp_db.yml content
+                  dhcp_preprocess:
+                    dhcp_dict: "{{ dhcp_unfiltered }}"
+                  register: no_src_vrfs_dict
+
+                - name: Check for any error msg from python module for relay source interface processing
+                  when: no_src_vrfs_dict['global_src_err'] != False
+                  fail:
+                    msg: "Relay source interface for '{{ no_src_vrfs_dict['global_src_err'] }}' 
+                      is not defined in group_vars/dhcp_db.yml"
+                  any_errors_fatal: True
+                
+                - set_fact:
+                    no_src_vrf: "{{ no_src_vrfs_dict['no_src_vrf'] }}"
+
+
+  # ------ 3) Collect overlay data ( to get VRFs and SVIs ) --------
+
+            - name: Get overlay info to config DHCP
+              when: inventory_hostname in leaf_group
+              block:
+              - name: Get overlay details from sh_run_nve
+                when: design == false
+                block:
+                #- name: Run and parse show run nve
+                #  ansible.utils.cli_parse:
+                #    command: "show run nve"
+                #    parser:
+                #      name: ansible.netcommon.pyats
+                #    set_fact: overlay_dict
+
+                ########## Replace with genie parser
+
+                - name: Collect "show run nve"
+                  cli_command:
+                    command: show run nve
+                  register: nve_output
+
+                - name: Call python module to parse NVE output
+                  sh_run_nve_parse:
+                    command_output: "{{ nve_output.stdout }}"
+                  register: nve_parsed
+
+                - set_fact:
+                    overlay_dict: "{{ nve_parsed.parsed }}"
+
+                ########## Replace with genie parser
+
+                - name: Collect "show run | sec dhcp"
+                  cli_command:
+                    command: show run | sec dhcp
+                  register: dhcp_output
+
+                - set_fact:
+                    one_iter: false
+                    overlay_vrf_dict: "{{ overlay_dict.vrf | default({}) }}"
+
+              - name: Get overlay details from overlay_db.yml
+                run_once: true
+                when: design != false
+                block:
+                - name: Load vars from overlay_db.yml
+                  include_vars: 
+                    file: "{{ input_vars_path }}group_vars/overlay_db.yml"
+                    name: overlay_dict
+
+                - set_fact:
+                    one_iter: true
+                    overlay_vrf_dict: "{{ overlay_dict.vrfs | default({}) }}"
+
+
+  # ------ 4) Collect and filter VRFs in dhcp_db ( to extract respective SVIs from overlay_db/devices ) --------
+
+              # filter VRFs that are not in the device/overlay_db: vrfs ignored if overlay is not configured
+
+              - name: Collect all VRFs mentioned in dhcp_db.yml
+                run_once: "{{ one_iter }}"
+                set_fact:
+                  all_vrfs: "{{ dhcp_db_vars.dag.keys() | get_vrf_list(overlay_vrf_dict.keys()) }}"
+
+              - name: Collect VRFs of interest for incremental playbook
+                when: dhcp_inc == true
+                set_fact:
+                  all_vrfs: "{{ dhcp_create_vars.dag | get_vrf_list(all_vrfs) }}"
+
+              - set_fact:
+                  no_src_vrf: "{{ all_vrfs }}"
+                when: "'all' in no_src_vrf"
+
+
+  # ------ 5) Remove VRFs that not in device/overlay_db (overlay is not configured) from the dhcp dictionary
+
+              - name: Filter vrfs from dhcp dictionary if is not in overlay_db/device using 'all_vrfs' variable
+                when: all_vrfs != []
+                run_once: "{{ one_iter }}"
+                set_fact: 
+                  dhcp: "{{ { 
+                    'dag': dhcp_unfiltered.dag | filter_unconfigured_vrfs(all_vrfs + ['all']), 
+                    'dhcp_options': dhcp_db_vars.dhcp_options | default({}) } }}"
+
+
+  # ------ 6) Assign DHCP src intf for VRFs (from step 2) from host_vars/node_vars/<host>.yml or device --------
+
+              - name: Assign dhcp source interface for VRFs if not already assigned
+                when: all_vrfs != [] and no_src_vrf != []
+                block:
+
+                - name: Load vars from host_vars/node_vars/<inventory_hostname>.yml to get overlay interfaces
+                  when: design != false
+                  block:
+                  - include_vars:
+                      file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
+                      name: host_vars_vars
+
+                  - set_fact:
+                      overlay_intf_dict: "{{ host_vars_vars.overlay_interfaces }}"
+                      src_of_intf: "hostvars/{{inventory_hostname}}.yml"
+
+                - name: Get overlay interfaces from devices
+                  when: design == false
+                  block:
+                  - set_fact:
+                      overlay_intf_dict: "{{ overlay_dict.overlay_interfaces | default({}) }}"
+                      src_of_intf: "{{ inventory_hostname }}"
+
+                - name: Get relay src intf for VRFs (if not already assigned) from host_vars/node_vars/<host>.yml or device
+                  block:
+                  - name: Call python module to assign relay src interface
+                    dhcp_preprocess:
+                      no_src_vrf_dict: "{{ { 
+                        'overlay_intf': overlay_intf_dict,
+                        'no_src_vrf': no_src_vrf } }}"
+                    register: dhcp_overlay_src_dict
+
+                  - name: Check for any error msg from python module for relay src intf processing 
+                    when: dhcp_overlay_src_dict['intf_err'] != False
+                    fail:
+                      msg: "Relay source interface for {{ dhcp_overlay_src_dict['intf_err'] }} 
+                        is not defined and cannot be found in {{ src_of_intf }}"
+                    any_errors_fatal: True
+
+
+  # ------ 7) Collect SVIs ( avoid reconfig for inc playbook - through 'check_svis_reconfig' key) --------
+
+              - name: Populate svi dictionary
+                when: all_vrfs != []
+                run_once: "{{ one_iter }}"
+                block:
+
+                - name: Call python module to filter svi dictionary
+                  dhcp_preprocess:
+                    filter_svis_dict: "{{ {
+                      'svis_dict': overlay_dict.svis | default({}),
+                      'overlay_intf': overlay_intf_dict | default ([]),
+                      'dhcp_dict': dhcp,
+                      'all_vrfs': all_vrfs,
+                      'dhcp_overlay_src': dhcp_overlay_src_dict.overlay_intf | default ({}),
+                      'dhcp_output': dhcp_output.stdout_lines | default ([]) } }}"
+                  register: svis_mod_output
+
+                - set_fact: 
+                    config_dhcp_header: "{{ svis_mod_output.config_dhcp_header }}"
+                    all_vrfs: "{{ svis_mod_output.all_vrfs }}"
+                    dhcp: "{{ dhcp | combine (
+                      { 'dag':svis_mod_output.filtered_dhcp_vrfs },
+                      { 'svis':svis_mod_output.filtered_svis } ) }}"
+
+
+  # ------ 8) Apply configurations --------
+
+              - name: Apply configurations
+                cli_config:
+                  config: "{{ lookup('template', '../templates/dhcp_overlay.j2') }}"
+                  diff_match: none
+                register: result

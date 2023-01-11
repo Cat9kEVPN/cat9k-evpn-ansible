@@ -12,15 +12,9 @@ Immutable paramiters:
 
 #jinja2: lstrip_blocks: "True", trim_blocks: "True"
 
-{% set vni_list = [] %}
-
-{% if vlan_cli is defined %}
-    {% for vlan in vlan_cli %}
-        {% set vni_list = vni_list.append(vlans[vlan].vni|int) %}
-    {% endfor %}
-{% endif %}
-
 {% if nve_interfaces is defined %}
+  
+  {% if underlay_config_type == 'green_field_ipv4' or underlay_config_type == ''  %}
 
     {% for interface in nve_interfaces %}
         !
@@ -56,4 +50,149 @@ Immutable paramiters:
             {% endif %}
         {% endfor %}
     {% endfor %}
+    
+  {% elif underlay_config_type == 'green_field_ipv6' %}
+
+    {% for interface in nve_interfaces %}
+        !
+        interface nve{{ interface }}
+        no ip address
+        source-interface {{ nve_interfaces[interface].source_interface }}
+        host-reachability protocol bgp
+        vxlan encapsulation ipv6
+
+        {% for ivlan,idata in vlans.items() %}
+            {% if ((vlan_cli is defined and ivlan in vlan_cli) or (vlan_cli is not defined)) %}
+
+                {# Checking an action for vlan - action_stitching #}
+                {% set action = vlans[ivlan].action | default ('add') %}
+
+                {% if action == 'delete' %}    
+                    {% set prefix = 'no' %}
+                {% else %}
+                    {% set prefix = '' %}
+                {% endif %}
+
+                {% if idata.vlan_type == 'access' %}
+                    {% if idata.evi is defined %}
+                        {% if idata.replication_type  == 'static' %}
+                           {{prefix}} member vni {{ idata.vni }} mcast-group {{idata.replication_mcast_ipv6}}
+                        {% elif ((idata.replication_type  == 'ingress') or (idata.replication_type  == 'ingress-replication')) %}
+                           {{prefix}} member vni {{ idata.vni }} ingress-replication
+                        {% endif %}
+                    {% endif %}
+                {% elif idata.vlan_type == 'core' %}
+                    {{prefix}} member vni {{ idata.vni }} vrf {{ idata.vrf }}
+                {% endif %}
+                
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+    
+  {% elif underlay_config_type == 'brown_field_dual_stack' %}
+
+    {% for interface in nve_interfaces %}
+        !
+        interface nve{{ interface }}
+        no ip address
+        source-interface {{ nve_interfaces[interface].source_interface }}
+        host-reachability protocol bgp
+        vxlan encapsulation dual-stack prefer-ipv6 underlay-mcast ipv6
+
+        {% for ivlan,idata in vlans.items() %}
+            {% if ((vlan_cli is defined and ivlan in vlan_cli) or (vlan_cli is not defined)) %}
+
+                {# Checking an action for vlan - action_stitching #}
+                {% set action = vlans[ivlan].action | default ('add') %}
+
+                {% if action == 'delete' %}    
+                    {% set prefix = 'no' %}
+                {% else %}
+                    {% set prefix = '' %}
+                {% endif %}
+
+                {% if idata.vlan_type == 'access' %}
+                    {% if idata.evi is defined %}
+                        {% if idata.replication_type  == 'static' %}
+                           {{prefix}} member vni {{ idata.vni }} mcast-group {{idata.replication_mcast}} {{idata.replication_mcast_ipv6}}
+                        {% elif ((idata.replication_type  == 'ingress') or (idata.replication_type  == 'ingress-replication')) %}
+                           {{prefix}} member vni {{ idata.vni }} ingress-replication
+                        {% endif %}
+                    {% endif %}
+                {% elif idata.vlan_type == 'core' %}
+                    {{prefix}} member vni {{ idata.vni }} vrf {{ idata.vrf }}
+                {% endif %}
+                
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+    
+  {% elif underlay_config_type == 'green_field_dual_stack' %}
+
+    {% for interface in nve_interfaces %}
+        !
+        interface nve{{ interface }}
+        no ip address
+        source-interface {{ nve_interfaces[interface].source_interface }}
+        host-reachability protocol bgp
+        vxlan encapsulation dual-stack prefer-ipv6 underlay-mcast ipv4
+
+        {% for ivlan,idata in vlans.items() %}
+            {% if ((vlan_cli is defined and ivlan in vlan_cli) or (vlan_cli is not defined)) %}
+
+                {# Checking an action for vlan - action_stitching #}
+                {% set action = vlans[ivlan].action | default ('add') %}
+
+                {% if action == 'delete' %}    
+                    {% set prefix = 'no' %}
+                {% else %}
+                    {% set prefix = '' %}
+                {% endif %}
+
+                {% if idata.vlan_type == 'access' %}
+                    {% if idata.evi is defined %}
+                        {% if idata.replication_type  == 'static' %}
+                           {{prefix}} member vni {{ idata.vni }} mcast-group {{idata.replication_mcast}} {{idata.replication_mcast_ipv6}}
+                        {% elif ((idata.replication_type  == 'ingress') or (idata.replication_type  == 'ingress-replication')) %}
+                           {{prefix}} member vni {{ idata.vni }} ingress-replication
+                        {% endif %}
+                    {% endif %}
+                {% elif idata.vlan_type == 'core' %}
+                    {{prefix}} member vni {{ idata.vni }} vrf {{ idata.vrf }}
+                {% endif %}
+                
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+  
+  {% elif underlay_config_type == 'downgrade_to_ipv4' %}
+
+    {% for interface in nve_interfaces %}
+        !
+        interface nve{{ interface }}
+        vxlan encapsulation ipv4
+
+        {% for ivlan,idata in vlans.items() %}
+            {% if ((vlan_cli is defined and ivlan in vlan_cli) or (vlan_cli is not defined)) %}
+
+                {# Checking an action for vlan - action_stitching #}
+                {% set action = vlans[ivlan].action | default ('add') %}
+
+                {% if action == 'delete' %}    
+                    {% set prefix = 'no' %}
+                {% else %}
+                    {% set prefix = '' %}
+                {% endif %}
+
+                {% if idata.vlan_type == 'access' %}
+                    {% if idata.evi is defined %}
+                        {% if idata.replication_type  == 'static' %}
+                           {{prefix}} member vni {{ idata.vni }} mcast-group {{idata.replication_mcast}}
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+  {% endif %}
 {% endif %}

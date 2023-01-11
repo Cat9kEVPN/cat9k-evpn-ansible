@@ -1,0 +1,19 @@
+{#
+This module is configuring global BGP process and neighbor parameters
+#}
+
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+
+{# initial BGP process configuration #}
+!
+router bgp {{ bgp.as_number }}
+
+    {# BGP neighbors configuration #}
+    {% for neighbor in bgp.neighbors%}
+        neighbor {{neighbor }} inherit peer-session EVPN-PEER-SESSION
+
+        {# if it is eBGP neighborship, eBGP multihop command is used #}
+        {% if bgp.as_number != bgp.neighbors[neighbor].peer_as_number%}
+            neighbor {{ neighbor }} ebgp-multihop 255
+        {% endif %}
+    {% endfor %}

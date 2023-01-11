@@ -1,0 +1,4 @@
+auth_type:
+  GigabitEthernet1/0/4: DefaultWiredDot1xOpenAuth
+  GigabitEthernet1/0/5: DefaultWiredDot1xClosedAuth
+  GigabitEthernet1/0/6: DefaultWiredDot1xLowImpactAuth

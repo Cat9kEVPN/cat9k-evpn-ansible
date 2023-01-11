@@ -1,0 +1,46 @@
+---
+
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
+  hosts: leaf
+  gather_facts: no
+
+  vars:
+    playbook_name: "auth"
+    input_vars_path: "./"
+    auth_block: ""
+
+    leaf_auth_dict:
+      '../templates/aaa_configs.j2': 'aaa configs block'
+      '../templates/auth_configs.j2': 'auth configs block'
+
+
+  tasks:
+
+          # leaf_group is defined in subtask
+          - name: Get inventory groups
+            include_tasks: ../subtasks/common_subtasks/subtask_get_inventory_group.yml
+
+          # Set db file path and load auth_db
+          - name: Load vars from auth_db input file
+            run_once: true
+            include_vars: 
+              file: "{{ input_vars_path }}group_vars/auth_db.yml"
+
+          - name: Read template files
+            when: inventory_hostname in leaf_group
+            set_fact:
+              auth_block: "{{ auth_block }} ! {{ leaf_auth_dict[item.key] }} {{ lookup('template', item.key ) }}"
+            with_dict: "{{ leaf_auth_dict }}"
+
+          - name: Write to preview files
+            include_tasks: ../subtasks/common_subtasks/subtask_write_to_preview_file.yml 
+
+
+- name: Display output file info
+  hosts: leaf
+  gather_facts: no
+  run_once: True
+
+  tasks:
+    - debug:
+        msg: Please refer to <hostname>-auth.txt in 'preview_files' folder

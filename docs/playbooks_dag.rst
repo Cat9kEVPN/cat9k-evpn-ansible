@@ -1330,7 +1330,7 @@ This playbook is generating the TRM related config based on config file ``group_
 
     No config will be pushed to the remote devices!
 
-.. code-block:: yaml
+.. code-block:: yml
 
   vrfs:
     blue:                                                 
@@ -1403,7 +1403,7 @@ For example it is needed to enable TRM for VRF :green:`green` additionaly to VRF
 
 Next config is added to the file ``group_vars/trm_overlay_db.yml``:
 
-.. code-block:: yaml
+.. code-block:: yml
 
   vrfs:
     blue:
@@ -1425,7 +1425,7 @@ After adding necessary configuration to the file ``group_vars/trm_overlay_db.yml
 
 In this file we define for which VRF TRM has to be configured. In our case it is VRF :green:`green`
 
-.. code-block:: yaml
+.. code-block::
 
   dag:
     - green  
@@ -1505,7 +1505,7 @@ For doing that we need to edit ``group_vars/trm_delete_vars.yml``.
 
 In this file we define for which VRF TRM has to be configured. In our case it is VRF :green:`green`
 
-.. code-block:: yaml
+.. code-block::
 
   dag:
     - green  

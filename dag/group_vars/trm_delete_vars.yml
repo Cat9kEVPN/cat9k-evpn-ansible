@@ -1,0 +1,50 @@
+# This is the input file for playbook_trm_overlay_delete_preview.yml and playbook_trm_overlay_delete_commit.yml
+# 
+# List the DAG/s where TRM needs to be disabled under 'dag' keyword
+#
+# Note: TRM information for listed DAG/s are taken from trm_overlay_db.yml
+#
+#
+# ______________________________________________
+# __________ EXAMPLE SCENARIOS _________________
+# ______________________________________________
+#
+#
+# Example 1: Disables TRM for DAG 'blue' and 'green' DAGs
+# 
+#   dag: 
+#     - blue                          <--------- Get TRM data for the DAG from trm_overlay_db.yml
+#     - green     
+#     
+# ------------
+#
+# Example 2: Disables TRM for all DAGs
+#
+#   dag:
+#     - all                           <--------- Disables TRM on all DAG/s mentioned in trm_overlay_db.yml
+#
+#   update_rp_loopbacks: false         <--------- Doesn't delete the RP loopback interfaces
+#
+# ------------
+#
+# Example 3: Disables TRM for blue DAGs
+#
+#   dag:
+#     - blue                          <--------- Disables TRM on 'blue' DAG mentioned in trm_overlay_db.yml
+#
+#   update_rp_loopbacks: false        <--------- Doesn't delete the RP loopback interfaces
+#   update_bgp_mvpns: false           <--------- Doesn't delete the BGP MVPN adress families
+#
+#
+# Note: 'update_rp_loopbacks' and 'update_bgp_mvpns' are set to true by Default
+#
+# ______________________________________________
+# ______________________________________________
+# ______________________________________________
+
+
+dag: 
+  - all
+
+#update_rp_loopbacks: false
+#update_bgp_mvpns: false

@@ -1,0 +1,30 @@
+  - name: Store VRFs and MVPNs of all hosts
+    block:
+    - name: Create temporary file
+      run_once: true
+      ansible.builtin.tempfile:
+        state: file
+        suffix: tmp_vrf_mvpn.yml
+      register: tmp_vrf_mvpn
+ 
+    - name: Write VRF AFs to temporary file
+      when: inventory_hostname in leaf_group 
+      lineinfile:
+        dest: "{{ tmp_vrf_mvpn.path }}"
+        line: "{{ inventory_hostname }} : {{ vrf_mvpn | default([]) }}"
+        insertafter: EOF
+
+    - name: Load data from temporary file
+      when: tmp_vrf_mvpn.path is defined
+      run_once: true
+      block:
+      
+      - name: Load vars from temporary file
+        include_vars: 
+          file: "{{ tmp_vrf_mvpn.path }}"
+          name: all_leaf_mvpn_data
+
+      - name: Remove the temporary file
+        file:
+          path: "{{ tmp_vrf_mvpn.path }}"
+          state: absent

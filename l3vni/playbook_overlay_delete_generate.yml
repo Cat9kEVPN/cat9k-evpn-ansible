@@ -3,10 +3,18 @@
 - name: Automated VXLAN deployment with BGP EVPN L3 underlay w/ Spine
   hosts: leaf
   gather_facts: no
-  vars:
-    update_acc_intf: false
     
   tasks:
+
+          - name: Cleanup host_vars/delete_vars dir
+            run_once: true
+            file:
+              state: "{{ item }}"
+              path: "host_vars/delete_vars"
+            with_items:
+              - absent
+              - directory
+
           - name: Load variables from group_vars/delete_vars.yml file
             run_once: true
             include_vars:
@@ -21,31 +29,54 @@
             - set_fact:
                 to_del: "{{ {'dag': dag } }}"
 
+          # Collect and parse the show run nve data
+
+          #- name: Run and parse show run nve
+          #  ansible.utils.cli_parse:
+          #    command: "show run nve"
+          #    parser:
+          #      name: ansible.netcommon.pyats
+          #    set_fact: nve_output_parsed
+
+          ########## Replace with genie parser
+
+          # Remove this block and uncommment the task above
           - name: Collect "show run nve"
             cli_command:
               command: show run nve
             register: nve_output
 
+          - name: Call python module to parse NVE output
+            sh_run_nve_parse:
+              command_output: "{{ nve_output.stdout }}"
+            register: nve_parsed
+
+          - set_fact:
+              nve_output_parsed: "{{ nve_parsed.parsed }}"
+
+          ########## Replace with genie parser
+
           - name: Add "show run nve" output to dictionary
             set_fact: 
-              command_output: "{{ { 'run_nve' : nve_output.stdout_lines} }}"
+              command_output: "{{ { 'run_nve' : nve_output_parsed } }}"
 
           - name: Get "update_access" value if present in group_vars/delete_vars.yml
-            when: to_del['update_access'] is defined
             set_fact:
-              update_acc_intf: "{{ to_del['update_access'] }}"
+              update_access_intf: "{{ to_del['update_access_intf'] | default(false) }}"
 
           - name: Collect and add interface information to dictionary
-            when: update_acc_intf == true
+            when: update_access_intf == true
             block:
-              - name: Collect "show run | section ^interface"
-                cli_command:
-                  command: show run | section ^interface
-                register: interface_output
-
-              - name: Add "show run | section ^interface" output to dictionary
-                set_fact: 
-                  command_output: "{{ command_output | combine ( {'intf_sec' : interface_output.stdout_lines} ) }}"
+            - name: Run and parse "show run | section ^interface"
+              ansible.utils.cli_parse:
+                command: "show run | section ^interface"
+                parser:
+                  name: ansible.netcommon.pyats
+                set_fact: interface_output
+                
+            - name: Add "show run | section ^interface" output to dictionary
+              set_fact: 
+                command_output: "{{ command_output | combine ( {'intf_sec' : interface_output} ) }}"
 
           - name: Process collected CLIs' output
             parser_to_delete_yaml:

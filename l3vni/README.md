@@ -1,6 +1,6 @@
 # General description #
 
-In this directory there are playbooks for provisioning L3VNI (L3 overlay) for Campus EVPN Fabric.
+In this directory there are playbooks for provisioning DAG (Distributed Anycast Gateway) for Campus EVPN Fabric.
 
 # Topology #
 
@@ -10,7 +10,7 @@ Below you can find a topology which is used in the automation scenario
 
 # Quick start #
 
-For the quick start with L3VNI provisioning next steps have to be executed:
+For the quick start with DAG provisioning next steps have to be executed:
  
 ## Step 1 ## 
 
@@ -30,7 +30,7 @@ all:
 
 <...snip...>
 ```
-Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_l3vni.html#inventory-yml)
+Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html#inventory-yml)
 
 ### Step 1b ###
 
@@ -52,7 +52,7 @@ username cisco privilege 15 password 0 cisco123
 
 If enable password should be used, check the [Enable Mode](https://docs.ansible.com/ansible/latest/network/user_guide/platform_ios.html) documentation.
 
-Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_l3vni.html#all-yml)
+Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html#all-yml)
 
 ### Step 1c ###
 
@@ -78,7 +78,7 @@ interfaces:
 <...snip...>
 ```
 
-Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_l3vni.html#host-vars).
+Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html#host-vars).
 
 ### Step 1d ###
 
@@ -89,7 +89,7 @@ Run the underlay preview playbook. This playbook generates the configuration for
 ```
 ansible-playbook -i inventory.yml playbook_underlay_preview.yml
 ```
-The files ``<hostname>-underlay.txt`` could be found in the directory ``cat9k-evpn-ansible/l3vni/preview_files``
+The files ``<hostname>-underlay.txt`` could be found in the directory ``cat9k-evpn-ansible/dag/preview_files``
 
 ```
 #cat preview_files/Leaf-01-underlay.txt
@@ -113,7 +113,7 @@ Run the underlay provisioning playbook. It is possible to see in terminal logs a
 ansible-playbook -i inventory.yml playbook_underlay_commit.yml
 ```
 
-Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/playbooks_l3vni.html#underlay-provisioning).
+Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/playbooks_dag.html#underlay-provisioning).
 
 ## Step 2 ##
 
@@ -125,12 +125,14 @@ Edit the ``group_vars/overlay_db.yml`` file and set desired parameters for EVPN 
 
 ```
 l2vpn_global:
+    replication_type: 'static'
     router_id: 'Loopback1'
+    default_gw: 'yes'
 
 <...skip...>
 ```
 
-Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_l3vni.html#overlay-db-yml)
+Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html#overlay-db-yml)
 
 ### Step 2b ###
 
@@ -162,7 +164,7 @@ Run the overlay preview playbook. This playbook generates the configuration for 
 ansible-playbook -i inventory.yml playbook_overlay_preview.yml
 ```
 
-The files ``<hostname>-overlay.txt`` could be found in the directory ``cat9k-evpn-ansible/l3vni/preview_files``
+The files ``<hostname>-overlay.txt`` could be found in the directory ``cat9k-evpn-ansible/dag/preview_files``
 
 ```
 #cat preview_files/Leaf-01-overlay.txt 
@@ -194,7 +196,7 @@ Run the overlay provisioning playbook. It is possible to see in terminal logs al
 ansible-playbook -i inventory.yml playbook_overlay_commit.yml
 ```
 
-Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/playbooks_l3vni.html#overlay-provisioning)
+Detailed information could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/playbooks_dag.html#overlay-provisioning)
 
 # Playbook usage #
 
@@ -328,4 +330,4 @@ inputs from ``playbook_overlay_delete_ipv6_preview.yml``
 
 # Documentation #
 
-Detailed documentation could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_l3vni.html)
+Detailed documentation could be found [here](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_dag.html)

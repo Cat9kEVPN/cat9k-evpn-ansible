@@ -1,0 +1,25 @@
+{#
+This module is configuring the auth configuration to the access interfaces.
+If action is not set in the configurations, it is "add" by default.
+#}
+
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+
+{# Auth configs to access interfaces #}
+{% if auth_type is defined %}
+  {% for auth_inft in auth_type %}
+    {% if action is defined and action == 'delete' %}
+      !
+      interface {{ auth_inft }}
+       no dot1x timeout tx-period 7
+       no dot1x max-reauth-req 3
+       no source template {{ auth_type[auth_inft] }}
+    {% else %}
+      !
+      interface {{ auth_inft }}
+       dot1x timeout tx-period 7
+       dot1x max-reauth-req 3
+       source template {{ auth_type[auth_inft] }}
+    {% endif %}
+  {% endfor %}
+{% endif %}

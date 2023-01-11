@@ -1,0 +1,41 @@
+---
+
+- name: Write access_auth generate info to files in host_vars/auth_vars folder
+  import_playbook: playbook_delete_access_auth_generate.yml
+  
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
+  hosts: leaf
+  gather_facts: no
+
+  vars:
+    action : 'delete' 
+
+    access_auth_dict:
+      '../templates/access_auth_configs.j2': 'access auth configs block'
+
+
+  tasks:
+
+          - name: Load vars from auth_db input file
+            run_once: true
+            include_vars: 
+              file: "group_vars/auth_db.yml"
+
+          - name: Check whether host_vars/delete_auth_vars/{{ inventory_hostname }}.yml is present
+            local_action: stat path=./host_vars/delete_auth_vars/{{ inventory_hostname }}.yml
+            register: file_state
+            become: no 
+
+          - name: Executing tasks if host_vars/delete_auth_vars/{{ inventory_hostname }}.yml is present
+            when: file_state.stat.exists and inventory_hostname in groups['leaf']
+            block:
+            - name: Load variables from files under host_vars/delete_auth_vars folder
+              include_vars: host_vars/delete_auth_vars/{{ inventory_hostname }}.yml
+          
+          - name: auth configuration to access interfaces
+            when: (inventory_hostname in groups['leaf'])
+            cli_config:
+              config: " {{ lookup('template', item.key) }} "
+              diff_match: none 
+            register: result
+            with_dict: "{{ access_auth_dict }}"

@@ -177,6 +177,23 @@
 # GigabitEthernet1/0/7 - 101,102,201,202 (from group_vars/overlay_db.yml or host_vars/inc_vars/<hostname>.yml)
 # GigabitEthernet1/0/8 - 201
 #
+# Example 7:
+# 
+# Content of host_vars/access_intf/<hostname>.yml
+# access_interfaces:
+#  trunks:
+#    - GigabitEthernet1/0/6
+#  access:
+#    - GigabitEthernet1/0/5:
+#       access_vlan: 201
+#    - GigabitEthernet1/0/7
+#  access_vlan: 102
+# 
+# Values assigned after execution
+#
+# GigabitEthernet1/0/6 - 101,102,201,202 (from group_vars/overlay_db.yml or host_vars/inc_vars/<hostname>.yml)
+# GigabitEthernet1/0/5 - 201,auth_type : DefaultWiredDot1xClosedAuth(from ../auth/group_vars/overlay_db.yml )
+# GigabitEthernet1/0/7 - 102
 # ______________________________________________
 # ______________________________________________
 # ______________________________________________

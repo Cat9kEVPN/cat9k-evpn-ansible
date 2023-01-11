@@ -6,7 +6,55 @@ If action is not set in the configurations, it is "add" by default.
 #jinja2: lstrip_blocks: "True", trim_blocks: "True"
 
 {# Configure BGP AF for VRF #}
-{% if vrfs is defined -%}
+
+{% if vrfs is defined %}
+  {% if underlay_config_type == 'green_field_dual_stack' %}
+    !
+    router bgp {{ bgp_ipv6.as_number }}
+    {% for vrf in vrfs -%}
+        {% if ( (vrf_cli is defined and vrf in vrf_cli) or (vrf_cli is not defined) ) %}
+            {% for af in vrfs[vrf].afs -%}
+                !
+                address-family {{ af }} vrf {{ vrf }}
+                advertise l2vpn evpn
+                redistribute connected
+                redistribute static
+
+                {# Check if something else needed to be redistributed except static or connected #}
+                {% if bgp_ipv6.afs[af].vrf[vrf].redistribute is defined %}
+                    {% for redist in bgp_ipv6.afs[af].vrf[vrf].redistribute %}
+                        redistribute {{redist}}
+                    {% endfor%}
+                {% endif %}
+
+            {% endfor%}
+        {% endif %}
+    {% endfor %}
+    
+  {% elif underlay_config_type == 'green_field_ipv6' %}
+    !
+    router bgp {{ bgp_ipv6.as_number }}
+    {% for vrf in vrfs -%}
+        {% if ( (vrf_cli is defined and vrf in vrf_cli) or (vrf_cli is not defined) ) %}
+            {% for af in vrfs[vrf].afs -%}
+                !
+                address-family {{ af }} vrf {{ vrf }}
+                advertise l2vpn evpn
+                redistribute connected
+                redistribute static
+
+                {# Check if something else needed to be redistributed except static or connected #}
+                {% if bgp_ipv6.afs[af].vrf[vrf].redistribute is defined %}
+                    {% for redist in bgp_ipv6.afs[af].vrf[vrf].redistribute %}
+                        redistribute {{redist}}
+                    {% endfor%}
+                {% endif %}
+
+            {% endfor%}
+        {% endif %}
+    {% endfor %}
+    
+  {% elif underlay_config_type == 'green_field_ipv4' or underlay_config_type == ''  %}
     !
     router bgp {{ bgp.as_number }}
     {% for vrf in vrfs -%}
@@ -28,4 +76,5 @@ If action is not set in the configurations, it is "add" by default.
             {% endfor%}
         {% endif %}
     {% endfor %}
+  {% endif %}
 {% endif %}

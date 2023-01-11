@@ -6,18 +6,52 @@ This module configures overlay interfaces
 
 {% if overlay_interfaces is defined %}
     {% for intf in overlay_interfaces %}
-        {% if ((ovrl_intf_cli is defined and intf in ovrl_intf_cli) or (ovrl_intf_cli is not defined)) %}
-        {# Checking an action for the vlan - action_vlan. #}
-        {% set action = overlay_interfaces[intf].action | default ('add') %}
-            !
-            interface {{ intf }}
-            {% if action == 'delete' -%}
-                no vrf forwarding {{ overlay_interfaces[intf].vrf }}
-            {% elif action == 'add' %}
-                vrf forwarding {{ overlay_interfaces[intf].vrf }}
-                ip address {{ overlay_interfaces[intf].ip_address }} {{ overlay_interfaces[intf].subnet_mask }} 
-            {% endif %}
-            no shutdown
+    
+        {% if underlay_config_type == 'green_field_ipv4' or underlay_config_type == '' %}
+          {% if ((ovrl_intf_cli is defined and intf in ovrl_intf_cli) or (ovrl_intf_cli is not defined)) %}
+          {# Checking an action for the vlan - action_vlan. #}
+          {% set action = overlay_interfaces[intf].action | default ('add') %}
+              !
+              interface {{ intf }}
+              {% if action == 'delete' -%}
+                  no vrf forwarding {{ overlay_interfaces[intf].vrf }}
+              {% elif action == 'add' %}
+                  vrf forwarding {{ overlay_interfaces[intf].vrf }}
+                  ip address {{ overlay_interfaces[intf].ip_address }} {{ overlay_interfaces[intf].subnet_mask }} 
+              {% endif %}
+              no shutdown
+          {% endif %}
+          
+        {% elif underlay_config_type == 'green_field_ipv6' or underlay_config_type == 'brown_field_dual_stack' %}
+          {% if ((ovrl_intf_cli is defined and intf in ovrl_intf_cli) or (ovrl_intf_cli is not defined)) %}
+          {# Checking an action for the vlan - action_vlan. #}
+          {% set action = overlay_interfaces[intf].action | default ('add') %}
+              !
+              interface {{ intf }}
+              {% if action == 'delete' -%}
+                  no vrf forwarding {{ overlay_interfaces[intf].vrf }}
+              {% elif action == 'add' %}
+                  vrf forwarding {{ overlay_interfaces[intf].vrf }}
+                  ipv6 address {{ overlay_interfaces[intf].ipv6_address }}
+              {% endif %}
+              no shutdown
+          {% endif %}
+          
+        {% elif underlay_config_type is defined and underlay_config_type == 'green_field_dual_stack' %}
+          {% if ((ovrl_intf_cli is defined and intf in ovrl_intf_cli) or (ovrl_intf_cli is not defined)) %}
+          {# Checking an action for the vlan - action_vlan. #}
+          {% set action = overlay_interfaces[intf].action | default ('add') %}
+              !
+              interface {{ intf }}
+              {% if action == 'delete' -%}
+                  no vrf forwarding {{ overlay_interfaces[intf].vrf }}
+              {% elif action == 'add' %}
+                  vrf forwarding {{ overlay_interfaces[intf].vrf }}
+                  ip address {{ overlay_interfaces[intf].ip_address }} {{ overlay_interfaces[intf].subnet_mask }} 
+                  ipv6 address {{ overlay_interfaces[intf].ipv6_address }}
+              {% endif %}
+              no shutdown
+          {% endif %}
         {% endif %}
     {% endfor %}
 {% endif %}

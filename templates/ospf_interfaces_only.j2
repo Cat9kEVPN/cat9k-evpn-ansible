@@ -1,0 +1,42 @@
+{#
+This module configures underlay OSPF process and interfaces.
+Default OSPF network type in underlay is P2P for speeding up the convergence time.
+#}
+
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+
+{# configure ospf under interface and set ospf interface P2P if not loopback #}
+{% if underlay_config_type == 'ipv4' %}
+    {% for interface in interfaces%}
+        !
+        interface  {{ interface }}
+        {% if interfaces[interface].loopback == 'no'%}
+            ip ospf network point-to-point
+        {% endif %}
+
+        ip ospf 1 area 0
+    {% endfor %}
+
+{% elif underlay_config_type == 'ipv6' %}
+    {% for interface in interfaces%}
+        !
+        interface  {{ interface }}
+        {% if interfaces[interface].loopback == 'no'%}
+            ipv6 ospf network point-to-point
+        {% endif %}
+        ipv6 ospf 1 area 0
+    {% endfor %}
+
+{% elif underlay_config_type == 'dual_stack' %}
+    {% for interface in interfaces%}
+        !
+        interface  {{ interface }}
+        {% if interfaces[interface].loopback == 'no'%}
+            ip ospf network point-to-point
+            ipv6 ospf network point-to-point
+        {% endif %}
+        ospf 1 area 0
+        ipv6 ospf 1 area 0
+    {% endfor %}
+
+{% endif %}

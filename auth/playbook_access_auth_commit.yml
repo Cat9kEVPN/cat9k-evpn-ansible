@@ -1,0 +1,49 @@
+---
+
+- name: Write auth generate info to files in host_vars/auth_vars folder
+  import_playbook: playbook_access_auth_generate.yml
+  
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
+  hosts: leaf
+  gather_facts: no
+
+  vars:
+    input_vars_path: "./"
+
+    leaf_access_auth_dict:
+      '../templates/access_auth_configs.j2': 'access auth configs block'
+
+
+  tasks:
+
+          # leaf_group is defined in subtask
+          - name: Get inventory groups
+            include_tasks: ../subtasks/common_subtasks/subtask_get_inventory_group.yml
+
+          # Set db file path and load auth_db
+          - name: Load and process auth_db input file
+            run_once: true
+            include_vars: 
+              file: "{{ input_vars_path }}group_vars/auth_db.yml"
+
+          - name: Load variables from input file if present in auth_vars folder
+            when: inventory_hostname in leaf_group
+            block:
+
+            - name: Check whether host_vars/auth_vars/{{ inventory_hostname }}.yml is present
+              local_action: stat path={{ input_vars_path }}host_vars/auth_vars/{{ inventory_hostname }}.yml
+              register: auth_vars_file_state
+              become: no 
+
+            - name: Executing tasks if host_vars/auth_vars/{{ inventory_hostname }}.yml is present
+              when: auth_vars_file_state.stat.exists
+              block:
+              - name: Load variables from files under host_vars/auth_vars folder
+                include_vars: "{{ input_vars_path }}host_vars/auth_vars/{{ inventory_hostname }}.yml"
+          
+            - name: Auth configuration to access interfaces
+              cli_config:
+                config: " {{ lookup('template', item.key) }} "
+                diff_match: none 
+              register: result
+              with_dict: "{{ leaf_access_auth_dict }}"

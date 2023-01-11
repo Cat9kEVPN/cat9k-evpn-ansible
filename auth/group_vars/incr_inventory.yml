@@ -1,0 +1,37 @@
+# This is the input file for the following playbooks to run in add device mode
+#
+# 1) playbook_underlay_preview.yml, playbook_underlay_commit.yml
+# 2) playbook_overlay_preview.yml, playbook_overlay_commit.yml
+# 3) playbook_access_add_preview.yml, playbook_access_add_commit.yml
+# 4) playbook_dhcp_preview.yml, playbook_dhcp_commit.yml
+# 5) playbook_trm_overlay_preview.yml, playbook_trm_overlay_commit.yml
+# 6) playbook_aaa_auth_preview.yml, playbook_aaa_auth_commit.yml
+# 7) playbook_access_auth_preview.yml, playbook_access_auth_commit.yml
+#
+#
+# Description:
+# ---------------- 
+# Brings the leaf devices mentioned in this file on the same level
+# with the other devices in the fabric by applying the current configuration on it 
+# 
+# Copy the new deivces from inventory.yml
+#
+# all:
+#   children:
+#     leaf:
+#       hosts:
+#         Leaf-03:
+#           ansible_host: 10.1.1.1
+#
+# Note: Remember to update respective input files in inventory.yml, group_vars and host_vars folder
+# ______________________________________________
+# ______________________________________________
+# ______________________________________________
+
+
+#all:
+#  children:
+#    leaf:
+#      hosts:
+#        Leaf-03:
+#          ansible_host: 10.1.1.1

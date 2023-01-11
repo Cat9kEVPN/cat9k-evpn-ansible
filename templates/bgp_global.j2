@@ -6,38 +6,152 @@ This module is configuring global BGP process and neighbor parameters
 
 {# initial BGP process configuration #}
 !
-router bgp {{ bgp.as_number }}
+{% if underlay_config_type == 'green_field_ipv4' or underlay_config_type == '' %}
+  router bgp {{ bgp.as_number }}
+  
+      {# default bgp parameters configuration #}
+      bgp log-neighbor-changes
+      {# bgp router-id interface {{bgp.router_id}} #}
+      bgp router-id {{ interfaces.Loopback0.ip_address }}
+      no bgp default ipv4-unicast
+  
+      {# if multiple-as are used in fabric, default route-target filter should be disabled #}
+      {% if bgp.route_target_filter is defined and bgp.route_target_filter == 'disable' %}
+          no bgp default route-target filter
+      {% endif %}
+  
+      {# defining BGP peer session template #}
+      template peer-session EVPN-PEER-SESSION
+          remote-as 65001
+          update-source Lo0
+  
+      {# defining BGP peer policy template #}
+      template peer-policy LEAF-EVPN-PEER-POLICY
+          send-community both
+  
+      {# defining BGP RR peer policy template #}
+      template peer-policy SPINE-EVPN-PEER-POLICY
+          send-community both
+          route-reflector-client
+  
+      {# BGP neighbors configuration #}
+      {% for neighbor in bgp.neighbors%}
+          neighbor {{neighbor }} inherit peer-session EVPN-PEER-SESSION
+  
+          {# if it is eBGP neighborship, eBGP multihop command is used #}
+          {% if bgp.as_number != bgp.neighbors[neighbor].peer_as_number%}
+              neighbor {{ neighbor }} ebgp-multihop 255
+          {% endif %}
+      {% endfor %}
+      
+{% elif underlay_config_type == 'green_field_ipv6' %}
+  router bgp {{ bgp_ipv6.as_number }}
+  
+      {# default bgp parameters configuration #}
+      bgp log-neighbor-changes
+      {# bgp router-id interface {{bgp_ipv6.router_id}} #}
+      bgp router-id {{ interfaces.Loopback0.ip_address }}
+      no bgp default ipv4-unicast
+  
+      {# if multiple-as are used in fabric, default route-target filter should be disabled #}
+      {% if bgp_ipv6.route_target_filter is defined and bgp_ipv6.route_target_filter == 'disable' %}
+          no bgp default route-target filter
+      {% endif %}
+  
+      {# defining BGP peer session template #}
+      template peer-session EVPN-PEER-SESSION
+          remote-as 65001
+          update-source Lo0
+  
+      {# defining BGP peer policy template #}
+      template peer-policy LEAF-EVPN-PEER-POLICY
+          send-community both
+  
+      {# defining BGP RR peer policy template #}
+      template peer-policy SPINE-EVPN-PEER-POLICY
+          send-community both
+          route-reflector-client
+  
+      {# BGP neighbors configuration #}
+      {% for neighbor in bgp_ipv6.neighbors%}
+          neighbor {{neighbor }} inherit peer-session EVPN-PEER-SESSION
+  
+          {# if it is eBGP neighborship, eBGP multihop command is used #}
+          {% if bgp_ipv6.as_number != bgp_ipv6.neighbors[neighbor].peer_as_number%}
+              neighbor {{ neighbor }} ebgp-multihop 255
+          {% endif %}
+      {% endfor %}
 
-    {# default bgp parameters configuration #}
-    bgp log-neighbor-changes
-    bgp router-id interface {{bgp.router_id}}
-    no bgp default ipv4-unicast
+{% elif underlay_config_type == 'brown_field_dual_stack' %}
+  router bgp {{ bgp_ipv6.as_number }}
+  
+      {# BGP neighbors configuration #}
+      {% for neighbor in bgp_ipv6.neighbors%}
+          neighbor {{neighbor }} inherit peer-session EVPN-PEER-SESSION
+  
+          {# if it is eBGP neighborship, eBGP multihop command is used #}
+          {% if bgp_ipv6.as_number != bgp_ipv6.neighbors[neighbor].peer_as_number%}
+              neighbor {{ neighbor }} ebgp-multihop 255
+          {% endif %}
+      {% endfor %}
+      
+{% elif underlay_config_type == 'green_field_dual_stack' %}
+  router bgp {{ bgp_ipv6.as_number }}
+  
+      {# default bgp parameters configuration #}
+      bgp log-neighbor-changes
+      {# bgp router-id interface {{bgp_ipv6.router_id}} #}
+      bgp router-id {{ interfaces.Loopback0.ip_address }}
+      no bgp default ipv4-unicast
+  
+      {# if multiple-as are used in fabric, default route-target filter should be disabled #}
+      {% if bgp_ipv6.route_target_filter is defined and bgp_ipv6.route_target_filter == 'disable' %}
+          no bgp default route-target filter
+      {% endif %}
+  
+      {# defining BGP peer session template #}
+      template peer-session EVPN-PEER-SESSION
+          remote-as 65001
+          update-source Lo0
+  
+      {# defining BGP peer policy template #}
+      template peer-policy LEAF-EVPN-PEER-POLICY
+          send-community both
+  
+      {# defining BGP RR peer policy template #}
+      template peer-policy SPINE-EVPN-PEER-POLICY
+          send-community both
+          route-reflector-client
+          
+      {# BGP neighbors configuration #}
+      {% if bgp is defined %}
+        {% for neighbor in bgp.neighbors%}
+            neighbor {{neighbor }} inherit peer-session EVPN-PEER-SESSION
+    
+            {# if it is eBGP neighborship, eBGP multihop command is used #}
+            {% if bgp.as_number != bgp.neighbors[neighbor].peer_as_number%}
+                neighbor {{ neighbor }} ebgp-multihop 255
+            {% endif %}
+        {% endfor %}
+      {% endif %}
+          
+      {# BGP neighbors configuration #}
+      {% for neighbor in bgp_ipv6.neighbors%}
+          neighbor {{neighbor }} inherit peer-session EVPN-PEER-SESSION
+  
+          {# if it is eBGP neighborship, eBGP multihop command is used #}
+          {% if bgp_ipv6.as_number != bgp_ipv6.neighbors[neighbor].peer_as_number%}
+              neighbor {{ neighbor }} ebgp-multihop 255
+          {% endif %}
+      {% endfor %}
 
-    {# if multiple-as are used in fabric, default route-target filter should be disabled #}
-    {% if bgp.route_target_filter is defined and bgp.route_target_filter == 'disable' %}
-        no bgp default route-target filter
-    {% endif %}
-
-    {# defining BGP peer session template #}
-    template peer-session EVPN-PEER-SESSION
-        remote-as 65001
-        update-source Lo0
-
-    {# defining BGP peer policy template #}
-    template peer-policy LEAF-EVPN-PEER-POLICY
-        send-community both
-
-    {# defining BGP RR peer policy template #}
-    template peer-policy SPINE-EVPN-PEER-POLICY
-        send-community both
-        route-reflector-client
-
-    {# BGP neighbors configuration #}
-    {% for neighbor in bgp.neighbors%}
-        neighbor {{neighbor }} inherit peer-session EVPN-PEER-SESSION
-
-        {# if it is eBGP neighborship, eBGP multihop command is used #}
-        {% if bgp.as_number != bgp.neighbors[neighbor].peer_as_number%}
-            neighbor {{ neighbor }} ebgp-multihop 255
-        {% endif %}
-    {% endfor %}
+{% elif underlay_config_type == 'downgrade_to_ipv4' %}
+  router bgp {{ bgp_ipv6.as_number }}
+  
+      {# BGP neighbors configuration #}
+      {% if bgp is defined %}
+        {% for neighbor in bgp_ipv6.neighbors%}
+            no neighbor {{neighbor }}
+        {% endfor %}
+      {% endif %}
+{% endif %}

@@ -5,9 +5,12 @@
 - name: Automated VXLAN deployment with BGP EVPN L3 underlay w/ Spine
   hosts: leaf
   gather_facts: no
+
   vars:
     svi_ipv6_dict:
       '../templates/ipv6_incremental.j2': 'svi ipv6 block'
+
+
   tasks:
           - name: Check whether host_vars/ipv6_delete_vars/{{ inventory_hostname }}.yml is present
             local_action: stat path=./host_vars/ipv6_delete_vars/{{ inventory_hostname }}.yml

@@ -1,62 +1,88 @@
 ---
 
-- name: Automated VXLAN deployment with BGP EVPN L2 underlay w/ Spine
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
   hosts: all
   gather_facts: no
-  connection: network_cli
-  tasks:  
-          # Set db file path and load underlay vars
-          - name: Load and process underlay input file
-            run_once: true
-            block:
-            - name: set underlay vars input file path if not already set
-              when: input_vars_path is not defined
-              set_fact: 
-                input_vars_path: "./"
 
-          - name: Load vars from node_vars/<host>.yml input file
+  vars:
+    input_vars_path: "./"
+
+    underlay_general_dict:
+      '../templates/hostname.j2': 'hostname block'
+      '../templates/global_routing.j2': 'global routing block'
+      '../templates/pim_rp.j2': 'pim rp block'
+
+    underlay_intf_dict:
+      '../templates/underlay_interfaces.j2': 'underlay interface block'
+      '../templates/ospf_interfaces.j2': 'ospf interface block' # divide it?
+      '../templates/pim_interfaces.j2': 'pim interface block'
+
+    underlay_intf_new_node_dict:
+      '../templates/underlay_interfaces.j2': 'underlay interface block'
+      '../templates/ospf_interfaces_only.j2': 'ospf interface block' # divide it?
+      '../templates/pim_interfaces.j2': 'pim interface block'
+
+    underlay_msdp_dict:
+      '../templates/msdp_peering.j2': 'MSDP peering block'
+
+    underlay_leaf_dict: "{{ underlay_general_dict | combine( underlay_intf_dict )}}"
+
+    underlay_spine_dict: "{{ underlay_leaf_dict | combine( underlay_msdp_dict )}}"
+
+    underlay_borderspine_dict: "{{ underlay_msdp_dict }}"
+
+
+  tasks:
+
+          # leaf_group, borderspine_group, spine_group and new_node are defined in subtask
+          - name: Get inventory groups
+            include_tasks: ../subtasks/common_subtasks/subtask_get_inventory_group.yml
+          
+          - name: Load vars from group_vars/underlay_config file
+            run_once: true
+            include_vars:
+              file: "{{ input_vars_path }}group_vars/underlay_config.yml"           
+
+          - name: Load variables from node_vars/<host>.yml input file
+            when: inventory_hostname in leaf_group + spine_group
             include_vars: 
               file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
-              
-          - name: Configuring hostnames
-            cli_config:
-              config: "{{ lookup('template', '../templates/hostname.j2') }}"
-              diff_match: none 
-            register: result
 
-          - name: Enabling Unicast/Multicast routing
-            cli_config:
-              config: "{{ lookup('template', '../templates/global_routing.j2') }}"
-              diff_match: none 
-            register: result
-          
-          - name: Configuring ip addresses
-            cli_config:
-              config: "{{ lookup('template', '../templates/underlay_interfaces.j2') }}"
-              diff_match: none 
-            register: result
+          - name: Update dictionary to enable routing for ipv4 unicast
+            set_fact:
+              routing: "{{ routing | default({}) | combine( {'ipv4_uni': 'yes'} ) }}"
 
-          - name: Configuring OSPF
-            cli_config:
-              config: "{{ lookup('template', '../templates/ospf_interfaces.j2') }}"
-              diff_match: none 
-            register: result
+          - name: Load vars from overlay input file
+            run_once: true
+            include_vars: 
+              file: "{{ input_vars_path }}group_vars/overlay_db.yml"
 
-          - name: Configuring PIM on interfaces
-            cli_config:
-              config: "{{ lookup('template', '../templates/pim_interfaces.j2') }}"
-              diff_match: none 
-            register: result
+          # --------- This task runs only when new leaf/s are added in incr_inventory.yml ---------
+          - name: Tasks for new leaf addition
+            when: new_node == true
+            include_tasks: ../subtasks/underlay_subtasks/subtask_new_node_tasks.yml
+          # ---------------------------------------------------------------------------------------
 
-          - name: Configuring RP
+          - name: Read template files for leaf devices
+            when: inventory_hostname in leaf_group      # leaf_group includes borderspine
             cli_config:
-              config: "{{ lookup('template', '../templates/pim_rp.j2') }}"
+              config: "{{ lookup('template', item.key ) }}"
               diff_match: none 
             register: result
-          
-          - name: Configuring MSDP peering
-            when: inventory_hostname in groups['spine']
+            with_dict: "{{ underlay_leaf_dict }}"
+
+          - name: Read template files for borderspine devices
+            when: inventory_hostname in borderspine_group
             cli_config:
-              config: "{{ lookup('template', '../templates/msdp_peering.j2') }}"
+              config: "{{ lookup('template', item.key ) }}"
               diff_match: none 
             register: result
+            with_dict: "{{ underlay_borderspine_dict }}"
+
+          - name: Read template files for spine devices
+            when: inventory_hostname in spine_group
+            cli_config:
+              config: "{{ lookup('template', item.key ) }}"
+              diff_match: none 
+            register: result
+            with_dict: "{{ underlay_spine_dict }}"

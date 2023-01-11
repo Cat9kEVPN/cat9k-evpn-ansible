@@ -1,0 +1,58 @@
+---
+
+- name: Write access_auth generate info to files in host_vars/auth_vars folder
+  import_playbook: playbook_delete_access_auth_generate.yml
+  
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
+  hosts: leaf
+  gather_facts: no
+
+  vars:
+    action : 'delete' 
+    delete_access_auth_block: ""
+
+    leaf_ol_dict:
+      '../templates/access_auth_configs.j2': 'access auth configs block'
+
+
+  tasks:
+
+          - name: Load vars from auth_db input file
+            run_once: true
+            include_vars: 
+              file: "group_vars/auth_db.yml"
+
+          - name: Check whether host_vars/delete_auth_vars/{{ inventory_hostname }}.yml is present
+            local_action: stat path=./host_vars/delete_auth_vars/{{ inventory_hostname }}.yml
+            register: file_state
+            become: no 
+
+          - name: Executing tasks if host_vars/delete_auth_vars/{{ inventory_hostname }}.yml is present
+            when: file_state.stat.exists and inventory_hostname in groups['leaf']
+            block:
+            - name: Load variables from files under host_vars/delete_auth_vars folder
+              include_vars: host_vars/delete_auth_vars/{{ inventory_hostname }}.yml
+
+          - name: Read template files
+            when: inventory_hostname in groups['leaf']
+            set_fact:
+              delete_access_auth_block: "{{ delete_access_auth_block }} ! {{ leaf_ol_dict[item.key] }} {{ lookup('template', item.key ) }}"
+            with_dict: "{{ leaf_ol_dict }}"
+
+          - name: Render template files output
+            set_fact:
+              rendered: "{{  delete_access_auth_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n\n! ') }}"
+
+          - name: Copy configurations to respective file ( <hostname>-delete_access_auth.txt ) under 'preview_files' folder
+            copy:
+              dest: preview_files/{{inventory_hostname}}-delete_access_auth.txt
+              content: "{{ rendered }}"
+
+- name: Display output file info
+  hosts: leaf
+  gather_facts: no
+  run_once: True
+
+  tasks:
+    - debug:
+        msg: Please refer to <hostname>-delete_access_auth.txt in 'preview_files' folder

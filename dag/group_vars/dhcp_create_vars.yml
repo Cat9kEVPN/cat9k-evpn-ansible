@@ -1,0 +1,34 @@
+# This is the input file for playbook_dhcp_incremental_preview.yml and playbook_dhcp_incremental_commit.yml
+# 
+# List the DAG/s where DHCP needs to be enabled under the 'dag' keyword
+#
+# Note: Enter the DHCP information for listed DAG/s in dhcp_db.yml
+#
+# To reconfig a dag/dags : Run DHCP delete playbook before running DHCP incremental playbook
+#
+# ______________________________________________
+# __________ EXAMPLE SCENARIOS _________________
+# ______________________________________________
+#
+#
+# Example 1: Enables DHCP for DAG 'blue' and 'green' DAGs
+# 
+#   dag: 
+#     - blue                          <--------- Get DHCP data for the DAG from dhcp_db.yml
+#     - green     
+#     
+# ------------
+#
+# Example 2: Enables DHCP for all DAGs
+#
+#   dag:
+#     - all                           <--------- Enables DHCP on all DAG/s mentioned in dhcp_db.yml
+#
+# ______________________________________________
+# ______________________________________________
+# ______________________________________________
+
+
+dag:
+   - blue
+

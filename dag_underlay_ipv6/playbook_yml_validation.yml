@@ -1,0 +1,26 @@
+---
+
+- name: Overlay "group_vars/overlay_db.yml" validation 
+  hosts: all 
+  gather_facts: no
+  tasks:
+          - name: Collect vars from overlay_db.yml
+            run_once: true
+            include_vars:
+              file: group_vars/underlay_config.yml
+              name: underlay_config_type
+                
+          - name: run the "group_vars/overlay_db.yml" validation module
+            run_once: true
+            precheck_yml: 
+              fileName: "group_vars/overlay_db.yml"
+              underlay_config: "{{ underlay_config_type }}"
+              #debug : 'verbose'( displaying complete output if validation is successful else displays the errors)
+              #debug : ' '(displays only error senarios if found any)
+              debug : ''
+            register: result
+            
+          - name: Print result
+            run_once: true
+            debug:
+              msg: "Yaml file validation : {{ result}}'"

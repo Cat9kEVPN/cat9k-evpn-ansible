@@ -1,0 +1,48 @@
+
+  - name: Get devices to be configured
+    run_once: true
+    block:
+    - name: Check whether group_vars/incr_inventory.yml is present
+      local_action: stat path="{{ input_vars_path }}group_vars/incr_inventory.yml"
+      register: add_dev_file_state
+      become: no 
+
+    - name: Get list of device from group_vars/incr_inventory.yml
+      when: add_dev_file_state.stat.exists
+      block:
+      - name: Load variables from group_vars/incr_inventory.yml if present
+        include_vars:
+          file: "{{ input_vars_path }}group_vars/incr_inventory.yml"
+          name: incr_inventory_vars
+
+      - set_fact:
+          add_dev_leaf: "{{ incr_inventory_vars.all.children.leaf.hosts | list }}"
+        when: incr_inventory_vars.all.children.leaf.hosts | default({}) != {}
+
+    - name: Set leaf devices
+      block:
+      - set_fact:
+          leaf_group: "{{ add_dev_leaf }}"
+          new_node: true
+        when: add_dev_leaf is defined
+
+      - set_fact:
+          leaf_group: "{{ groups['leaf'] }}"
+          new_node: false
+        when: add_dev_leaf is not defined
+
+    - name: Set spine devices - role as spine only
+      block:
+      - set_fact:
+          spine_group: []
+
+      - name: Filter borderspines
+        set_fact:
+          spine_group: "{{ spine_group + [ item ] }}"
+        when: "item not in groups['leaf']"
+        loop: "{{ groups['spine'] }}"
+
+    - name: Set borderspine devices
+      block:
+      - set_fact:
+          borderspine_group: "{{ (groups['spine'] | difference(spine_group)) | default([]) }}"

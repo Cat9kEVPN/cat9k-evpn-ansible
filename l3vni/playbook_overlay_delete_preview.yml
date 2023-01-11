@@ -5,14 +5,18 @@
 - name: Automated VXLAN deployment with BGP EVPN L3 underlay w/ Spine
   hosts: leaf
   gather_facts: no
+
   vars: 
-    whole_block: ""
-    update_acc_intf: false
+    overlay_block: ""
+    playbook_name: "overlay"
+    playbook_mode: "-del"
+
     block_dict:
       '../templates/svi_create.j2': 'svi block'
       '../templates/nve_create.j2': 'nve block'
       '../templates/vlan_create.j2': 'vlan block' 
       '../templates/vrf_definition.j2': 'vrf block'
+
 
   tasks:
 
@@ -20,46 +24,46 @@
             run_once: true
             include_vars: group_vars/delete_vars.yml
           
+          - name: Load variables from files under group_vars/underlay_config.yml folder
+            run_once: true
+            include_vars: 
+              file: group_vars/underlay_config.yml
+          
           - name: Load variables from group_vars/delete_vars.yml file and appending to dag keyword
             when: l3vni is defined
             set_fact:
               dag: "{{ l3vni }}"
 
-          - name: Get "update_access" value if present in group_vars/delete_vars.yml
+          - name: Get "update_access_intf" value if present in group_vars/delete_vars.yml
             run_once: true
-            when: update_access is defined
+            when: update_access_intf is not defined
             set_fact:
-              update_acc_intf: "{{ update_access }}"
+              update_access_intf: false
 
           - name: Check whether host_vars/delete_vars/<hostname>.yml is present
             local_action: stat path=./host_vars/delete_vars/{{ inventory_hostname }}.yml
             register: file_state
             become: no 
 
-          - name: Executing tasks if host_vars/delete_vars/<hostname>.yml is present
+          - name: Execute tasks if host_vars/delete_vars/<hostname>.yml is present
             when: file_state.stat.exists
             block:
             - name: Load variables from files under host_vars/delete_vars folder
               include_vars: host_vars/delete_vars/{{ inventory_hostname }}.yml
 
-            - name: Read template files
+            - name: Read overlay template files
               set_fact:
-                whole_block: "{{ whole_block }} ! {{ block_dict[item.key] }} {{ lookup('template', item.key) }}"
+                overlay_block: "{{ overlay_block }} ! {{ block_dict[item.key] }} {{ lookup('template', item.key) }}"
               with_dict: "{{ block_dict }}"
 
             - name: Read access interface template files
-              when: update_acc_intf == true
+              when: update_access_intf == true
               set_fact:
-                whole_block: "{{ whole_block }} ! access interfaces block {{ lookup('template', '../templates/access_interfaces.j2' ) }}"
+                overlay_block: "{{ overlay_block }} ! access interfaces block {{ lookup('template', '../templates/access_interfaces.j2' ) }}"
 
-            - name: Render template files output
-              set_fact:
-                rendered: "{{  whole_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n! ') }}"
+          - name: Write to preview files
+            include_tasks: ../subtasks/common_subtasks/subtask_write_to_preview_file.yml
 
-            - name: Copy configurations to the respective file ( <hostname>-delete.txt ) under 'preview_files' folder
-              copy:
-                dest: preview_files/{{inventory_hostname}}-delete.txt
-                content: "{{ rendered }}"
 
 - name: Display output file info
   hosts: localhost

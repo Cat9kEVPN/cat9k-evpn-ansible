@@ -1,8 +1,6 @@
 hostname: 'Leaf-02'
 
 routing:
- ipv4_uni: 'yes'
- ipv6_uni: 'yes'
  ipv4_multi: 'yes'
 
 interfaces:

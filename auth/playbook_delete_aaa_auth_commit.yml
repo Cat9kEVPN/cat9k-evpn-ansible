@@ -1,0 +1,42 @@
+---
+  
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
+  hosts: leaf
+  gather_facts: no
+
+  vars:
+    action : 'delete'
+
+    leaf_auth_dict:
+      '../templates/auth_configs.j2': 'auth configs block'
+      '../templates/aaa_configs.j2': 'aaa configs block'
+
+
+  tasks:
+
+          - name: Load vars from auth_db input file
+            run_once: true
+            include_vars: 
+              file: "group_vars/auth_db.yml"
+          
+#          - name: run command expecting user confirmation
+#            cli_command:
+#              command: "{{ item }}"
+#              prompt:
+#                - "This operation will remove all username related configurations with same name.Do you want to continue? [confirm]"
+#              answer: 'y'
+#            loop:
+#              - conf t
+#              - no username user1 privilege 15 password 0 Cisco123
+                      
+          - name: aaa and auth configuration
+            when: (inventory_hostname in groups['leaf']) 
+            cli_config:
+              config: " {{ lookup('template', item.key) }} "
+              diff_match: none
+            register: result
+            with_dict: "{{ leaf_auth_dict }}"
+            become: yes
+
+              
+            

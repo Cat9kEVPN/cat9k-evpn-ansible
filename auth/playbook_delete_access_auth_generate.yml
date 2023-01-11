@@ -1,0 +1,48 @@
+---
+
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
+  hosts: leaf
+  gather_facts: no
+
+  vars:
+    #access_dir: '{{ access_dir }}' 
+    access_dir: 'auth'
+
+  tasks:
+          - name: Cleanup 'delete_auth_vars' folder
+            run_once: true
+            file:
+              state: "{{ item }}"
+              path: "host_vars/delete_auth_vars"
+            with_items:
+              - absent
+              - directory
+
+          - name: Load and process auth_db input file
+            run_once: true
+            include_vars: 
+              file: "group_vars/auth_db.yml"
+              name: user_input
+            
+          - name: Collect vars from host_vars/access_intf
+            include_vars:
+              file: ../{{ access_dir }}/host_vars/access_intf/{{ inventory_hostname }}.yml
+              name: access_intf_input
+          
+          - name: Collect "show run | sec ^int"
+            cli_command:
+              command: show run | sec ^int
+            register: sec_command_output
+                
+          - name: Process data
+            delete_auth_configs:
+              userinput: "{{ user_input }}"
+              access_input: "{{ access_intf_input }}"
+              sec_output: "{{ sec_command_output.stdout_lines }}"
+            register: module_output
+              
+          - name: Copying configurations to the repective files ( <hostname>.yml ) under host_vars/delete_auth_vars folder
+            when: module_output['yaml'] != '{}\n'
+            copy:
+              dest: host_vars/delete_auth_vars/{{ inventory_hostname }}.yml
+              content: "{{ module_output['yaml'] }}"

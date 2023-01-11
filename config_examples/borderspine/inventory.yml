@@ -1,0 +1,16 @@
+all:
+  children:
+    leaf:
+      hosts:
+        Leaf-01:
+          ansible_host: 172.19.74.248
+        Leaf-02:
+          ansible_host: 172.19.74.132
+        Spine-01:
+          ansible_host: 172.19.74.184 
+
+    spine:
+      hosts:
+        Spine-01:
+          ansible_host: 172.19.74.184 
+                                 

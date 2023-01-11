@@ -1,0 +1,91 @@
+---
+
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
+  hosts: all
+  gather_facts: no
+
+  vars:
+    input_vars_path: "./"
+    playbook_name: "overlay"
+    overlay_block: ""
+
+    bgp_overlay_dict:
+      '../templates/global_routing.j2': 'global routing block'
+      '../templates/bgp_global.j2': 'bgp global block'
+      '../templates/bgp_l2vpn_evpn_af.j2': 'bgp l2vpn evpn af block'
+
+    bgp_overlay_new_node_dict:
+      '../templates/bgp_global_neighbors.j2': 'bgp global block'
+      '../templates/bgp_l2vpn_evpn_af.j2': 'bgp l2vpn evpn af block'
+
+    bgp_spine_overlay_dict: "{{ bgp_overlay_dict }}"
+
+    leaf_overlay_dict:      
+      '../templates/global_routing.j2': 'global routing block'
+      '../templates/bgp_global.j2': 'bgp global block'
+      '../templates/bgp_l2vpn_evpn_af.j2': 'bgp l2vpn evpn af block'
+      '../templates/vrf_definition.j2': 'vrf definition block'
+      '../templates/bgp_l2vpn_ipv46_per_vrf.j2': 'bgp per vrf block'
+      '../templates/vlan_create.j2': 'vlan block'
+      '../templates/svi_create.j2': 'svi block'
+      '../templates/l2vpn_evpn_global.j2': 'l2vpn evpn global block'
+      '../templates/l2vpn_evpn_evi_create.j2': 'l2vpn evpn evi block'
+      '../templates/evi_vni_vlan_stiching.j2': 'evi vni vlan stiching block'
+      '../templates/overlay_interfaces.j2': 'overlay interface block'
+      '../templates/nve_create.j2': 'nve block'
+
+
+  tasks:
+            
+          # leaf_group, borderspine_group, spine_group, and new_node are defined in subtask
+          - name: Get inventory groups
+            include_tasks: ../subtasks/common_subtasks/subtask_get_inventory_group.yml 
+
+          - name: Load variables from overlay_db.yml input file
+            run_once: true
+            include_vars: 
+              file: "{{ input_vars_path }}group_vars/overlay_db.yml"
+          
+          - name: Load vars from group_vars/underlay_config file
+            run_once: true
+            include_vars:
+              file: "{{ input_vars_path }}group_vars/underlay_config.yml"  
+
+          - name: Load variables from node_vars/<host>.yml input file
+            when: inventory_hostname in leaf_group + spine_group
+            include_vars: 
+              file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
+
+          - name: Update routing dictionary for ipv6 unicast
+            include_tasks: ../subtasks/overlay_subtasks/subtask_update_routing_dict_for_ipv6.yml
+
+          # --------- This task runs only when new leaf/s are added in incr_inventory.yml ---------
+          - name: Tasks for new leaf addition
+            when: new_node == true
+            include_tasks: ../subtasks/overlay_subtasks/subtask_new_node_tasks.yml
+          # ---------------------------------------------------------------------------------------
+
+          - name: Read template files for spine devices
+            when: inventory_hostname in spine_group
+            set_fact:
+              overlay_block: "{{ overlay_block }} ! {{  bgp_spine_overlay_dict[item.key] }} {{ lookup('template', item.key ) }}"
+            with_dict: "{{ bgp_spine_overlay_dict }}"
+
+          - name: Read template files for leaf devices
+            when: inventory_hostname in leaf_group
+            set_fact:
+              overlay_block: "{{ overlay_block }} ! {{ leaf_overlay_dict[item.key] }} {{ lookup('template', item.key ) }}"
+            with_dict: "{{ leaf_overlay_dict }}"
+
+          - name: Write to preview files
+            include_tasks: ../subtasks/common_subtasks/subtask_write_to_preview_file.yml
+
+
+- name: Display output file info
+  hosts: localhost
+  gather_facts: no
+  run_once: True
+
+  tasks:
+    - debug:
+        msg: Please refer to <hostname>-overlay.txt in 'preview_files' folder

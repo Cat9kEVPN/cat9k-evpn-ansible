@@ -24,16 +24,16 @@ Inventory.yml
         leaf:
           hosts:
             Leaf-01:
-              ansible_host: 10.1.1.1
+              ansible_host: 10.62.149.179
             Leaf-02:
-              ansible_host: 10.1.1.2
+              ansible_host: 10.62.149.182
             
         spine:
           hosts:
             Spine-01:
-              ansible_host: 10.1.1.3
+              ansible_host: 10.62.149.180
             Spine-02:
-              ansible_host: 10.1.1.4
+              ansible_host: 10.62.149.181
 
 ``leaf`` and ``spine`` are two roles. Each node should be placed under one of these roles.
 
@@ -590,179 +590,7 @@ Repective DAG's interface from the overlay_interface section of host_vars/<inven
 Since ``relay_src_intf`` key is explicitly mentioned in this case, Loopback1 is set as DHCP relay source interface for all :green:`green` SVIs and
 Loopback2 is set as DHCP relay source interface for all :blue:`blue` SVIs.
 
-trm_overlay_db.yml
-==================
-
-This section defines TRM configuration for the EVPN Fabric.
-
-By default all TRM-related configuration is stored in ``group_vars/trm_overlay_db.yml``.
-
-It is assumed that DAG configuration for unicast is alredy done and only TRM part is needed.
-
-.. code-block:: yml
-    vrfs:
-      blue:                                                 
-        register_source: loopback1 
-                         
-        fabric_anycast_rp:                                  
-          rp_loopback: Loopback256                          
-          ipv4_rp_address: '10.2.255.255'                   
- 
-        afs:
-          ipv4:
-          default_mdt_group: '239.1.1.1' 
-    <...snip...>
-
-.. table::
-    :widths: auto
-
-    =============================================== ==========================================================================
-    **Parameter**                                                            **Comments**
-    =============================================== ==========================================================================
-    **vrfs** / :red:`mandatory`                     This option defines VRF section globally.
-    
-    **vrf_name** / :red:`mandatory`                 This option defines VRF name which will be configured.
-
-    **register_source** / :red:`mandatory`          This option defines interface which IPv4 will be used for SRC Registration.
-
-    **ipv6_register_source** / :orange:`optional`   This option defines interface which IPv6 will be used for SRC Registration.
-
-    **fabric_anycast_rp** / :orange:`optional`      This option defines Anycast RP section.
-
-    **fabric_internal_rp** / :orange:`optional`     This option defines Internal RP section.
-
-    **fabric_external_rp** / :orange:`optional`     This option defines External RP section.
-
-    **ipv4_rp_address** / :orange:`optional`        This option defines RP IPv4 address.
-
-    **ipv6_rp_address** / :orange:`optional`        This option defines RP IPv6 address.
-
-    **rp_loopback** / :orange:`optional`            This option defines RP loopback interface (Anycast or Internal)
-
-    **rp_device** / :orange:`optional`              This option defines VTEP where Internal RP is configured. 
-
-    **ssm_range: 'x-y'** / :orange:`optional`       This option defines per VRF SSM range.
-
-    **afs** / :red:`mandatory`                      This option defines address family section.
-
-    **ipv4** / :orange:`optional`                   This option defines IPv4 AF section.
-
-    **ipv6** / :orange:`optional`                   This option defines IPv6 AF section.
-
-    **default_mdt_group** / :orange:`optional`      This option defines Default MDT multicast group.
-
-    **data_mdt_group** / :orange:`optional`         This option defines Data MDT multicast group.
-
-    **data_mdt_threshold** / :orange:`optional`     This option defines Data MDT threshold.
-    =============================================== ==========================================================================
-
-Examples
---------
-
-Example 1
-^^^^^^^^^
-
-TRM v4 with anycast RP fabric for DAG 'blue'
-
-.. code-block:: yml
-  
-  vrfs:
-    blue:                                                 <--------- Applies config to blue DAG
-      register_source: loopback1                          <--------- configs unique IP for the loopback
-      fabric_anycast_rp:                                  <--------- configs PIM sparse mode with anycast RP
-        rp_loopback: Loopback256                          <--------- configs loopback (on all device) if not already configured
-        ipv4_rp_address: '10.2.255.255'                   <--------- configs IPv4 addr as PIM RP for the multicast group, by default /32 mask is applied
    
-      afs:
-        ipv4:
-          default_mdt_group: '239.1.1.1'                  <--------- configs mcast group address for default MDT groups
-
-Example 2
-^^^^^^^^^
-
-TRM v4 and v6 with internal RP fabric for DAG 'blue'.
-
-.. code-block:: yml
-
-  vrfs:   
-    blue:
-      register_source: loopback1
-      ipv6_register_source: loopback1                     <--------- configs unique IP for the loopback for IPv6; if this key is missing, "register_source" is used for IPv6
-
-      fabric_internal_rp:                                 <--------- configs PIM sparse mode with internal RP
-        rp_device: Leaf-02
-        rp_loopback: Loopback256                          <--------- configs loopback (only on the mentioned device above) if not already configured
-        ipv4_rp_address: '10.2.255.255 255.255.255.255'
-        ipv6_rp_address: 'FC00:2:255::255'                <--------- configs IPv6 addr as PIM RP for the multicast group, by default /128 mask is applied
-  
-      afs:
-        ipv4:
-          default_mdt_group: '239.1.1.1'                  
-          data_mdt_group: '225.2.2.0 0.0.0.255'           <--------- configs mcast group address for data MDT groups for IPv4
-          data_mdt_threshold: '111'                       <--------- defines bandwidth threshold for data MDT groups
-
-        ipv6:
-          default_mdt_group: '239.1.1.1'                  <--------- configs mcast group address for default MDT groups for IPv6
-
-Example 3
-^^^^^^^^^
-
-TRM v6 with external RP fabric for DAG 'blue'
-
-.. code-block:: yml
-
-  vrfs:   
-    blue:
-      ipv6_register_source: loopback1                     <--------- configs unique IP for the loopback for IPv6
-
-      fabric_external_rp:                                 <--------- configs PIM sparse mode with external RP
-        ipv6_rp_address: 'FC00:2:255::255'                <--------- configs IPv6 addr as PIM RP for the multicast group, by default /128 mask is applied   
-
-      afs:
-        ipv6:
-          default_mdt_group: '239.1.1.1'                  <--------- configs mcast group address for default MDT groups for IPv6
-
-Example 4
-^^^^^^^^^
-
-TRM v4 with anycast RP fabric for DAG 'blue'
-TRM v4 and v6 with internal RP fabric for DAG 'green'
-
-.. code-block:: yml
-
-  vrfs:
-    blue:
-      register_source: Loopback0
-  
-      fabric_anycast_rp:
-        rp_loopback: Loopback256
-        ipv4_rp_address: '10.2.255.255 255.255.255.255'
-  
-      afs:
-        ipv4:
-          default_mdt_group: '239.1.1.1'
-          data_mdt_group: '225.2.2.0 0.0.0.255'
-          data_mdt_threshold: '111'
-  
-    green:
-      register_source: Loopback1
-      ipv6_register_source: Loopback2
-  
-      fabric_internal_rp:
-        rp_device: Leaf-02
-        rp_loopback: Loopback255
-        ipv4_rp_address: '10.3.255.255'
-        ipv6_rp_address: 'FC00:2:255::255'
-  
-      afs:
-        ipv4:
-          default_mdt_group: '239.1.1.2'
-          data_mdt_group: '225.2.3.0 0.0.0.255'
-          data_mdt_threshold: '111'
-  
-        ipv6:
-          default_mdt_group: '239.1.1.2'
-          
 host_vars
 *********
 
@@ -1280,3 +1108,176 @@ Vlans assigned after execution:
 **GigabitEthernet1/0/7** - :green:`101,102,201,202` (from ``group_vars/overlay_db.yml`` or ``host_vars/inc_vars/<hostname>.yml``)
 
 **GigabitEthernet1/0/8** - :green:`201`
+
+TRM configuration
+=================
+
+This section defines TRM configuration for the EVPN Fabric.
+
+By default all TRM-related configuration is stored in ``group_vars/trm_overlay_db.yml``.
+
+It is assumed that DAG configuration for unicast is alredy done and only TRM part is needed.
+
+.. code-block:: yml
+    vrfs:
+      blue:                                                 
+        register_source: loopback1 
+                         
+        fabric_anycast_rp:                                  
+          rp_loopback: Loopback256                          
+          ipv4_rp_address: '10.2.255.255'                   
+ 
+        afs:
+          ipv4:
+          default_mdt_group: '239.1.1.1' 
+    <...snip...>
+
+.. table::
+    :widths: auto
+
+    =============================================== ==========================================================================
+    **Parameter**                                                            **Comments**
+    =============================================== ==========================================================================
+    **vrfs** / :red:`mandatory`                     This option defines VRF section globally.
+    
+    **vrf_name** / :red:`mandatory`                 This option defines VRF name which will be configured.
+
+    **register_source** / :red:`mandatory`          This option defines interface which IPv4 will be used for SRC Registration.
+
+    **ipv6_register_source** / :orange:`optional`   This option defines interface which IPv6 will be used for SRC Registration.
+
+    **fabric_anycast_rp** / :orange:`optional`      This option defines Anycast RP section.
+
+    **fabric_internal_rp** / :orange:`optional`     This option defines Internal RP section.
+
+    **fabric_external_rp** / :orange:`optional`     This option defines External RP section.
+
+    **ipv4_rp_address** / :orange:`optional`        This option defines RP IPv4 address.
+
+    **ipv6_rp_address** / :orange:`optional`        This option defines RP IPv6 address.
+
+    **rp_loopback** / :orange:`optional`            This option defines RP loopback interface (Anycast or Internal)
+
+    **rp_device** / :orange:`optional`              This option defines VTEP where Internal RP is configured. 
+
+    **ssm_range: 'x-y'** / :orange:`optional`       This option defines per VRF SSM range.
+
+    **afs** / :red:`mandatory`                      This option defines address family section.
+
+    **ipv4** / :orange:`optional`                   This option defines IPv4 AF section.
+
+    **ipv6** / :orange:`optional`                   This option defines IPv6 AF section.
+
+    **default_mdt_group** / :orange:`optional`      This option defines Default MDT multicast group.
+
+    **data_mdt_group** / :orange:`optional`         This option defines Data MDT multicast group.
+
+    **data_mdt_threshold** / :orange:`optional`     This option defines Data MDT threshold.
+    =============================================== ==========================================================================
+
+Examples
+--------
+
+Example 1
+^^^^^^^^^
+
+TRM v4 with anycast RP fabric for DAG 'blue'
+
+.. code-block:: yml
+  
+  vrfs:
+    blue:                                                 <--------- Applies config to blue DAG
+      register_source: loopback1                          <--------- configs unique IP for the loopback
+      fabric_anycast_rp:                                  <--------- configs PIM sparse mode with anycast RP
+        rp_loopback: Loopback256                          <--------- configs loopback (on all device) if not already configured
+        ipv4_rp_address: '10.2.255.255'                   <--------- configs IPv4 addr as PIM RP for the multicast group, by default /32 mask is applied
+   
+      afs:
+        ipv4:
+          default_mdt_group: '239.1.1.1'                  <--------- configs mcast group address for default MDT groups
+
+Example 2
+^^^^^^^^^
+
+TRM v4 and v6 with internal RP fabric for DAG 'blue'.
+
+.. code-block:: yml
+
+  vrfs:   
+    blue:
+      register_source: loopback1
+      ipv6_register_source: loopback1                     <--------- configs unique IP for the loopback for IPv6; if this key is missing, "register_source" is used for IPv6
+
+      fabric_internal_rp:                                 <--------- configs PIM sparse mode with internal RP
+        rp_device: Leaf-02
+        rp_loopback: Loopback256                          <--------- configs loopback (only on the mentioned device above) if not already configured
+        ipv4_rp_address: '10.2.255.255 255.255.255.255'
+        ipv6_rp_address: 'FC00:2:255::255'                <--------- configs IPv6 addr as PIM RP for the multicast group, by default /128 mask is applied
+  
+      afs:
+        ipv4:
+          default_mdt_group: '239.1.1.1'                  
+          data_mdt_group: '225.2.2.0 0.0.0.255'           <--------- configs mcast group address for data MDT groups for IPv4
+          data_mdt_threshold: '111'                       <--------- defines bandwidth threshold for data MDT groups
+
+        ipv6:
+          default_mdt_group: '239.1.1.1'                  <--------- configs mcast group address for default MDT groups for IPv6
+
+Example 3
+^^^^^^^^^
+
+TRM v6 with external RP fabric for DAG 'blue'
+
+.. code-block:: yml
+
+  vrfs:   
+    blue:
+      ipv6_register_source: loopback1                     <--------- configs unique IP for the loopback for IPv6
+
+      fabric_external_rp:                                 <--------- configs PIM sparse mode with external RP
+        ipv6_rp_address: 'FC00:2:255::255'                <--------- configs IPv6 addr as PIM RP for the multicast group, by default /128 mask is applied   
+
+      afs:
+        ipv6:
+          default_mdt_group: '239.1.1.1'                  <--------- configs mcast group address for default MDT groups for IPv6
+
+Example 4
+^^^^^^^^^
+
+TRM v4 with anycast RP fabric for DAG 'blue'
+TRM v4 and v6 with internal RP fabric for DAG 'green'
+
+.. code-block:: yml
+
+  vrfs:
+    blue:
+      register_source: Loopback0
+  
+      fabric_anycast_rp:
+        rp_loopback: Loopback256
+        ipv4_rp_address: '10.2.255.255 255.255.255.255'
+  
+      afs:
+        ipv4:
+          default_mdt_group: '239.1.1.1'
+          data_mdt_group: '225.2.2.0 0.0.0.255'
+          data_mdt_threshold: '111'
+  
+    green:
+      register_source: Loopback1
+      ipv6_register_source: Loopback2
+  
+      fabric_internal_rp:
+        rp_device: Leaf-02
+        rp_loopback: Loopback255
+        ipv4_rp_address: '10.3.255.255'
+        ipv6_rp_address: 'FC00:2:255::255'
+  
+      afs:
+        ipv4:
+          default_mdt_group: '239.1.1.2'
+          data_mdt_group: '225.2.3.0 0.0.0.255'
+          data_mdt_threshold: '111'
+  
+        ipv6:
+          default_mdt_group: '239.1.1.2'

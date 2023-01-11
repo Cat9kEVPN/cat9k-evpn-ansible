@@ -1,0 +1,96 @@
+hostname: 'Leaf-02'
+
+routing:
+ ipv4_multi: 'yes'
+ ipv6_multi: 'yes'
+ ipv6_uni: 'yes'
+
+interfaces:
+
+  Loopback0:
+    name: 'Routing Loopback'
+    ip_address: '172.16.255.4'
+    subnet_mask: '255.255.255.255'
+    ipv6_address: 'fd00:172:16:255::4/128'
+    loopback: 'yes'
+    pim_enable: 'yes'
+
+  Loopback1:
+    name: 'NVE Loopback'
+    ip_address: '172.16.254.4'
+    subnet_mask: '255.255.255.255'
+    ipv6_address: 'fd00:172:16:254::4/128'
+    loopback: 'yes'
+    pim_enable: 'yes'
+
+  GigabitEthernet1/0/34:
+    name: 'Backbone interface to Spine-01'
+    ip_address: '172.16.14.4'
+    subnet_mask: '255.255.255.0'
+    ipv6_address: 'fd00:172:16:14::4/64'
+    loopback: 'no'
+    pim_enable: 'yes'
+
+  GigabitEthernet1/0/35:
+    name: 'Backbone interface to Spine-02'
+    ip_address: '172.16.24.4'
+    subnet_mask: '255.255.255.0'
+    ipv6_address: 'fd00:172:16:24::4/64'
+    loopback: 'no'
+    pim_enable: 'yes' 
+
+ospf:
+  router_id: '172.16.255.4'
+
+ospf_ipv6:
+  router_id: '172.16.255.4'
+
+pim:
+  rp_address: '172.16.255.255'
+
+pim_ipv6:
+  rp_address: 'fd00:172:16:255::255'
+
+bgp:
+  as_number: '65001'
+  router_id: 'Loopback0'
+  neighbors:
+    '172.16.255.1':
+     peer_as_number: '65001'
+     source_interface: 'Loopback0'
+    
+    '172.16.255.2':
+     peer_as_number: '65001'
+     source_interface: 'Loopback0'
+
+bgp_ipv6:
+  as_number: '65001'
+  router_id: 'Loopback0'
+  neighbors:
+    'fd00:172:16:255::1':
+     peer_as_number: '65001'
+     source_interface: 'Loopback0'
+
+    'fd00:172:16:255::2':
+     peer_as_number: '65001'
+     source_interface: 'Loopback0'
+
+#layer 3 interface
+overlay_interfaces:
+  Loopback11:
+    name: 'Vrf Loopback '
+    ip_address: '10.2.11.11'
+    subnet_mask: '255.255.255.0'
+    ipv6_address: 'fd00:10:2:11::11/128'
+    loopback: 'yes'
+    vrf: 'green'
+
+  Loopback12:
+    name: 'Vrf Loopback '
+    ip_address: '10.2.12.12'
+    subnet_mask: '255.255.255.0'
+    ipv6_address: 'fd00:10:2:12::12/128'
+    loopback: 'yes'
+    vrf: 'blue'
+
+

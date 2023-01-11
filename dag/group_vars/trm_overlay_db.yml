@@ -1,7 +1,10 @@
-# This is the input file for playbook_trm_overlay_preview.yml, playbook_trm_overlay_commit.yml
+# This is the input file for the following playbooks,
+# playbook_trm_overlay_preview.yml, playbook_trm_overlay_commit.yml
+# playbook_trm_overlay_incremental_preview.yml, playbook_trm_overlay_incremental_commit.yml
+# playbook_trm_overlay_delete_preview.yml, playbook_trm_overlay_delete_commit.yml
 #
 #
-#   vrfs:
+#   dag:
 #     blue:
 #       register_source: Loopback1
 #   
@@ -19,16 +22,18 @@
 #
 # Example 1) TRM v4 with anycast RP fabric for DAG 'blue'
 #
-# By default, VXLAN with BGP auto-discovery, default SSM are enabled
+# By default, VXLAN with BGP auto-discovery is enabled
 #
 #
-#   vrfs:
+#   dag:
 #     blue:                                                 <--------- Applies config to blue DAG
 #       register_source: loopback1                          <--------- configs unique IP for the loopback
 #
 #       fabric_anycast_rp:                                  <--------- configs PIM sparse mode with anycast RP
 #         rp_loopback: Loopback256                          <--------- configs loopback (on all device) if not already configured
 #         ipv4_rp_address: '10.2.255.255'                   <--------- configs IPv4 addr as PIM RP for the multicast group, by default /32 mask is applied
+#
+#       ssm_range: default                                    <--------- configs default SSM range for TRM
 #    
 #       afs:
 #         ipv4:
@@ -39,7 +44,7 @@
 #
 # By default, VXLAN with BGP auto-discovery is enabled
 #
-#   vrfs:   
+#   dag:   
 #     blue:
 #       register_source: loopback1
 #       ipv6_register_source: loopback1                     <--------- configs unique IP for the loopback for IPv6; if this key is missing, "register_source" is used for IPv6
@@ -64,14 +69,13 @@
 #  
 # Example 3) TRM v6 with external RP fabric for DAG 'blue'
 #
-# By default, VXLAN with BGP auto-discovery, default SSM are enabled
+# By default, VXLAN with BGP auto-discovery is enabled
 #
-#   vrfs:   
+#   dag:   
 #     blue:
 #       ipv6_register_source: loopback1                     <--------- configs unique IP for the loopback for IPv6
 #
 #       fabric_external_rp:                                 <--------- configs PIM sparse mode with external RP
-#         rp_loopback: Loopback256
 #         ipv6_rp_address: 'FC00:2:255::255'                <--------- configs IPv6 addr as PIM RP for the multicast group, by default /128 mask is applied   
 #
 #       afs:
@@ -83,7 +87,7 @@
 # Example 4) TRM v4 with anycast RP fabric for DAG 'blue'
 #            TRM v4 and v6 with internal RP fabric for DAG 'green'
 #
-#   vrfs:
+#   dag:
 #     blue:
 #       register_source: Loopback0
 #   
@@ -123,14 +127,20 @@
 # ______________________________________________
 # ______________________________________________
 
-vrfs:
-  blue:                                                 
-    register_source: loopback1 
-                         
-    fabric_anycast_rp:                                  
-      rp_loopback: Loopback256                          
-      ipv4_rp_address: '10.2.255.255'                   
- 
+
+dag:
+  blue:
+    register_source: Loopback1 
+
+    fabric_anycast_rp:
+      rp_loopback: Loopback256
+      ipv4_rp_address: '10.2.255.255 255.255.255.255'
+
+    ssm_range: 'x-y'
+
     afs:
       ipv4:
-        default_mdt_group: '239.1.1.1' 
+        default_mdt_group: '239.1.1.1'
+        data_mdt_group: '225.2.2.0 0.0.0.255'
+        data_mdt_threshold: '111'
+

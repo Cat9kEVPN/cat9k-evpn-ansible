@@ -19,16 +19,16 @@ Inventory.yml
         leaf:
           hosts:
             Leaf-01:
-              ansible_host: 10.1.1.1
+              ansible_host: 10.62.149.179
             Leaf-02:
-              ansible_host: 10.1.1.2
+              ansible_host: 10.62.149.182
             
         spine:
           hosts:
             Spine-01:
-              ansible_host: 10.1.1.3
+              ansible_host: 10.62.149.180
             Spine-02:
-              ansible_host: 10.1.1.4
+              ansible_host: 10.62.149.181
 
 ``leaf`` and ``spine`` are two roles. Each node should be placed under one of these roles.
 

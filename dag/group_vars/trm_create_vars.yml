@@ -6,7 +6,7 @@
 #
 # DAGs where TRM is already enabled are skipped even if they are listed under dag
 # To reconfigure DAGs for TRM, either run playbook_trm_overlay_delete_commit.yml (OR) 
-# set 'check_vrfs_4_trm' key in 'playbook_trm_overlay_incremental_preview/commit.yml' to 'false'
+# set 'avoid_force_reconfig' key in 'playbook_trm_overlay_incremental_preview/commit.yml' to 'false'
 # However, It is advised to use playbook_trm_overlay_delete_commit.yml for reconfiguring
 #
 # ______________________________________________

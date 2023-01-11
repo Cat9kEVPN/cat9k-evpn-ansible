@@ -1,0 +1,21 @@
+
+  # Ignoring general spine configs to avoid reconfiguration
+  - name: Set BGP template files for spines
+    set_fact:
+      underlay_spine_dict: "{{ underlay_intf_new_node_dict }}"
+    run_once: true
+    
+  # This task run only when new node/s is added to avoid reconfiguring interfaces on Spines
+  - name: Get interfaces from show run | sec ^interface to filter already configured interface
+    when: inventory_hostname in groups['spine']
+    block:
+    - name: Run and parse show run | sec ^interface
+      ansible.utils.cli_parse:
+        command: "show run | sec ^interface"
+        parser:
+          name: ansible.netcommon.pyats
+        set_fact: interfaces_on_device
+        
+    - name: Filter configured interface to avoid reconfiguring
+      set_fact: 
+        interfaces: "{{ interfaces | filter_configured_interfaces(interfaces_on_device.interfaces | default({})) }}"

@@ -1,39 +1,64 @@
-show run nve
-show nve peers
-show l2vpn evpn peers vxlan
-show bgp l2vpn evpn summary 
-show bgp l2vpn evpn 
+{% if underlay_config_type == 'green_field_ipv4' or underlay_config_type == ''  %} 
+  show run
 
-{% if vlans is defined -%}
-{% for ivlan,idata in vlans.items() %}
-  {% if vlans[ivlan].vlan_type == 'access' %} 
-     show l2vpn evpn evi {{idata.evi}} detail
-     show l2vpn evpn mac evi {{idata.evi}}
-     show l2vpn evpn mac ip evi {{idata.evi}}
-     show l2fib bridge-domain {{ivlan}} detail
-   {% endif %}
-{% endfor %}
-{% endif %}
+  show ip route
+  show ip mroute
 
-{%- if vrfs is defined -%}
- {% for vrf in vrfs -%}
-    {% for af in vrfs[vrf].afs -%}
-       {% if af == 'ipv4' %}
-          {% set ipv4_multicast  = vrfs[vrf].ipv4_multicast | default ('false') %}
-          {%- if ipv4_multicast != 'false' -%}
-             show bgp ipv4 mvpn all summ
-             show ip pim vrf {{vrf}} rp mapping
-             show ip route vrf {{vrf}} {{ vrfs[vrf].rp_address }}
-             show ip igmp vrf {{vrf}} groups
-             show ip mroute vrf {{vrf}}
-             show ip mfib vrf *
-             show bgp ipv4 mvpn all
-             show ip mroute
-             show ip mfib
-          {% endif %}
-       {% endif %}
-    {% endfor %}
- {% endfor %}
+  show bgp l2vpn evpn summ
+  show nve peers
+  sh l2vpn evpn peers vxlan
+  show l2vpn evpn mac ip
+  show l2route evpn mac ip
+
+  {% if vlans is defined -%}
+  {% for ivlan,idata in vlans.items() %}
+    {% if vlans[ivlan].vlan_type == 'access' %} 
+       show l2vpn evpn evi {{idata.evi}} detail
+       show l2vpn evpn mac evi {{idata.evi}}
+       show l2vpn evpn mac ip evi {{idata.evi}}
+       show l2fib bridge-domain {{ivlan}} detail
+     {% endif %}
+  {% endfor %}
+  {% endif %}
+  
+  {%- if vrfs is defined -%}
+   {% for vrf in vrfs -%}
+      {% for af in vrfs[vrf].afs -%}
+         {% if af == 'ipv4' %}
+            {% set ipv4_multicast  = vrfs[vrf].ipv4_multicast | default ('false') %}
+            {%- if ipv4_multicast != 'false' -%}
+               show bgp ipv4 mvpn all summ
+               show ip pim vrf {{vrf}} rp mapping
+               show ip route vrf {{vrf}} {{ vrfs[vrf].rp_address }}
+               show ip igmp vrf {{vrf}} groups
+               show ip mroute vrf {{vrf}}
+               show ip mfib vrf *
+               show bgp ipv4 mvpn all
+               show ip mroute
+               show ip mfib
+            {% endif %}
+         {% endif %}
+      {% endfor %}
+   {% endfor %}
+  {% endif %}
+{% elif underlay_config_type == 'green_field_ipv6' -%}
+  show ipv6 route
+  show ipv6 mroute
+  show nve peer
+  show bgp l2vpn evpn summary
+  show bgp l2vpn evpn
+  show l2vpn evpn mac ip
+  show l2route evpn mac ip
+{% elif underlay_config_type == 'brown_field_dual_stack' or underlay_config_type == 'green_field_dual_stack' -%}
+  show ip route
+  show ipv6 route
+  show ip mroute
+  show ipv6 mroute
+  show nve peer
+  show bgp l2vpn evpn summary
+  show bgp l2vpn evpn
+  show l2vpn evpn mac ip
+  show l2route evpn mac ip
 {% endif %}
 
 

@@ -1,0 +1,53 @@
+
+  # ------------------ Design ----------------#
+
+  # Get BGP data from host_vars/node_vars/<hostname>.yml incase of config_example
+
+  - name: Get BGP details from host_vars/node_vars/<inventory>.yml
+    when: design != false
+    block:
+
+    - name: Load vars from host_vars/node_vars/<inventory>.yml
+      include_vars:
+        file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
+        name: bgp_vars
+
+    - set_fact:
+        neighbors: "{{ bgp_vars.bgp.neighbors.keys() | list }}"
+        bgp: "{{ bgp | combine({ 'as_number': bgp_vars.bgp.as_number }) }}"
+        mvpns: "{{ vrf_mvpn }}"
+
+    - set_fact:
+        bgp: "{{ bgp | combine({ item+'_mvpn_neighbors': neighbors }) }}"
+      loop: "{{ vrf_mvpn }}"
+
+  # ------------------------------------------#
+
+
+  # -------------- Not design ----------------#
+
+  # Get BGP data from device and assign L2VPN AFs neighbors as BGP MVPN AFs neighbors
+
+  - name: Get BGP details from show run | sec bgp 
+    when: design == false
+    block:
+    - name: Run and parse show run | sec bgp
+      ansible.utils.cli_parse:
+        command: "show run | sec bgp"
+        parser:
+          name: ansible.netcommon.pyats
+        set_fact: bgp_parsed
+
+    # Get L2VPN addr family neighbors and set it as MVPN AF neighbors
+    - name: Collect L2VPN addr family neighbor from show run | sec bgp output
+      trm_preprocess:
+        get_bgp_af_neighbors: "{{ {'bgp_dict': bgp_parsed.bgp, 'mvpn_afs': vrf_mvpn} }}"
+      register: bgp_vars
+
+    - set_fact:
+        bgp: "{{ bgp | combine(
+          { 'as_number': bgp_vars.as_number },
+          bgp_vars.mvpn_af_neighbors) }}"
+        mvpns: "{{ bgp_vars.mvpn_afs }}"
+
+  # ------------------------------------------#

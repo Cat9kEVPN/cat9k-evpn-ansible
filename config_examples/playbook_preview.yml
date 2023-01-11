@@ -1,0 +1,64 @@
+- name: Display output info
+  hosts: localhost
+  gather_facts: no
+  run_once: true
+  vars:
+    design: '{{ design }}'
+
+  tasks:
+          - name: Remove files in 'preview_files' folder
+            file:
+              state: "{{ item }}"
+              path: "./preview_files"
+            with_items:
+              - absent
+              - directory
+
+          - name: Create .gitkeep
+            file:
+              path: "./preview_files/.gitkeep"
+              state: touch
+
+          - name: Write readme file under 'preview_files' folder
+            copy:
+              dest: preview_files/README.md
+              content: "This folder contains preview files for {{ design }}"
+
+          - name: Get list of playbooks to be run
+            include_vars:
+              file: "{{ design }}/playbook_list.yml"
+              name: config_ex_playbook_list
+
+          - name: Set playbook path
+            block:
+            - name: Get playbook folder name from playbook_list.yml
+              set_fact:
+                playbook_folder: "{{ config_ex_playbook_list['playbook_folder'] | default('dag') }}"
+        
+           # Initialise the playbook folder
+            - name: Set path for playbooks
+              set_fact:
+                playbook_folder:
+                  'underlay': '../{{ playbook_folder }}'
+                  'overlay': '../{{ playbook_folder }}'
+                  'access_add': '../{{ playbook_folder }}'
+                  'dhcp': '../{{ playbook_folder }}'
+                  'trm_overlay': '../{{ playbook_folder }}'
+                  'aaa_auth': '../auth'
+                  'access_auth': '../auth'
+
+                extra_vars: 
+                  "input_vars_path": "../config_examples/{{ design }}/" 
+                  "design": true 
+                  "access_dir": "config_examples/{{ design }}"
+
+          # Loop through the playbooks mentioned in design/playbook_list.yml
+          - name: Run playbooks
+            shell:
+              cmd: ansible-playbook -vvv -i {{ design }}/inventory.yml 
+                   {{ playbook_folder[item] }}/playbook_{{ item }}_preview.yml 
+                   --extra-vars '{{extra_vars}}'
+            loop: "{{ config_ex_playbook_list.playbooks_to_run }}"
+
+          - debug:
+              msg: Please refer to 'preview_files' folder for preview files

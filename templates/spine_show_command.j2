@@ -1,11 +1,29 @@
-show run
-show ip ospf neighbor
-show bgp l2vpn evpn summary
-show bgp l2vpn evpn
-show ip pim neighbor
-show ip pim rp map
-show ip rpf 172.16.255.255
-show ip msdp summary
-show ip msdp sa-cache
-show ip mroute
+{% if underlay_config_type == 'green_field_ipv4' or underlay_config_type == ''  %}
+  show run
+  show ip ospf neighbor
+  show bgp l2vpn evpn summary
+  show bgp l2vpn evpn
+  show ip pim neighbor
+  show ip pim rp map
+  show ip rpf 172.16.255.255
+  show ip msdp summary
+  show ip msdp sa-cache
+  show ip mroute
+{% elif underlay_config_type == 'green_field_ipv6' -%}
+  show ipv6 route
+  show ipv6 mroute
+  show bgp l2vpn evpn summary
+  show bgp l2vpn evpn
+  show ipv6 pim anycast-rp
+{% elif underlay_config_type == 'brown_field_dual_stack' or underlay_config_type == 'green_field_dual_stack' -%}
+  show ip route
+  show ipv6 route
+  show ip mroute
+  show ipv6 mroute
+  show bgp l2vpn evpn summary
+  show bgp l2vpn evpn
+  show ip msdp peer
+  show ip msdp sa-cache
+  show ipv6 pim anycast-rp
+{% endif %}
 

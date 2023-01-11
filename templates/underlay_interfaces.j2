@@ -4,16 +4,76 @@ This module configures ip addresses for underlay interfaces
 
 #jinja2: lstrip_blocks: "True", trim_blocks: "True"
 
-{% for interface in interfaces%}
-    !
-    interface  {{ interface }}
-    {% if interfaces[interface].name is defined %}
-        description {{ interfaces[interface].name }}
-    {% endif %}
+{% if underlay_config_type == 'green_field_ipv4' or underlay_config_type == ''  %}
+  {% for interface in interfaces%}
+      !
+      interface {{ interface }}
+      {% if interfaces[interface].name is defined %}
+          description {{ interfaces[interface].name }}
+      {% endif %}
+  
+      {% if interfaces[interface].loopback == 'no'%}
+          no switchport
+      {% endif %}
+          ip address {{ interfaces[interface].ip_address }} {{ interfaces[interface].subnet_mask }}
+          no shut
+  {% endfor %}
 
-    {% if interfaces[interface].loopback == 'no'%}
-        no switchport
-    {% endif %}
-        ip address {{ interfaces[interface].ip_address }} {{ interfaces[interface].subnet_mask }}
-        no shut
-{% endfor %}
+{% elif underlay_config_type == 'green_field_ipv6' or underlay_config_type == 'brown_field_dual_stack' %}
+  {% for interface in interfaces%}
+      !
+      interface {{ interface }}
+      {% if interfaces[interface].name is defined %}
+          description {{ interfaces[interface].name }}
+      {% endif %}
+  
+      {% if interfaces[interface].loopback == 'no'%}
+          no switchport
+      {% endif %}
+        {% if underlay_config_type == 'green_field_ipv6' %}
+          {% if interface == bgp.router_id or interface == l2vpn_global.router_id %}
+            ip address {{ interfaces[interface].ip_address }} {{ interfaces[interface].subnet_mask }}
+          {% endif %}
+          ipv6 address {{ interfaces[interface].ipv6_address }}
+          ipv6 enable
+          no shut
+        {% elif underlay_config_type == 'brown_field_dual_stack' %}
+          ipv6 address {{ interfaces[interface].ipv6_address }}
+          ipv6 enable
+          no shut
+        {% endif %}
+  {% endfor %}
+
+{% elif underlay_config_type == 'green_field_dual_stack' %}
+  {% for interface in interfaces%}
+      !
+      interface {{ interface }}
+      {% if interfaces[interface].name is defined %}
+          description {{ interfaces[interface].name }}
+      {% endif %}
+  
+      {% if interfaces[interface].loopback == 'no'%}
+          no switchport
+      {% endif %}
+          ip address {{ interfaces[interface].ip_address }} {{ interfaces[interface].subnet_mask }}
+          ipv6 address {{ interfaces[interface].ipv6_address }}
+          ipv6 enable
+          no shut
+  {% endfor %}
+
+{% elif underlay_config_type == 'downgrade_to_ipv4' %}
+  {% for interface in interfaces%}
+      !
+      interface {{ interface }}
+      {% if interfaces[interface].name is defined %}
+          description {{ interfaces[interface].name }}
+      {% endif %}
+  
+      {% if interfaces[interface].loopback == 'no'%}
+          no switchport
+      {% endif %}
+          no ipv6 address {{ interfaces[interface].ipv6_address }}
+          no ipv6 enable
+          no shut
+  {% endfor %}
+{% endif %}

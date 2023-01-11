@@ -3,32 +3,30 @@
 - name: Automated VXLAN deployment with BGP EVPN L3 underlay w/ Spine
   hosts: leaf
   gather_facts: no 
+
   tasks:
-          - name: Locate files in host_vars/ipv6_inc_vars dir
-            find:
-              path: "host_vars/ipv6_inc_vars"
-            register: cleanup
-            ignore_errors: true
-          
-          - name: Remove files from previous run
+
+          - name: Cleanup host_vars/ipv6_inc_vars dir
+            run_once: true
             file:
-              path: "{{ item.path }}"
-              state: absent
-            with_items: "{{ cleanup.files }}"
-            ignore_errors: true
-              
+              state: "{{ item }}"
+              path: "host_vars/ipv6_inc_vars"
+            with_items:
+              - absent
+              - directory
+
+          - name: Collect vars from ipv6_create_vars.yml
+            run_once: true
+            include_vars:
+              file: group_vars/ipv6_create_vars.yml
+              name: user_input
+ 
           - name: Collect vars from overlay_db.yml
             run_once: true
             include_vars:
               file: group_vars/overlay_db.yml
               name: to_compare
           
-          - name: Collect vars from ipv6_create_vars.yml
-            run_once: true
-            include_vars:
-              file: group_vars/ipv6_create_vars.yml
-              name: user_input
-
           - name: Collect "show run nve"
             cli_command:
               command: show run nve

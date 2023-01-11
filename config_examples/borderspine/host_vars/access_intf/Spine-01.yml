@@ -1,0 +1,190 @@
+# trunk:
+# =====
+# vlans to be assigned to an interace are taken from the following in increasing order of priority (3 > 2 > 1)
+# 
+# 1) 'vlans' in group_vars/overlay_db.yml (for playbook_access_add_commit/preview.yml) or 'access_intf_cli' in host_vars/inc_vars/<hostname>.yml (for playbook_access_incremental_commit/preview.yml)
+#      ..........................................
+#      .        access_interfaces:              .
+#      .          trunks:                       .
+#      .            - GigabitEthernet1/0/6      .
+#      ..........................................
+#
+# 2) 'trunk_vlan_list' in 'access_interfaces' dictionary
+#      ...........................................
+#      .       access_interfaces:                .
+#      .         trunk_vlan_list: 101,102,201    . 
+#      .         trunks:                         .
+#      .           - GigabitEthernet1/0/6        .
+#      ...........................................
+#
+# 3) 'trunk_vlan_list' in specific interface dictionary
+#      ............................................
+#      .       access_interfaces:                 .
+#      .         trunks:                          .
+#      .           - GigabitEthernet1/0/6:        .
+#      .               trunk_vlan_list: 101,102   .
+#      ............................................
+#
+#
+#
+# access:
+# ======
+# vlan to be assigned to an interace are taken from the following in increasing order of priority (2 > 1)
+# 
+# 1) 'access_vlan' in 'access_interfaces' dictionary
+#      ..........................................
+#      .       access_interfaces:               .
+#      .         access_vlan: 101               .
+#      .         access:                        .
+#      .           - GigabitEthernet1/0/6       .
+#      ..........................................
+#
+# 2) 'access_vlan' in specific interface dictionary
+#      ..........................................
+#      .       access_interfaces:               .
+#      .         access:                        .
+#      .           - GigabitEthernet1/0/6:      .
+#      .               access_vlan: 102         .
+#      ..........................................
+#
+#
+#
+# ______________________________________________
+# __________ EXAMPLE SCENARIOS _______________
+# ______________________________________________
+#
+# Example 1:
+# 
+# Content of host_vars/access_intf/<hostname>.yml
+#
+# access_interfaces:
+#   trunks:
+#     - GigabitEthernet1/0/7
+#     - GigabitEthernet1/0/8
+# 
+# Values assigned after execution
+#
+# GigabitEthernet1/0/7 - 101,102,201,202 (from group_vars/overlay_db.yml or host_vars/inc_vars/<hostname>.yml)
+# GigabitEthernet1/0/8 - 101,102,201,202 (from group_vars/overlay_db.yml or host_vars/inc_vars/<hostname>.yml)
+#
+# ------------------------------------
+#
+# Example 2:
+# 
+# Content of host_vars/access_intf/<hostname>.yml
+#
+# access_interfaces:
+#   access_vlan: 202
+#   access:
+#     - GigabitEthernet1/0/7
+#     - GigabitEthernet1/0/8
+# 
+# Values assigned after execution
+#
+# GigabitEthernet1/0/7 - 202
+# GigabitEthernet1/0/8 - 202
+#
+# ------------------------------------
+#
+# Example 3:
+# 
+# Content of host_vars/access_intf/<hostname>.yml
+#
+# access_interfaces:
+#   trunks:
+#     - GigabitEthernet1/0/6
+#     - GigabitEthernet1/0/7:
+#         trunk_vlan_list: 101,102,201
+#   access:
+#     - GigabitEthernet1/0/8
+#     - GigabitEthernet1/0/9
+#   access_vlan: 202
+# 
+# Values assigned after execution
+#
+# GigabitEthernet1/0/6 - 101,102,201,202 (from group_vars/overlay_db.yml or host_vars/inc_vars/<hostname>.yml)
+# GigabitEthernet1/0/7 - 101,102,201
+# GigabitEthernet1/0/8 - 202
+# GigabitEthernet1/0/9 - 202
+# 
+# ------------------------------------
+#
+# Example 4:
+# 
+# Content of host_vars/access_intf/<hostname>.yml
+#
+# access_interfaces:
+#   trunks:
+#     - GigabitEthernet1/0/6
+#     - GigabitEthernet1/0/7:
+#         trunk_vlan_list: 101,102,201
+#   trunk_vlan_list: 101,201
+#   access:
+#     - GigabitEthernet1/0/8
+#     - GigabitEthernet1/0/9:
+#         access_vlan: 102
+#   access_vlan: 202
+# 
+# Values assigned after execution
+#
+# GigabitEthernet1/0/6 - 101,201
+# GigabitEthernet1/0/7 - 101,102,201
+# GigabitEthernet1/0/8 - 202
+# GigabitEthernet1/0/9 - 102
+# 
+# ------------------------------------
+# 
+# Example 5:
+# 
+# Content of host_vars/access_intf/<hostname>.yml
+#
+# access_interfaces:
+#   trunks:
+#     - GigabitEthernet1/0/5
+#     - GigabitEthernet1/0/6:
+#         trunk_vlan_list: 101,102,201
+#     - GigabitEthernet1/0/7
+#   access:
+#     - GigabitEthernet1/0/8:
+#         access_vlan: 201
+#     - GigabitEthernet1/0/9:
+#         access_vlan: 102
+#   access_vlan: 202
+# 
+# Values assigned after execution
+#
+# GigabitEthernet1/0/5 - 101,102,201,202 (from group_vars/overlay_db.yml or host_vars/inc_vars/<hostname>.yml)
+# GigabitEthernet1/0/6 - 101,102,201
+# GigabitEthernet1/0/7 - 101,102,201,202 (from group_vars/overlay_db.yml or host_vars/inc_vars/<hostname>.yml)
+# GigabitEthernet1/0/8 - 201
+# GigabitEthernet1/0/9 - 102
+#
+# ----------------------------------------
+#
+# Example 6:
+# 
+# Content of host_vars/access_intf/<hostname>.yml
+#
+# access_interfaces:
+#   trunks:
+#     - GigabitEthernet1/0/7
+#   access:
+#     - GigabitEthernet1/0/8:
+#         access_vlan: 201
+# 
+# Values assigned after execution
+#
+# GigabitEthernet1/0/7 - 101,102,201,202 (from group_vars/overlay_db.yml or host_vars/inc_vars/<hostname>.yml)
+# GigabitEthernet1/0/8 - 201
+#
+# ______________________________________________
+# ______________________________________________
+# ______________________________________________
+#
+# layer 2 interfaces
+
+access_interfaces:
+  trunks:
+    #- FortyGigabitEthernet1/0/4
+     - TenGigabitEthernet1/0/40
+

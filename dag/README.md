@@ -293,7 +293,7 @@ Detailed information could be found [here](https://cat9k-evpn-ansible.readthedoc
 
 **playbook_overlay_incremental_generate.yml**
 
-* the playbook is checking ``overlay_db.yml``, current configuration on the switch and generate internal configuration files in
+* the playbook is checking ``overlay_db.yml``,``create_vars.yml`` current configuration on the switch and generate internal configuration files in
 
 directory ``host_vars/inc_vars/``
 
@@ -306,6 +306,24 @@ directory ``host_vars/inc_vars/``
 inputs from ``host_vars/inc_vars/<hostname>.yml``. Output could be checked in ``preview_files/<hostname>-inc.txt``
 
 **playbook_overlay_incremental_commit.yml**
+
+* the playbook is used for provisioning incremental ipv6 add changes to the remote devices
+
+**playbook_overlay_incremental_ipv6_generate.yml**
+
+* the playbook is checking ``overlay_db.yml``,``ipv6_create_vars.yml`` current configuration on the switch and generate internal configuration files in
+
+directory ``host_vars/ipv6_inc_vars/``
+
+⚠️ This playbook is used internally and should not be run separately by user.
+
+**playbook_overlay_incremental_ipv6_preview.yml**
+
+* the playbook is used to generate list of commands which have to be entered on remote device based on
+
+inputs from ``host_vars/ipv6_inc_vars/<hostname>.yml``. Output could be checked in ``preview_files/<hostname>--ipv6_inc.txt``
+
+**playbook_overlay_incremental_ipv6_commit.yml**
 
 * the playbook is used for provisioning incremental add changes to the remote devices
 
@@ -328,6 +346,24 @@ inputs from ``playbook_overlay_delete_preview.yml``
 **playbook_overlay_delete_commit.yml:**
 
 * the playbook is used for provisioning incremental delete changes to the remote devices
+
+**playbook_overlay_delete_ipv6_generate.yml:**
+
+* the playbook checks ``group_vars/overlay_db.yml, group_vars/ipv6_delete_vars.yml`` and current configuration on the switch
+
+and generates internal configuration files in the directory ``host_vars/ipv6_delete_vars/``
+
+⚠️ This playbook is used internally and should not be run separately by user.
+
+**playbook_overlay_delete_ipv6_preview.yml:**
+
+* the playbook generates list of commands which have to be entered on the remote device based on
+
+inputs from ``playbook_overlay_delete_ipv6_generate.yml``
+
+**playbook_overlay_delete_ipv6_commit.yml:**
+
+* the playbook is used for provisioning incremental ipv6 delete changes to the remote devices
 
 
 ## Access interface provisioning ##

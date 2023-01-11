@@ -3,49 +3,89 @@
 - name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
   hosts: all
   gather_facts: no
+
   vars:
+    playbook_name: "underlay"
+    input_vars_path: "./"
     underlay_block: ""
-    underlay_dict:
+
+    underlay_general_dict:
       '../templates/hostname.j2': 'hostname block'
       '../templates/global_routing.j2': 'global routing block'
-      '../templates/underlay_interfaces.j2': 'underlay interface block'
-      '../templates/ospf_interfaces.j2': 'ospf interface block'
-      '../templates/pim_interfaces.j2': 'pim interface block'
       '../templates/pim_rp.j2': 'pim rp block'
+
+    underlay_intf_dict:
+      '../templates/underlay_interfaces.j2': 'underlay interface block'
+      '../templates/ospf_interfaces.j2': 'ospf interface block' # divide it?
+      '../templates/pim_interfaces.j2': 'pim interface block'
+
+    underlay_intf_new_node_dict:
+      '../templates/underlay_interfaces.j2': 'underlay interface block'
+      '../templates/ospf_interfaces_only.j2': 'ospf interface block' # divide it?
+      '../templates/pim_interfaces.j2': 'pim interface block'
+
+    underlay_msdp_dict:
+      '../templates/msdp_peering.j2': 'MSDP peering block'
+
+    underlay_leaf_dict: "{{ underlay_general_dict | combine( underlay_intf_dict )}}"
+
+    underlay_spine_dict: "{{ underlay_leaf_dict | combine( underlay_msdp_dict )}}"
+
+    underlay_borderspine_dict: "{{ underlay_msdp_dict }}"
+
 
   tasks:
 
-          # Set db file path and load underlay vars
-          - name: Load and process underlay input file
+          # leaf_group, borderspine_group, spine_group and new_node are defined in subtask
+          - name: Get inventory groups
+            include_tasks: ../subtasks/common_subtasks/subtask_get_inventory_group.yml
+          
+          - name: Load vars from group_vars/underlay_config file
             run_once: true
-            block:
-            - name: set underlay vars input file path if not already set
-              when: input_vars_path is not defined
-              set_fact: 
-                input_vars_path: "./"
+            include_vars:
+              file: "{{ input_vars_path }}group_vars/underlay_config.yml"           
 
-          - name: Load vars from node_vars/<host>.yml input file
+          - name: Load variables from node_vars/<host>.yml input file
+            when: inventory_hostname in leaf_group + spine_group
             include_vars: 
               file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
 
-          - name: Read template files
+          - name: Update dictionary to enable routing for ipv4 unicast
             set_fact:
-              underlay_block: "{{ underlay_block }} ! {{ underlay_dict[item.key] }} {{ lookup('template', item.key ) }}"
-            with_dict: "{{ underlay_dict }}"
+              routing: "{{ routing | default({}) | combine( {'ipv4_uni': 'yes'} ) }}"
 
-          - name: Read MSDP peering template file
-            when: inventory_hostname in groups['spine']
+          - name: Load vars from overlay input file
+            run_once: true
+            include_vars: 
+              file: "{{ input_vars_path }}group_vars/overlay_db.yml"
+
+          # --------- This task runs only when new leaf/s are added in incr_inventory.yml ---------
+          - name: Tasks for new leaf addition
+            when: new_node == true
+            include_tasks: ../subtasks/underlay_subtasks/subtask_new_node_tasks.yml
+          # ---------------------------------------------------------------------------------------
+
+          - name: Read template files for leaf devices
+            when: inventory_hostname in leaf_group      # leaf_group includes borderspine
             set_fact:
-              underlay_block: "{{ underlay_block }} ! MSDP peering block {{ lookup('template', '../templates/msdp_peering.j2' ) }}"
+              underlay_block: "{{ underlay_block }} ! {{ underlay_leaf_dict[item.key] }} {{ lookup('template', item.key ) }}"
+            with_dict: "{{ underlay_leaf_dict }}"
 
-          - name: Render template files output
+          - name: Read template files for borderspine devices
+            when: inventory_hostname in borderspine_group
             set_fact:
-              rendered: "{{ underlay_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n\n! ') }}"
+              underlay_block: "{{ underlay_block }} ! {{ underlay_borderspine_dict[item.key] }} {{ lookup('template', item.key ) }}"
+            with_dict: "{{ underlay_borderspine_dict }}"
 
-          - name: Copy configurations to the respective file ( <hostname>-underlay.txt ) under 'preview_files' folder
-            copy:
-              dest: preview_files/{{inventory_hostname}}-underlay.txt
-              content: "{{ rendered }}"
+          - name: Read template files for spine devices
+            when: inventory_hostname in spine_group
+            set_fact:
+              underlay_block: "{{ underlay_block }} ! {{ underlay_spine_dict[item.key] }} {{ lookup('template', item.key ) }}"
+            with_dict: "{{ underlay_spine_dict }}"
+
+          - name: Write to preview files
+            include_tasks: ../subtasks/common_subtasks/subtask_write_to_preview_file.yml 
+
 
 - name: Display output file info
   hosts: localhost

@@ -1,0 +1,34 @@
+---
+  
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
+  hosts: leaf
+  gather_facts: no
+
+  vars:
+    input_vars_path: "./"
+
+    leaf_auth_dict:
+      '../templates/aaa_configs.j2': 'aaa configs block'
+      '../templates/auth_configs.j2': 'auth configs block'
+
+
+  tasks:
+
+          # leaf_group is defined in subtask
+          - name: Get inventory groups
+            include_tasks: ../subtasks/common_subtasks/subtask_get_inventory_group.yml
+
+          # Set db file path and load auth_db
+          - name: Load and process auth_db input file
+            run_once: true
+            include_vars: 
+              file: "{{ input_vars_path }}group_vars/auth_db.yml"
+
+          - name: AAA and auth configuration
+            when: inventory_hostname in leaf_group
+            cli_config:
+              config: " {{ lookup('template', item.key) }} "
+              diff_match: none
+            register: result
+            with_dict: "{{ leaf_auth_dict }}"
+            become: yes

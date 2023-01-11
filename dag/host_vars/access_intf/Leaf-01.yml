@@ -177,13 +177,61 @@
 # GigabitEthernet1/0/7 - 101,102,201,202 (from group_vars/overlay_db.yml or host_vars/inc_vars/<hostname>.yml)
 # GigabitEthernet1/0/8 - 201
 #
+# 
+#
+# Example 7:
+# 
+# Content of host_vars/access_intf/<hostname>.yml
+#leaf_auth_type : DefaultWiredDot1xClosedAuth
+# access_interfaces:
+#   trunks:
+#     - GigabitEthernet1/0/7
+#   access:
+#     - GigabitEthernet1/0/4:
+#         auth_type : DefaultWiredDot1xOpenAuth
+#         access_vlan: 201
+#      - GigabitEthernet1/0/5:
+#         access_vlan: 201
+#      - GigabitEthernet1/0/6:
+#         auth_type : DefaultWiredDot1xLowImpactAuth
+#         access_vlan: 201
+# 
+# Values assigned after execution
+#
+# GigabitEthernet1/0/7 - 101,102,201,202 (from group_vars/overlay_db.yml or host_vars/inc_vars/<hostname>.yml)
+# GigabitEthernet1/0/8 - 201
+# GigabitEthernet1/0/4 - 201,auth_type : DefaultWiredDot1xOpenAuth
+# GigabitEthernet1/0/5 - 201,auth_type : DefaultWiredDot1xClosedAuth ( from leaf_auth_type var)
+# GigabitEthernet1/0/6 - 201,auth_type : DefaultWiredDot1xLowImpactAuth
 # ______________________________________________
 # ______________________________________________
 # ______________________________________________
 #
 # layer 2 interfaces
 
+leaf_auth_type : DefaultWiredDot1xClosedAuth  
 access_interfaces:
   trunks:
     - GigabitEthernet1/0/7
     - GigabitEthernet1/0/8
+  access:
+   - GigabitEthernet1/0/4:
+       auth_type : DefaultWiredDot1xOpenAuth
+       access_vlan: 201
+   - GigabitEthernet1/0/5:
+       access_vlan: 201
+   - GigabitEthernet1/0/6:
+       auth_type : DefaultWiredDot1xLowImpactAuth
+       access_vlan: 201
+       
+#misc_config :
+#   - device-tracking attach-policy IPDT_POLICY
+#   - load-interval 30
+#   - access-session inherit disable interface-template-sticky
+#   - access-session inherit disable autoconf
+#   - no macro auto processing
+#   - spanning-tree portfast
+#   - spanning-tree bpduguard enable
+    
+  
+  
