@@ -73,6 +73,10 @@ More details could be found [here](https://docs.python.org/3/library/venv.html)
 
 Detailed documentation could be found [here](https://cat9k-evpn-ansible.readthedocs.io)
 
+# Ask a question #
+
+If you have any questions, please leverage the GitHub [discussions board](https://github.com/Cat9kEVPN/cat9k-evpn-ansible/discussions/)
+
 # Release notes #
 
 ## 2.1.0 ##
