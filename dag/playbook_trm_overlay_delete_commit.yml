@@ -28,8 +28,14 @@
   # 4) Deploy configs to the hosts
   ##--------------------
 
+          - block:
 
   # ------ 1) Load and process input files ( trm_overlay_db.yml and trm_delete_vars.yml ) --------
+
+            - name: Set playbook name and mode
+              set_fact:
+                playbook_name: "trm"
+                playbook_mode: "-del"
 
             - name: Load and process TRM input file
               run_once: True
@@ -76,7 +82,8 @@
                       'no_loopback_info':true} }}"
                   register: processed_trm_db
 
-                - set_fact:
+                - name: Get RP loopbacks from trm_preprocess module output
+                  set_fact:
                     all_rp_loopbacks: "{{ processed_trm_db.rp_loopbacks }}"
                     #vrf_mvpn: "{{ processed_trm_db.vrf_mvpn }}"
 
@@ -102,10 +109,10 @@
               - name: Call python module to parse NVE output
                 sh_run_nve_parse:
                   command_output: "{{ nve_output.stdout }}"
-
                 register: nve_parsed
 
-              - set_fact:
+              - name: Get overlay and vrf dictionary from sh_run_nve_parse module output
+                set_fact:
                   overlay_dict: "{{ nve_parsed.parsed }}"
                   overlay_vrf_dict: "{{ nve_parsed.parsed.vrf | default({}) }}"
 
@@ -130,7 +137,8 @@
                       {'unfiltered_vrfs': vrfs, 'overlay_vrfs': overlay_vrf_dict} }}"
                   register: filtered_vrfs
 
-                - set_fact:
+                - name: Get filtered (non-existing VRFs) VRFs list from trm_preprocess module output
+                  set_fact:
                     vrfs: "{{ filtered_vrfs.filtered_vrfs }}"
 
               # Get SVIs of the desired VRFs
@@ -157,7 +165,8 @@
                       file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
                       name: node_vars_vars
 
-                  - set_fact:
+                  - name: Get RP loopbacks which are not in host_vars/node_vars/<host>.yml
+                    set_fact:
                       rp_unupdated: "{{ rp_loopbacks | difference(node_vars_vars['overlay_interfaces']) }}"
 
 
@@ -179,21 +188,25 @@
               # Get BGP router ASN and MVPN AFs
               - name: Collect AS number from show run | sec bgp output
                 block:
-                - set_fact:
+                - name: Get bgp data
+                  set_fact:
                     bgp_list: "{{ bgp_parsed.bgp | dict2items }}"
 
-                - set_fact:
+                - name: Add AS number to BGP dictionary
+                  set_fact:
                     bgp: "{{ bgp | default({}) | combine({ 'as_number': bgp_list[0].value.as_number | string }) }}"
 
               # Get VRF AFS minus BGP MVPN AFs that are missing in the device
               # Set delete MVPN address families for filtered MVPN AFs
               - name: Filter MVPN AFs missing in the device
                 block:
-                - set_fact:
+                - name: Set vrf_mvpn from vrf_mvpn of spine
+                  set_fact:
                     vrf_mvpn: "{{ vrf_mvpn_spine }}"
                   when: inventory_hostname in groups['spine']
 
-                - set_fact:
+                - name: Get MVPN present in the device 
+                  set_fact:
                     mvpns: "{{ vrf_mvpn | intersect(
                       bgp_parsed.bgp[bgp.as_number]['address_family'] | intersect(['ipv4 mvpn', 'ipv6 mvpn']) ) }}"
 
@@ -217,6 +230,10 @@
               register: result
               with_dict: "{{ common_trm_dict }}"
 
+            rescue:
+              - name: Record failure
+                include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
 
 - name: Display output info
   hosts: localhost
@@ -225,12 +242,17 @@
 
   tasks:
 
-            # Issue warning if RP loopbacks are not updated in host_vars/node_vars/<host>.yml
-            - name: Warning
-              set_fact:
-                msg: 
-                - playbook_trm_overlay_delete_commit will delete the following RP interfaces from the devices, which is/are not found in host_vars/node_vars/{{ item }}.yml
-                - "{{ hostvars[item]['rp_unupdated'] }}"
-                - Please update host_vars/node_vars/{{ item }}.yml accordingly
-              when: "hostvars[item]['rp_unupdated'] != []"
-              loop: "{{ hostvars['localhost']['groups']['leaf'] }}"
+    # Issue warning if RP loopbacks are not updated in host_vars/node_vars/<host>.yml
+    - name: Warning
+      set_fact:
+        msg: 
+        - playbook_trm_overlay_delete_commit will delete the following RP interfaces from the devices, which is/are not found in host_vars/node_vars/{{ item }}.yml
+        - "{{ hostvars[item]['rp_unupdated'] }}"
+        - Please update host_vars/node_vars/{{ item }}.yml accordingly
+      when: "hostvars[item]['rp_unupdated'] != []"
+      loop: "{{ hostvars['localhost']['groups']['leaf'] }}"
+              
+    - debug:
+        msg: 
+        - "Please refer the following folders/files"
+        - "'trm-del-err.log' in 'log_directory' folder for error informations if any"

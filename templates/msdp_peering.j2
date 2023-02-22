@@ -10,4 +10,11 @@ This module configures MSDP peering
       ip msdp peer {{ idata.peer_ip }} connect-source {{ idata.source_interface }} remote-as {{ idata.remote_as }}
       ip msdp cache-sa-state
   {% endfor %}
+
+{% elif underlay_config_type == 'downgrade_to_ipv6' %}
+  {% for index,idata in msdp.items() %}
+      !
+      no ip msdp peer {{ idata.peer_ip }} connect-source {{ idata.source_interface }} remote-as {{ idata.remote_as }}
+      no ip msdp cache-sa-state
+  {% endfor %}
 {% endif %}

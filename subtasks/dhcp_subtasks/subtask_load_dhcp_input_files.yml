@@ -21,7 +21,7 @@
         include_vars: 
           file: "{{ input_vars_path }}group_vars/dhcp_create_vars.yml"
           name: dhcp_create_vars
-          
+
       # Load DHCP configs of VRFs in dhcp_create_vars.yml from dhcp_db.yml and form dhcp dictionary 
       - name: Form DHCP dictionary
         set_fact:

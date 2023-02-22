@@ -16,6 +16,13 @@
 
   tasks:
 
+        - block:
+
+          - name: Set playbook name and mode
+            set_fact:
+              playbook_name: "access_auth"
+              playbook_mode: "-del"
+
           - name: Load vars from auth_db input file
             run_once: true
             include_vars: 
@@ -39,3 +46,19 @@
               diff_match: none 
             register: result
             with_dict: "{{ access_auth_dict }}"
+
+          rescue:
+            - name: Record failure
+              include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
+
+- name: Display output file info
+  hosts: leaf
+  gather_facts: no
+  run_once: True
+
+  tasks:
+    - debug:
+        msg: 
+        - "Please refer the following folders/files"
+        - "'access_auth-del-err.log' in 'log_directory' folder for error informations if any"

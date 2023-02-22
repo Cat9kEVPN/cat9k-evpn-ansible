@@ -69,4 +69,18 @@ Default OSPF network type in underlay is P2P for speeding up the convergence tim
   {# unconfigure ospf process and ospf router-id for ipv6 #}
   !
   no ipv6 router ospf 1
+
+{% elif underlay_config_type == 'downgrade_to_ipv6' %}
+  {% for interface in interfaces%}
+      !
+      interface  {{ interface }}
+      {% if interfaces[interface].loopback == 'no'%}
+          no ip ospf network point-to-point
+      {% endif %}
+      no ip ospf 1 area 0
+  {% endfor %}
+  
+  {# unconfigure ospf process and ospf router-id for ipv6 #}
+  !
+  no router ospf 1
 {% endif %}

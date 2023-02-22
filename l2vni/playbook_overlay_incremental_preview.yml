@@ -5,9 +5,12 @@
 - name: Automated VXLAN deployment with BGP EVPN L2 underlay w/ Spine
   hosts: all
   gather_facts: no
+
   vars_files:
     - "group_vars/overlay_db.yml"
+
   vars:
+    input_vars_path: "./"
     incremental_run: false
     whole_block: ""
 
@@ -22,7 +25,15 @@
       '../templates/bgp_global.j2': 'bgp global block'
       '../templates/bgp_l2vpn_evpn_af.j2': 'bgp l2vpn evpn af block'
       
-  tasks:  
+  tasks:
+
+        - block:
+
+          - name: Set playbook name and mode
+            set_fact:
+              playbook_name: "overlay"
+              playbook_mode: "-inc"
+
           - name: Check whether host_vars/inc_vars/{{ inventory_hostname }}.yml is present
             local_action: stat path=./host_vars/inc_vars/{{ inventory_hostname }}.yml
             register: file_state
@@ -31,7 +42,7 @@
           - name: Load vars from group_vars/underlay_config file
             run_once: true
             include_vars:
-              file: "group_vars/underlay_config.yml" 
+              file: "group_vars/underlay_config.yml"
 
           - name: Executing tasks if host_vars/inc_vars/{{ inventory_hostname }}.yml is present
             when: file_state.stat.exists and inventory_hostname in groups['leaf']
@@ -66,16 +77,21 @@
             set_fact:
               rendered: "{{  whole_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n! ') }}"
 
-          - name: Copy configurations to respective file ( <hostname>-inc.txt ) under 'preview_files' folder
+          - name: Copy configurations to respective file ( <hostname>-<playbook_mode>-<playbook_name>.txt ) under 'preview_files' folder
             copy:
-              dest: preview_files/{{inventory_hostname}}-inc.txt
+              dest: preview_files/{{inventory_hostname}}-inc-{{ playbook_name }}.txt
               content: "{{ rendered }}"
               
-          - name: Clearing configurations in preview_files/<hostname>-inc.txt if device config is skipped
+          - name: Clearing configurations in preview_files/<hostname>-<playbook_mode>-<playbook_name>.txt if device config is skipped
             when: not file_state.stat.exists
             copy:
-              dest: preview_files/{{inventory_hostname}}-inc.txt
+              dest: preview_files/{{inventory_hostname}}-inc-{{ playbook_name }}.txt
               content: ""
+
+          rescue:
+            - name: Record failure
+              include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
 
 - name: Display output file info
   hosts: localhost
@@ -84,4 +100,7 @@
 
   tasks:
     - debug:
-        msg: Please refer to <hostname>-inc.txt in 'preview_files' folder
+        msg: 
+        - "Please refer the following folders/files"
+        - "'<hostname>-inc-overlay.txt' in 'preview_files' folder for preview files"
+        - "'overlay-inc-err.log' in 'log_directory' folder for error informations if any"

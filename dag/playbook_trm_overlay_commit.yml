@@ -6,7 +6,6 @@
 
   vars:
     input_vars_path: "./"
-    playbook_mode: ''
     avoid_force_reconfig: true      # when set to false, reconfigs TRM configs under the DAGs
 
     trm_inc: false
@@ -36,8 +35,19 @@
   # 9) Deploy configurations
   ##--------------------
 
+          - block:
 
   # ------ 1) load input files --------
+
+            - name: Set playbook name and mode
+              set_fact:
+                playbook_name: "trm"
+                playbook_mode: ""
+
+            - name: Set playbook mode
+              when: trm_inc == true
+              set_fact:
+                playbook_mode: "-inc"
 
             - name: Load and get TRM data from TRM input file
               block:
@@ -56,7 +66,8 @@
                   vrf_mvpn_spine: []
                   collect_svis_af_once: false
 
-              - set_fact:
+              - name: Set collect_svis_af_once and avoid_force_reconfig
+                set_fact:
                   collect_svis_af_once: true        # Collect svi from overlay_db once
                   avoid_force_reconfig: false       # Do not check in the host for already-TRM-enabled VRFs
                 when: design != false
@@ -78,12 +89,14 @@
                   vrf_trm_info: "{{ {'vrfs': vrfs_unfiltered, 'inventory_leafs': leaf_group } }}"
                 register: processed_trm_db
 
-              - set_fact: 
+              - name: Get loopback info from trm_preprocess module
+                set_fact: 
                   #vrf_mvpn: "{{ processed_trm_db.vrf_mvpn }}"
                   rp_interface_dict: "{{ processed_trm_db.rp_intf }}"
                   rp_for_hosts_dict: "{{ processed_trm_db.rp_loopbacks }}"
                   
-            - set_fact:
+            - name: Get vrfs listed in input file
+              set_fact:
                 vrfs_unfiltered: "{{ vrfs_unfiltered.keys() | list }}"
               run_once: true
                 
@@ -163,14 +176,16 @@
               - name: Get not-trm-enabled VRFs from the device
                 when: avoid_force_reconfig == true
                 block:
-                - trm_preprocess:
+                - name: Call trm_preprocess module to filter the already-trm-enabled VRFs
+                  trm_preprocess:
                     config_vrf_info: "{{ {
-                      'vrf_dict': overlay_dict.vrf, 
+                      'vrf_dict': overlay_dict.vrf | default([]), 
                       'db_dict': trm_db_vars.dag, 
                       'vrf_interested': vrfs_filtered } }}"
                   register: vrfs_unconfig_dict
 
-                - set_fact:
+                - name: Collect VRFs from trm_preprocess module result
+                  set_fact:
                     vrfs_unconfig: "{{ vrfs_unconfig_dict['vrfs_unconfig'] }}"
 
               - name: Set all VRFs as not-trm-enabled VRFs
@@ -304,3 +319,21 @@
                 diff_match: none
               register: result
               with_dict: "{{ bgp_mvpn_dict }}"
+
+            rescue:
+              - name: Record failure
+                include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
+
+- name: Display output file info
+  hosts: localhost
+  gather_facts: no
+  run_once: True
+  vars:
+    playbook_mode: ''
+
+  tasks:
+    - debug:
+        msg: 
+        - "Please refer the following folders/files"
+        - "'trm{{ playbook_mode }}-err.log' in 'log_directory' folder for error informations if any"

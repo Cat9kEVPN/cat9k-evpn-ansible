@@ -12,12 +12,14 @@
         file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
         name: bgp_vars
 
-    - set_fact:
+    - name: Get BGP neighbours from host_vars/node_vars/<host>.yml, BGP as number and MVPN
+      set_fact:
         neighbors: "{{ bgp_vars.bgp.neighbors.keys() | list }}"
         bgp: "{{ bgp | combine({ 'as_number': bgp_vars.bgp.as_number }) }}"
         mvpns: "{{ vrf_mvpn }}"
 
-    - set_fact:
+    - name: Update bgp dictionary with MVPN neighbors
+      set_fact:
         bgp: "{{ bgp | combine({ item+'_mvpn_neighbors': neighbors }) }}"
       loop: "{{ vrf_mvpn }}"
 
@@ -44,7 +46,8 @@
         get_bgp_af_neighbors: "{{ {'bgp_dict': bgp_parsed.bgp, 'mvpn_afs': vrf_mvpn} }}"
       register: bgp_vars
 
-    - set_fact:
+    - name: Update bgp dictionary with AS number and MVPN neighbours
+      set_fact:
         bgp: "{{ bgp | combine(
           { 'as_number': bgp_vars.as_number },
           bgp_vars.mvpn_af_neighbors) }}"

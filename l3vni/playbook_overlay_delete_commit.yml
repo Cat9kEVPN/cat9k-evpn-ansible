@@ -7,7 +7,8 @@
   hosts: leaf
   gather_facts: no
 
-  vars: 
+  vars:
+
     block_dict:
       '../templates/svi_create.j2': 'svi block'
       '../templates/nve_create.j2': 'nve block'
@@ -15,6 +16,13 @@
       '../templates/vrf_definition.j2': 'vrf block'
 
   tasks:
+
+        - block:
+
+          - name: Set playbook name and mode
+            set_fact:
+              playbook_name: "overlay"
+              playbook_mode: "-del"
 
           - name: Load variables from group_vars/delete_vars.yml file
             run_once: true
@@ -47,14 +55,14 @@
             - name: Load variables from files under host_vars/delete_vars folder
               include_vars: host_vars/delete_vars/{{inventory_hostname}}.yml
 
-            - name: Applying overlay configurations
+            - name: Apply overlay configurations
               cli_config:
                 config: "{{ lookup('template', item.key) }}"
                 diff_match: none
               register: result
               with_dict: "{{ block_dict }}"
                
-            - name: Applying configurations on access interfaces
+            - name: Apply configurations on access interfaces
               when: update_access_intf == true
               cli_config:
                 config: "{{ lookup('template', '../templates/access_interfaces.j2' ) }}"
@@ -65,3 +73,19 @@
               wait_for:
                 delay: 30
                 timeout: 0
+
+          rescue:
+            - name: Record failure
+              include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
+
+- name: Display output file info
+  hosts: localhost
+  gather_facts: no
+  run_once: True
+
+  tasks:
+    - debug:
+        msg: 
+        - "Please refer the following folders/files"
+        - "'overlay-del-err.log' in 'log_directory' folder for error informations if any"

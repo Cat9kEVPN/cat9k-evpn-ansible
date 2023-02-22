@@ -1,0 +1,2 @@
+- name: Import tasks from playbook_cleanup.yml
+  import_playbook: ../dag/playbook_cleanup.yml

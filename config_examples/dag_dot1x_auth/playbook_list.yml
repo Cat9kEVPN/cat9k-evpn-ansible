@@ -9,5 +9,6 @@ playbooks_to_run:
   - access_add
   - aaa_auth
   - access_auth
+  - dhcp
 
 #playbook_folder: 'dag'

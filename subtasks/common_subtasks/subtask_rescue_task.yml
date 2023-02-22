@@ -1,0 +1,32 @@
+  - name: Creates directory
+    file:
+      path: log_directory
+      state: directory
+
+  - name: Get playbook mode
+    set_fact:
+      playbook_mode: "{{ playbook_mode | default('') }}"
+
+  - name: Create log_directory/<playbook>-err.log
+    run_once: true
+    copy:
+      dest: log_directory/{{ playbook_name }}{{playbook_mode}}-err.log
+      content: ''
+
+  - name: Get failed tasks details
+    when: ansible_failed_task is defined
+    block:
+    - name: Get playbook mode
+      set_fact:
+        stderr: "{{ stderr | default([]) + [ ansible_failed_result[item] ] }} "
+      when: item in ansible_failed_result
+      loop: ['message', 'msg', 'exception', 'results', 'reason']
+
+    - name: Write failed task detail to log_directory/<playbook>-err.log
+      lineinfile:
+        path: log_directory/{{ playbook_name }}{{playbook_mode}}-err.log
+        line: "{{ { 
+          'host': inventory_hostname,
+          'task name': ansible_failed_task['name'], 
+          'stderr': stderr
+         } | to_nice_yaml(indent=2, width=88) }}"

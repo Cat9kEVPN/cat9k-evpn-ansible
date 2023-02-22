@@ -34,6 +34,13 @@
       
   tasks:
 
+        - block:
+
+          - name: Set playbook name and mode
+            set_fact:
+              playbook_name: "overlay"
+              playbook_mode: "-inc"
+
           - name: Load vars from node_vars/<host>.yml input file
             include_vars: 
               file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
@@ -99,16 +106,21 @@
             set_fact:
               rendered: "{{  whole_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n! ') }}"
 
-          - name: Copy configurations to respective file ( <hostname>-inc.txt ) under 'preview_files' folder
+          - name: Copy configurations to respective file ( <hostname>-inc-overlay.txt ) under 'preview_files' folder
             copy:
-              dest: preview_files/{{inventory_hostname}}-inc.txt
+              dest: preview_files/{{inventory_hostname}}-inc-{{ playbook_name }}.txt
               content: "{{ rendered }}"
               
-          - name: Clearing configurations in preview_files/<hostname>-inc.txt if device config is skipped
+          - name: Clearing configurations in preview_files/( <hostname>-inc-overlay.txt ) if device config is skipped
             when: not file_state.stat.exists
             copy:
-              dest: preview_files/{{inventory_hostname}}-inc.txt
+              dest: preview_files/{{inventory_hostname}}-inc-{{ playbook_name }}.txt
               content: ""
+
+          rescue:
+            - name: Record failure
+              include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
 
 - name: Display output file info
   hosts: localhost
@@ -117,4 +129,7 @@
 
   tasks:
     - debug:
-        msg: Please refer to <hostname>-inc.txt in 'preview_files' folder
+        msg: 
+        - "Please refer the following folders/files"
+        - "'<hostname>-inc-overlay.txt' in 'preview_files' folder for preview files"
+        - "'overlay-inc-err.log' in 'log_directory' folder for error informations if any"

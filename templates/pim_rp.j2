@@ -28,10 +28,15 @@ This module configures RP for the global routing table
   {% endif %}
 
 {% elif underlay_config_type == 'downgrade_to_ipv4' %}
-  {% if pim.rp_address is defined and pim_ipv6.rp_address is defined %}
+  {% if pim_ipv6.rp_address is defined %}
       no ipv6 pim rp-address {{pim_ipv6.rp_address}}
       {% if pim_ipv6.pim_ipv6_peer_ip is defined %}
         no ipv6 pim anycast-rp {{pim_ipv6.rp_address}} {{pim_ipv6.pim_ipv6_peer_ip}}
       {% endif %}
+  {% endif %}
+
+{% elif underlay_config_type == 'downgrade_to_ipv6' %}
+  {% if pim.rp_address is defined %}
+      no ip pim rp-address {{pim.rp_address}}
   {% endif %}
 {% endif %}

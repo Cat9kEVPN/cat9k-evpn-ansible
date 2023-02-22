@@ -6,7 +6,6 @@
   tasks:    
           - set_fact:
               dhcp_inc: true
-              playbook_mode: '-inc'
             run_once: true
 
 - name: Initialising variable for localhost

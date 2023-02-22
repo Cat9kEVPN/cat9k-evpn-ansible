@@ -13,4 +13,15 @@ This module configures pim under interfaces in underlay
               ip pim sparse-mode
       {% endif %}
   {% endfor %}
+
+{% elif underlay_config_type == 'downgrade_to_ipv6'%}
+  {% for interface in interfaces %}
+      {% set pim_enable = interfaces[interface].pim_enable | default ('no')%}
+      {% if pim_enable == 'yes' %}
+          !
+          interface  {{ interface }}
+              no ip pim sparse-mode
+      {% endif %}
+  {% endfor %}
+  
 {% endif %}

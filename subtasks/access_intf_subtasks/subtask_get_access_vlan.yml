@@ -6,13 +6,16 @@
 
   - name: Get access-type vlans
     block:
-      - set_fact: 
+      - name: Initialise vlan_id_all
+        set_fact: 
           vlan_id_all: []
 
-      - set_fact: 
+      - name: Get VLANs of type 'access' from group_vars/overlay_db.yml 
+        set_fact: 
           vlan_id_all: "{{ vlan_id_all + [ item ] }}"
         when: overlay_data['vlans'][item]['vlan_type'] == 'access'
         loop: "{{ overlay_data.vlans.keys() }}"  
 
-      - set_fact: 
+      - name: Initialise counter
+        set_fact: 
           counter: 1

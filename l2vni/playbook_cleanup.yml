@@ -4,7 +4,16 @@
   hosts: all
   gather_facts: no
   connection: network_cli
+
+
   tasks:  
+
+        - block:
+
+          - name: Set playbook name and mode
+            set_fact:
+              playbook_name: "cleanup"
+              playbook_mode: ""
 
           - name: replace base config
             when: inventory_hostname in groups['leaf']
@@ -21,3 +30,19 @@
                   - show run
                   - configure replace bootflash:default_config.txt force 
                   - show run
+
+          rescue:
+            - name: Record failure
+              include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
+
+- name: Display output info
+  hosts: localhost
+  gather_facts: no
+  run_once: True
+
+  tasks:
+    - debug:
+        msg: 
+        - "Please refer the following folders/files"
+        - "'cleanup-err.log' in 'log_directory' folder for error informations if any"

@@ -10,8 +10,8 @@
     - "group_vars/overlay_db.yml"
 
   vars:
-    incremental_run: false
     input_vars_path: "./"
+    incremental_run: false
     whole_block: ""
 
     vrf_dict:
@@ -35,8 +35,13 @@
 
   tasks:
 
-          
-          
+        - block:
+
+          - name: Set playbook name and mode
+            set_fact:
+              playbook_name: "overlay"
+              playbook_mode: "-inc"
+
           - name: Load vars from group_vars/underlay_config file
             run_once: true
             include_vars:
@@ -105,21 +110,27 @@
               set_fact:
                 rendered: "{{  whole_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n! ') }}"
   
-            - name: Copy configurations to respective file ( <hostname>-inc.txt ) under 'preview_files' folder
+            - name: Copy configurations to respective file ( <hostname>-inc-overlay.txt ) under 'preview_files' folder
               copy:
                 dest: preview_files/{{inventory_hostname}}-inc.txt
                 content: "{{ rendered }}"
                 
-            - name: Clearing configurations in preview_files/<hostname>-inc.txt if device config is skipped
+            - name: Clearing configurations in preview_files/<hostname>-inc-overlay.txt if device config is skipped
               when: not file_state.stat.exists
               copy:
-                dest: preview_files/{{inventory_hostname}}-inc.txt
+                dest: preview_files/{{inventory_hostname}}{{ playbook_mode }}-{{ playbook_name }}.txt
                 content: ""
+
           - name: log message for brown_field_dual_stack
             run_once : true
             when: underlay_config_type == 'brown_field_dual_stack'
             debug:
               msg: "underlay_config_type 'brown_field_dual_stack' doesn't have incremental senarios'"
+
+          rescue:
+            - name: Record failure
+              include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
 
 - name: Display output file info
   hosts: localhost
@@ -128,4 +139,7 @@
 
   tasks:
     - debug:
-        msg: Please refer to <hostname>-inc.txt in 'preview_files' folder
+        msg: 
+        - "Please refer the following folders/files"
+        - "'<hostname>-inc-overlay.txt' in 'preview_files' folder for preview files"
+        - "'overlay-inc-err.log' in 'log_directory' folder for error informations if any"

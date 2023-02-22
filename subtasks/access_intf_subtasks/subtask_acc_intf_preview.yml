@@ -1,4 +1,5 @@
-  - set_fact:
+  - name: Initialise vlan_id
+    set_fact:
       vlan_id: ""
       
   - name: Set inteface detail
@@ -10,7 +11,8 @@
   - name: Collect custom VLAN/s per interface
     when: " intf_item | type_debug == 'dict' "
     block:
-      - set_fact:
+      - name: Get interface name
+        set_fact:
           intf_name: "{{ item }}"
         with_items: "{{ intf_item.keys() }}"
 
@@ -40,7 +42,8 @@
             state: rendered
           register: trunk_unit
 
-        - set_fact:
+        - name: Set intf_conf_unit for trunk
+          set_fact:
             intf_conf_unit: "{{ trunk_unit }}"
 
     - name: Access interface configuration
@@ -56,7 +59,8 @@
             state: rendered
           register: access_unit
 
-        - set_fact:
+        - name: Set intf_conf_unit for access
+          set_fact:
             intf_conf_unit: "{{ access_unit }}"
 
     - name: Rendering output for playbook mode incrememtal
@@ -72,5 +76,6 @@
       set_fact:
         intf_conf: "{{ intf_conf_unit + intf_conf }}"
 
-    - set_fact:
-        intf_block: "! access interface block \n{{ intf_conf | join('\n') }}"
+    - name: Store configs in access_intf_block var
+      set_fact: 
+        access_intf_block: "! access interface block \n{{ intf_conf | join('\n') }}"

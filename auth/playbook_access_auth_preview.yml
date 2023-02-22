@@ -8,7 +8,6 @@
   gather_facts: no
 
   vars:
-    playbook_name: "access_auth"
     input_vars_path: "./"
     access_auth_block: ""
 
@@ -17,6 +16,13 @@
 
 
   tasks:
+
+        - block:
+
+          - name: Set playbook name and mode
+            set_fact:
+              playbook_name: "access_auth"
+              playbook_mode: ""
 
           # leaf_group is defined in subtask
           - name: Get inventory groups
@@ -51,12 +57,19 @@
           - name: Write to preview files
             include_tasks: ../subtasks/common_subtasks/subtask_write_to_preview_file.yml 
 
+          rescue:
+            - name: Record failure
+              include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
 
 - name: Display output file info
-  hosts: leaf
+  hosts: localhost
   gather_facts: no
   run_once: True
 
   tasks:
     - debug:
-        msg: Please refer to <hostname>-access_auth.txt in 'preview_files' folder
+        msg: 
+        - "Please refer the following folders/files"
+        - "'<hostname>-access_auth.txt' in 'preview_files' folder for preview files"
+        - "'access_auth-err.log' in 'log_directory' folder for error informations if any"

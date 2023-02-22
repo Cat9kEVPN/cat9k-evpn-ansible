@@ -377,6 +377,46 @@ inputs from ``playbook_overlay_delete_preview.yml``
 
 * the playbook is used for provisioning configuration for incremental changes for the access interfaces to the remote devices
 
+# Downgrading fabric to green_field_ipv4 or green_field_ipv6 from green_field_dual_stack #
+
+:pushpin: **Make sure the fabric is in dual_stack mode before running the downgrading playbooks**
+
+## Downgrade Underlay provisioning ##
+
+**playbook_underlay_ipv4_downgrade_preview.yml:**
+
+* the playbook generates config for underlay_ipv4_downgrade for preview
+
+**playbook_underlay_ipv4_downgrade_commit.yml:**
+
+* the playbook is used for provisioning configuration for the underlay_ipv4_downgrade to the remote devices
+
+**playbook_underlay_ipv6_downgrade_preview.yml:**
+
+* the playbook generates config for underlay_ipv6_downgrade for preview
+
+**playbook_underlay_ipv6_downgrade_commit.yml:**
+
+* the playbook is used for provisioning configuration for the underlay_ipv6_downgrade to the remote devices
+
+## Downgrade Overlay provisioning ##
+
+**playbook_overlay_ipv4_downgrade_preview.yml:**
+
+* the playbook generates config for overlay_ipv4_downgrade for preview
+
+**playbook_overlay_ipv4_downgrade_commit.yml:**
+
+* the playbook is used for provisioning configuration for the overlay_ipv4_downgrade to the remote devices
+
+**playbook_overlay_ipv6_downgrade_preview.yml:**
+
+* the playbook generates config for overlay_ipv6_downgrade for preview
+
+**playbook_overlay_ipv6_downgrade_commit.yml:**
+
+* the playbook is used for provisioning configuration for the overlay_ipv6_downgrade to the remote devices
+
 ## Special playbooks ##
 
 **playbook_cleanup.yml:**

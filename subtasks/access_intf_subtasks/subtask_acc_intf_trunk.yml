@@ -2,42 +2,44 @@
     set_fact:
       intf_mode: "trunks"
   
-  - name: Get VLAN/s list from file in host_vars/access_intf
+  - name: Get VLAN/s list from files in host_vars/access_intf
     when: '"trunk_vlan_list" in get_Leaf_vars["access_interfaces"]'
     set_fact: 
       vlan_id_common: "{{ get_Leaf_vars.access_interfaces.trunk_vlan_list }}"
 
-  - name: Get VLAN/s list from group_vars/overlay_db.yml or host_vars/inc_vars/<hostname>.yml file
+  - name: Get VLAN/s list from group_vars/overlay_db.yml or host_vars/inc_vars/<host>.yml file
     when: '"trunk_vlan_list" not in get_Leaf_vars["access_interfaces"]'
     block:
-      - name: Assign VLANs from host_vars/inc_vars/<hostname>.yml
+      - name: Assign VLANs from host_vars/inc_vars/<host>.yml
         when: playbook_mode == '-inc'
         block:
         - name: Load variables from access interface input file if present
           block:
-          - name: Check whether host_vars/inc_vars/{{ inventory_hostname }}.yml" is present
+          - name: Check whether host_vars/inc_vars/<host>.yml is present
             local_action: stat path="{{ input_vars_path }}host_vars/inc_vars/{{ inventory_hostname }}.yml"
             register: inc_vars_file_state
             become: no 
             
-          - name: Load variables from host_vars/inc_vars/{{ inventory_hostname }}.yml if present
+          - name: Load variables from host_vars/inc_vars/<host>.yml if present
             include_vars:
               file: "{{ input_vars_path }}host_vars/inc_vars/{{ inventory_hostname }}.yml"
               name: inc_vars_data
             when: inc_vars_file_state.stat.exists
 
-          - set_fact: 
+          - name: Get VLANs from host_vars/inc_vars/<host>.yml
+            set_fact: 
               vlan_id_common: "{{ inc_vars_data['access_inft_cli'] }}"
             when: inc_vars_file_state.stat.exists
 
       - name: Assign VLANs from group_vars/overlay_db.yml
-        when: playbook_mode == '-add'
+        when: playbook_mode == ''
         block:
           - name: Filter 'access' type VLAN/s
             when: counter is not defined
             include_tasks: ../subtasks/access_intf_subtasks/subtask_get_access_vlan.yml
 
-          - set_fact: 
+          - name: Set vlan_id_common with access VLANs from group_vars/overlay_db.yml 
+            set_fact: 
               vlan_id_common: "{{ vlan_id_all }}"
 
   - name: Loop through interfaces

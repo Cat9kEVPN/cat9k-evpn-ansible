@@ -25,3 +25,9 @@
       - name: Get desired VRFs data from trm_overlay_db.yml
         set_fact:
           vrfs_unfiltered: "{{ trm_create_vars.dag | get_dag_data_from_db(trm_db_vars.dag) }}"
+
+      - name: Check whether dag dictionary is empty 
+        when: vrfs_unfiltered == {}
+        fail:
+          msg: "DAG data missing in trm_db_vars.yml/trm_create_vars.yml"
+        any_errors_fatal: True

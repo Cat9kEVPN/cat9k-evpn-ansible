@@ -6,7 +6,6 @@
 
   vars: 
     input_vars_path: "./"
-    playbook_name: "overlay"
     overlay_block: ""
 
     bgp_overlay_dict:
@@ -32,7 +31,14 @@
 
 
   tasks:
-            
+
+        - block:
+
+          - name: Set playbook name and mode
+            set_fact:
+              playbook_name: "overlay"
+              playbook_mode: ""
+
           # leaf_group, borderspine_group, spine_group, and new_node are defined in subtask
           - name: Get inventory groups
             include_tasks: ../subtasks/common_subtasks/subtask_get_inventory_group.yml
@@ -73,6 +79,10 @@
           - name: Write to preview files
             include_tasks: ../subtasks/common_subtasks/subtask_write_to_preview_file.yml
 
+          rescue:
+            - name: Record failure
+              include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
 
 - name: Display output file info
   hosts: localhost
@@ -81,4 +91,7 @@
 
   tasks:
     - debug:
-        msg: Please refer to <hostname>-overlay.txt in 'preview_files' folder
+        msg: 
+        - "Please refer the following folders/files"
+        - "'<hostname>-overlay.txt' in 'preview_files' folder for preview files"
+        - "'overlay-err.log' in 'log_directory' folder for error informations if any"

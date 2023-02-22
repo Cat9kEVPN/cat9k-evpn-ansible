@@ -194,5 +194,35 @@ Immutable paramiters:
             {% endif %}
         {% endfor %}
     {% endfor %}
+
+  {% elif underlay_config_type == 'downgrade_to_ipv6' %}
+
+    {% for interface in nve_interfaces %}
+        !
+        interface nve{{ interface }}
+        vxlan encapsulation ipv6
+
+        {% for ivlan,idata in vlans.items() %}
+            {% if ((vlan_cli is defined and ivlan in vlan_cli) or (vlan_cli is not defined)) %}
+
+                {# Checking an action for vlan - action_stitching #}
+                {% set action = vlans[ivlan].action | default ('add') %}
+
+                {% if action == 'delete' %}    
+                    {% set prefix = 'no' %}
+                {% else %}
+                    {% set prefix = '' %}
+                {% endif %}
+
+                {% if idata.vlan_type == 'access' %}
+                    {% if idata.evi is defined %}
+                        {% if idata.replication_type  == 'static' %}
+                           {{prefix}} member vni {{ idata.vni }} mcast-group {{idata.replication_mcast_ipv6}}
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
   {% endif %}
 {% endif %}

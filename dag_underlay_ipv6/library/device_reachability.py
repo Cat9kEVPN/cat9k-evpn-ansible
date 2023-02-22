@@ -18,7 +18,7 @@ mul_list_dict = collections.defaultdict(list)
 
 def version_license_check(parsed_output) :
     """
-    check version > 17.3 and license is network-advantage 
+    check version > 17.10 and license is network-advantage 
     Args:
         parsed_output: yaml file converted to dict
     Returns:
@@ -35,7 +35,7 @@ def version_license_check(parsed_output) :
                 return ("{} version is compatible  and license is {} which is expected".format(parsed_output["version"]["version"],parsed_output["version"]["license_package"]["network-advantage"]['license_level']))
             else :
                 return ("version {} is compatable but the license {} is Incompatable".format(parsed_output["version"]["version"],parsed_output["version"]["license_package"]["network-advantage"]['license_level']))
-        elif int(version[1]) >= int(3) :
+        elif int(version[1]) >= int(10) :
             if parsed_output["version"]["license_package"]["network-advantage"]['license_level'] == "network-advantage" :
                 return ("{} version is compatible  and license is {} which is expected".format(parsed_output["version"]["version"],parsed_output["version"]["license_package"]["network-advantage"]['license_level']))
             else :

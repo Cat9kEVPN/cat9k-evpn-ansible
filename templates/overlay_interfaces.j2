@@ -52,6 +52,27 @@ This module configures overlay interfaces
               {% endif %}
               no shutdown
           {% endif %}
+        
+        {% elif underlay_config_type is defined and underlay_config_type == 'downgrade_to_ipv4' %}
+          {% if ((ovrl_intf_cli is defined and intf in ovrl_intf_cli) or (ovrl_intf_cli is not defined)) %}
+              !
+              interface {{ intf }}
+              {% if overlay_interfaces[intf].ipv6_address is defined %}
+                no ipv6 address {{ overlay_interfaces[intf].ipv6_address }}
+              {% endif %} 
+              no shutdown
+          {% endif %}
+        
+        {% elif underlay_config_type is defined and underlay_config_type == 'downgrade_to_ipv6' %}
+          {% if ((ovrl_intf_cli is defined and intf in ovrl_intf_cli) or (ovrl_intf_cli is not defined)) %}
+              !
+              interface {{ intf }}
+              {% if ((overlay_interfaces[intf].ip_address is defined) and (overlay_interfaces[intf].subnet_mask is defined)) %}
+                no ip address {{ overlay_interfaces[intf].ip_address }} {{ overlay_interfaces[intf].subnet_mask }}
+              {% endif %} 
+              no shutdown
+          {% endif %}
+          
         {% endif %}
     {% endfor %}
 {% endif %}

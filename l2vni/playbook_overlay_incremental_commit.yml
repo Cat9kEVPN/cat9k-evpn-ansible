@@ -26,6 +26,13 @@
 
   tasks:
 
+        - block:
+
+          - name: Set playbook name and mode
+            set_fact:
+              playbook_name: "overlay"
+              playbook_mode: "-inc"
+
           - name: Load vars from node_vars/<host>.yml input file
             include_vars: 
               file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
@@ -80,3 +87,19 @@
               delay: 60
               timeout: 0
             when: incremental_run == false
+
+          rescue:
+            - name: Record failure
+              include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
+
+- name: Display output file info
+  hosts: localhost
+  gather_facts: no
+  run_once: True
+
+  tasks:
+    - debug:
+        msg: 
+        - "Please refer the following folders/files"
+        - "'overlay-inc-err.log' in 'log_directory' folder for error informations if any"

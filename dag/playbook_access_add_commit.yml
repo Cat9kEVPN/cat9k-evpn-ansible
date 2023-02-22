@@ -6,15 +6,28 @@
 
   vars:
     input_vars_path: './'
-    playbook_mode: '-add'
+    acc_inc: false
     
     info_dict:
       access:
         key_name: 'access_vlan'
       trunks:
         key_name: 'trunk_vlan_list'
-  
+
+
   tasks:
+
+        - block:
+
+          - name: Set playbook name and mode
+            set_fact:
+              playbook_name: "access_intf"
+              playbook_mode: ""
+
+          - name: Set playbook mode
+            when: acc_inc == true
+            set_fact:
+              playbook_mode: "-inc"
 
           # leaf_group is defined in this subtask
           - name: Get inventory groups
@@ -54,3 +67,21 @@
               - name: Process access interfaces
                 when: get_Leaf_vars.access_interfaces.access is defined
                 include_tasks: ../subtasks/access_intf_subtasks/subtask_acc_intf_access.yml
+
+          rescue:
+            - name: Record failure
+              include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
+
+- name: Display output file info
+  hosts: localhost
+  gather_facts: no
+  run_once: True
+  vars:
+    playbook_mode: ''
+
+  tasks:
+    - debug:
+        msg: 
+        - "Please refer the following folders/files"
+        - "'access_intf{{ playbook_mode }}-err.log' in 'log_directory' folder for error informations if any"

@@ -1,0 +1,2 @@
+auth_type:
+  GigabitEthernet1/0/48: DefaultWiredDot1xClosedAuth

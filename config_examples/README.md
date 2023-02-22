@@ -142,3 +142,19 @@
         preview: ansible-playbook -vvv playbook_preview.yml --extra-vars "design=l2vni_dot1x_auth"
         commit: ansible-playbook -vvv playbook_commit.yml --extra-vars "design=l2vni_dot1x_auth"
 ```
+
+## Special playbooks ##
+
+** playbook_cleanup.yml: **
+
+* This playbook reverts the current configuration back to initial default_config.txt
+
+CLI:
+    ansible-playbook -vvv playbook_cleanup.yml -i inventory.yml
+
+** playbook_output.yml: **
+
+* This playbook is used for collecting outputs from the remote devices
+
+CLI:
+    ansible-playbook -vvv playbook_output.yml -i inventory.yml --extra-vars "design=<design_name>"

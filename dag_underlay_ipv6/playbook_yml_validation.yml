@@ -3,14 +3,24 @@
 - name: Overlay "group_vars/overlay_db.yml" validation 
   hosts: all 
   gather_facts: no
+
+
   tasks:
+
+        - block:
+
+          - name: Set playbook name and mode
+            set_fact:
+              playbook_name: "yml_validation"
+              playbook_mode: ""
+
           - name: Collect vars from overlay_db.yml
             run_once: true
             include_vars:
               file: group_vars/underlay_config.yml
               name: underlay_config_type
                 
-          - name: run the "group_vars/overlay_db.yml" validation module
+          - name: Run the "group_vars/overlay_db.yml" validation module
             run_once: true
             precheck_yml: 
               fileName: "group_vars/overlay_db.yml"
@@ -24,3 +34,19 @@
             run_once: true
             debug:
               msg: "Yaml file validation : {{ result}}'"
+
+          rescue:
+            - name: Record failure
+              include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
+
+- name: Display output file info
+  hosts: localhost
+  gather_facts: no
+  run_once: True
+
+  tasks:
+    - debug:
+        msg: 
+        - "Please refer the following folders/files"
+        - "'yml_validation-err.log' in 'log_directory' folder for error informations if any"

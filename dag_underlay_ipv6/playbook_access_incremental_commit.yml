@@ -5,6 +5,13 @@
   gather_facts: no
   tasks:    
           - set_fact:
+              acc_inc: true
+
+- name: Initialising variable for localhost
+  hosts: localhost
+  gather_facts: no
+  tasks:    
+          - set_fact:
               playbook_mode: '-inc'
 
 - name: Import tasks from playbook_access_add_commit.yml

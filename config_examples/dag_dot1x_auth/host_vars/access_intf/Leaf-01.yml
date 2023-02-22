@@ -186,4 +186,6 @@
 access_interfaces:
   trunks:
     - GigabitEthernet1/0/1
-    - GigabitEthernet1/0/48
+  access:
+    - GigabitEthernet1/0/48 :
+        access_vlan: 201

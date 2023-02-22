@@ -1,4 +1,5 @@
-  - set_fact:
+  - name: Set playbook_config block name
+    set_fact:
       playbook_block:  "{{ lookup('vars', playbook_name ~ '_block' ) }}"
 
   - name: Render template files output
@@ -8,17 +9,19 @@
 
   - name: Check if output is empty
     block:
-    - set_fact:
+    - name: Check if config is empty
+      set_fact:
         check_for_empty_file: "{{ rendered | regex_replace('! [\\s\\w]+','') | regex_replace('[!\\s\\n]+','') }}"
 
-    - set_fact:
+    - name: Ignore comments if no configuration is given
+      set_fact:
         rendered: ""
       when: check_for_empty_file == ''
 
-  - name: Copy configurations to respective file ( <hostname>-<playbook_name>.txt ) under 'preview_files' folder
+  - name: Copy configurations to respective file ( <hostname>-<playbook_mode>-<playbook_name>.txt ) under 'preview_files' folder
     copy:
       dest: preview_files/{{inventory_hostname}}{{ playbook_mode | default('')}}-{{ playbook_name }}.txt
-      content: "{{ rendered }}"
+      content: "{{ rendered | default('') }}"
 
   #- name: Copy vars
   #  run_once: True

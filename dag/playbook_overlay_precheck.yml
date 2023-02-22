@@ -4,7 +4,17 @@
   hosts: leaf
   gather_facts: no
   connection: local
+
+
   tasks:  
+
+        - block:
+
+          - name: Set playbook name and mode
+            set_fact:
+              playbook_name: "overlay_precheck"
+              playbook_mode: ""
+
           # Collecting the show_version data
           - name: Collect "show version"
             cli_command:
@@ -72,4 +82,20 @@
           # printing the final result 
           - name: Print result
             debug:
-              msg: "{{ final_result}}'"
+              msg: "{{ final_result }}'"
+
+          rescue:
+            - name: Record failure
+              include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
+
+- name: Display output file info
+  hosts: localhost
+  gather_facts: no
+  run_once: True
+
+  tasks:
+    - debug:
+        msg: 
+        - "Please refer the following folders/files"
+        - "'overlay_precheck-err.log' in 'log_directory' folder for error informations if any"

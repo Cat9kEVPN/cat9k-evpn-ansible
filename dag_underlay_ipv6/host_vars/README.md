@@ -1,0 +1,1 @@
+# This directory contains inc_vars and delete_vars which will be automatically created at the runtime of the respective playbook_overlay_incremental_generate.yml and playbook_overlay_delete_generate.yml

@@ -6,7 +6,6 @@
 
   vars:
     input_vars_path: './'
-    playbook_mode: ''
 
     one_iter: false
     config_dhcp_header: false
@@ -28,8 +27,19 @@
   # 8) Apply configurations
   ##--------------------
 
+          - block:
 
   # ------ 1) load input files --------
+
+            - name: Set playbook name and mode
+              set_fact:
+                playbook_name: "dhcp"
+                playbook_mode: ""
+
+            - name: Set playbook mode
+              when: dhcp_inc == true
+              set_fact:
+                playbook_mode: "-inc"
 
             - name: Load and process DHCP input file
               run_once: true
@@ -66,7 +76,8 @@
                       is not defined in group_vars/dhcp_db.yml"
                   any_errors_fatal: True
                 
-                - set_fact:
+                - name: Get VRFs with no source interface from dhcp_preprocess 
+                  set_fact:
                     no_src_vrf: "{{ no_src_vrfs_dict['no_src_vrf'] }}"
 
 
@@ -97,7 +108,8 @@
                     command_output: "{{ nve_output.stdout }}"
                   register: nve_parsed
 
-                - set_fact:
+                - name: Get overlay dictionary from sh_run_nve_parse module
+                  set_fact:
                     overlay_dict: "{{ nve_parsed.parsed }}"
 
                 ########## Replace with genie parser
@@ -107,7 +119,8 @@
                     command: show run | sec dhcp
                   register: dhcp_output
 
-                - set_fact:
+                - name: Get VRF dictionary from sh_run_nve_parse module and set one_iter
+                  set_fact:
                     one_iter: false
                     overlay_vrf_dict: "{{ overlay_dict.vrf | default({}) }}"
 
@@ -120,7 +133,8 @@
                     file: "{{ input_vars_path }}group_vars/overlay_db.yml"
                     name: overlay_dict
 
-                - set_fact:
+                - name: Get VRF dictionary from overlay_db.yml and set_one_iter
+                  set_fact:
                     one_iter: true
                     overlay_vrf_dict: "{{ overlay_dict.vrfs | default({}) }}"
 
@@ -139,7 +153,8 @@
                 set_fact:
                   all_vrfs: "{{ dhcp_create_vars.dag | get_vrf_list(all_vrfs) }}"
 
-              - set_fact:
+              - name: Set all VRFs as VRFs with no source interface
+                set_fact:
                   no_src_vrf: "{{ all_vrfs }}"
                 when: "'all' in no_src_vrf"
 
@@ -161,21 +176,24 @@
                 when: all_vrfs != [] and no_src_vrf != []
                 block:
 
-                - name: Load vars from host_vars/node_vars/<inventory_hostname>.yml to get overlay interfaces
+                - name: Load vars from host_vars/node_vars/<host>.yml to get overlay interfaces
                   when: design != false
                   block:
-                  - include_vars:
+                  - name: Load variables from host_vars/node_vars/<host>.yml
+                    include_vars:
                       file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
                       name: host_vars_vars
 
-                  - set_fact:
+                  - name: Get source interface from host_vars/node_vars/<host>.yml
+                    set_fact:
                       overlay_intf_dict: "{{ host_vars_vars.overlay_interfaces }}"
                       src_of_intf: "hostvars/{{inventory_hostname}}.yml"
 
                 - name: Get overlay interfaces from devices
                   when: design == false
                   block:
-                  - set_fact:
+                  - name: Get source interface from device's overlay interface
+                    set_fact:
                       overlay_intf_dict: "{{ overlay_dict.overlay_interfaces | default({}) }}"
                       src_of_intf: "{{ inventory_hostname }}"
 
@@ -214,7 +232,8 @@
                       'dhcp_output': dhcp_output.stdout_lines | default ([]) } }}"
                   register: svis_mod_output
 
-                - set_fact: 
+                - name: From dhcp dictionary from the output of dhcp_preprocess module
+                  set_fact: 
                     config_dhcp_header: "{{ svis_mod_output.config_dhcp_header }}"
                     all_vrfs: "{{ svis_mod_output.all_vrfs }}"
                     dhcp: "{{ dhcp | combine (
@@ -229,3 +248,21 @@
                   config: "{{ lookup('template', '../templates/dhcp_overlay.j2') }}"
                   diff_match: none
                 register: result
+
+            rescue:
+              - name: Record failure
+                include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
+
+- name: Display output info
+  hosts: localhost
+  gather_facts: no
+  run_once: True
+  vars:
+    playbook_mode: ''
+
+  tasks:
+    - debug:
+        msg: 
+        - "Please refer the following folders/files"
+        - "'dhcp{{ playbook_mode }}-err.log' in 'log_directory' folder for error informations if any"

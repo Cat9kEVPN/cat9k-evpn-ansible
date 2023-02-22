@@ -76,4 +76,24 @@ This module configures ip addresses for underlay interfaces
           no ipv6 enable
           no shut
   {% endfor %}
+
+{% elif underlay_config_type == 'downgrade_to_ipv6' %}
+  {% for interface in interfaces%}
+      !
+      interface {{ interface }}
+      {% if interfaces[interface].name is defined %}
+          description {{ interfaces[interface].name }}
+      {% endif %}
+  
+      {% if interfaces[interface].loopback == 'no'%}
+          no switchport
+      {% endif %}
+          {% if interface == bgp.router_id or interface == l2vpn_global.router_id %}
+            ip address {{ interfaces[interface].ip_address }} {{ interfaces[interface].subnet_mask }}
+          {% else %}
+            no ip address {{ interfaces[interface].ip_address }} {{ interfaces[interface].subnet_mask }}
+          {% endif %}
+          no shut
+  {% endfor %}
+  
 {% endif %}

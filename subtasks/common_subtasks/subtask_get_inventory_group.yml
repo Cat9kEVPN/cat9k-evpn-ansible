@@ -15,25 +15,29 @@
           file: "{{ input_vars_path }}group_vars/incr_inventory.yml"
           name: incr_inventory_vars
 
-      - set_fact:
+      - name: Set leafs from inventory
+        set_fact:
           add_dev_leaf: "{{ incr_inventory_vars.all.children.leaf.hosts | list }}"
         when: incr_inventory_vars.all.children.leaf.hosts | default({}) != {}
 
     - name: Set leaf devices
       block:
-      - set_fact:
+      - name: Get leafs from incr_inventory.yml
+        set_fact:
           leaf_group: "{{ add_dev_leaf }}"
           new_node: true
         when: add_dev_leaf is defined
 
-      - set_fact:
+      - name: Get leafs from inventory.yml
+        set_fact:
           leaf_group: "{{ groups['leaf'] }}"
           new_node: false
         when: add_dev_leaf is not defined
 
     - name: Set spine devices - role as spine only
       block:
-      - set_fact:
+      - name: Initialise spine_group
+        set_fact:
           spine_group: []
 
       - name: Filter borderspines
@@ -44,5 +48,6 @@
 
     - name: Set borderspine devices
       block:
-      - set_fact:
+      - name: Get borderspine_group from inventory.yml
+        set_fact:
           borderspine_group: "{{ (groups['spine'] | difference(spine_group)) | default([]) }}"

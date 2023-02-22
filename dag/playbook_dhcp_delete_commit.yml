@@ -8,6 +8,7 @@
     input_vars_path: "./"
     action: 'delete'
 
+
   tasks:
 
   ## List of tasks block
@@ -19,8 +20,14 @@
   # 5) Apply configurations
   ##--------------------
 
+          - block:
 
   # ------ 1) load input files --------
+
+            - name: Set playbook name and mode
+              set_fact:
+                playbook_name: "dhcp"
+                playbook_mode: "-del"
 
             - name: Load and process DHCP input file
               run_once: true
@@ -65,7 +72,8 @@
                   command_output: "{{ nve_output.stdout }}"
                 register: nve_parsed
 
-              - set_fact:
+              - name: Get overlay dictionary from parsed output
+                set_fact:
                   overlay_dict: "{{ nve_parsed.parsed }}"
 
               ########## Replace with genie parser
@@ -75,10 +83,12 @@
                   command: show run | sec dhcp
                 register: dhcp_output
 
-              - set_fact:
+              - name: Get VRF dictionary from overlay dictionary
+                set_fact:
                   overlay_vrf_dict: "{{ overlay_dict.vrf | default({}) }}"
               
-              - set_fact:
+              - name: Set config_dhcp_header value if VRF dictionary is empty
+                set_fact:
                   config_dhcp_header: true
                 when: overlay_vrf_dict == {}
 
@@ -95,10 +105,12 @@
             ## Get only VRFs of interest 
             - name: Collect only VRFs of interest
               block:
-              - set_fact: 
+              - name: Get VRF from dhcp_delete_vars.yml
+                set_fact: 
                   all_vrfs: "{{ dhcp_delete_vars.dag | get_vrf_list(all_dhcp_vrfs) }}"
 
-              - set_fact:
+              - name: Set config_dhcp_header value if VRF list is empty
+                set_fact:
                   config_dhcp_header: true
                 when: all_dhcp_vrfs | difference(all_vrfs) == []
 
@@ -117,11 +129,13 @@
                     'config_dhcp_header': config_dhcp_header } }}"
                 register: svis_dhcp_header
 
-              - set_fact:
+              - name: Get svis and config_dhcp_header value from dhcp_preprocess module
+                set_fact:
                   dhcp: "{{ dhcp | combine ( { 'svis': svis_dhcp_header.filtered_svis | default({}) } ) }}"
                   config_dhcp_header: "{{ svis_dhcp_header.config_dhcp_header }}"
 
-              - set_fact:
+              - name: Set dhcp_options key in dhcp dictionary
+                set_fact:
                   dhcp: "{{ dhcp | combine ( { 'dhcp_options': dhcp_db_vars.dhcp_options | default({}) } ) }}"
                 when: config_dhcp_header == true
 
@@ -133,3 +147,19 @@
                 config: "{{ lookup('template', '../templates/dhcp_overlay.j2') }}"
                 diff_match: none
               register: result
+
+            rescue:
+              - name: Record failure
+                include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
+
+- name: Display output info
+  hosts: localhost
+  gather_facts: no
+  run_once: True
+
+  tasks:
+    - debug:
+        msg: 
+        - "Please refer the following folders/files"
+        - "'dhcp-del-err.log' in 'log_directory' folder for error informations if any"

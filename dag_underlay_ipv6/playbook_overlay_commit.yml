@@ -36,19 +36,26 @@
 
   tasks:
 
+        - block:
+
+          - name: Set playbook name and mode
+            set_fact:
+              playbook_name: "overlay"
+              playbook_mode: ""
+
           # leaf_group, borderspine_group, spine_group, and new_node are defined in subtask
           - name: Get inventory groups
-            include_tasks: ../subtasks/common_subtasks/subtask_get_inventory_group.yml 
-
-          - name: Load variables from overlay_db.yml input file
-            run_once: true
-            include_vars: 
-              file: "{{ input_vars_path }}group_vars/overlay_db.yml"
+            include_tasks: ../subtasks/common_subtasks/subtask_get_inventory_group.yml
           
           - name: Load vars from group_vars/underlay_config file
             run_once: true
             include_vars:
-              file: "{{ input_vars_path }}group_vars/underlay_config.yml"  
+              file: "{{ input_vars_path }}group_vars/underlay_config.yml" 
+
+          - name: Load variables from overlay_db.yml input file
+            run_once: true
+            include_vars: 
+              file: "{{ input_vars_path }}group_vars/overlay_db.yml"  
 
           - name: Load variables from node_vars/<host>.yml input file
             when: inventory_hostname in leaf_group + spine_group
@@ -81,6 +88,7 @@
             with_dict: "{{ leaf_overlay_dict }}"
 
           - name: Pause for 60 seconds for convergence  
+            when: design is not defined 
             wait_for:
               delay: 60
               timeout: 0
@@ -90,3 +98,19 @@
             cli_command:
               command: write memory
             register: result
+
+          rescue:
+            - name: Record failure
+              include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
+
+- name: Display output file info
+  hosts: localhost
+  gather_facts: no
+  run_once: True
+
+  tasks:
+    - debug:
+        msg: 
+        - "Please refer the following folders/files"
+        - "'overlay-err.log' in 'log_directory' folder for error informations if any"

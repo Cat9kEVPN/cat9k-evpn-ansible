@@ -8,8 +8,6 @@
 
   vars: 
     overlay_block: ""
-    playbook_name: "overlay"
-    playbook_mode: "-del"
 
     block_dict:
       '../templates/nve_create.j2': 'nve block'
@@ -17,6 +15,13 @@
       '../templates/l2vpn_evpn_evi_create.j2': 'l2vpn evpn evi block'
 
   tasks:
+
+        - block:
+
+          - name: Set playbook name and mode
+            set_fact:
+              playbook_name: "overlay"
+              playbook_mode: "-del"
 
           - name: Load variables from group_vars/delete_vars.yml file
             run_once: true
@@ -27,11 +32,13 @@
             include_vars: 
               file: group_vars/underlay_config.yml
 
-          - name: Get "update_access_intf" value if present in group_vars/delete_vars.yml
+          - name: Set "update_access_intf" value if absent
             run_once: true
-            when: update_access_intf is not defined
-            set_fact:
-              update_access_intf: false
+            block:
+            - name: Set "update_access_intf" value if absent
+              when: update_access_intf is not defined
+              set_fact:
+                update_access_intf: false
 
           - name: Check whether host_vars/delete_vars/<hostname>.yml is present
             local_action: stat path=./host_vars/delete_vars/{{ inventory_hostname }}.yml
@@ -57,6 +64,10 @@
           - name: Write to preview files
             include_tasks: ../subtasks/common_subtasks/subtask_write_to_preview_file.yml
 
+          rescue:
+            - name: Record failure
+              include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
 
 - name: Display output file info
   hosts: localhost
@@ -65,4 +76,7 @@
 
   tasks:
     - debug:
-        msg: Please refer to <hostname>-delete.txt in 'preview_files' folder
+        msg: 
+        - "Please refer the following folders/files"
+        - "'<hostname>-del-overlay.txt' in 'preview_files' folder for preview files"
+        - "'overlay-del-err.log' in 'log_directory' folder for error informations if any"

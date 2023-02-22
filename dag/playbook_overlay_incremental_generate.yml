@@ -4,7 +4,16 @@
   hosts: leaf
   gather_facts: no 
 
+
   tasks:
+
+        - block:
+
+          - name: Set playbook name and mode
+            set_fact:
+              playbook_name: "overlay"
+              playbook_mode: "-inc-gen"
+
           - name: Cleanup host_vars/inc_vars dir
             run_once: true
             file:
@@ -62,3 +71,19 @@
             copy:
               dest: host_vars/inc_vars/{{ inventory_hostname }}.yml
               content: "{{ module_output['yaml'] }}"
+
+          rescue:
+            - name: Record failure
+              include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
+
+- name: Display output file info
+  hosts: localhost
+  gather_facts: no
+  run_once: True
+
+  tasks:
+    - debug:
+        msg: 
+        - "Please refer the following folders/files"
+        - "'overlay-inc-gen-err.log' in 'log_directory' folder for error informations if any"

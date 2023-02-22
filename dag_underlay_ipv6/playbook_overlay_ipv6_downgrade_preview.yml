@@ -1,0 +1,148 @@
+---
+
+# This playbook assumes the current playbook is in dual_stack
+# After running this playbook it converts the fabric to single stack ipv6
+
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
+  hosts: all
+  gather_facts: no
+
+  vars:
+
+    vxlan_encap_type: 'dual-stack'
+    overlay_block: ""
+    rendered: ""
+
+    bgp_dict:
+      '../templates/bgp_global.j2': 'bgp global block'
+    nve_dict:
+      '../templates/nve_create.j2': 'nve create block'
+#    overlay_dict:  
+#      '../templates/overlay_interfaces.j2': 'overlay interface block'
+
+
+  tasks:
+
+        - block:
+
+          - name: Set playbook name and mode
+            set_fact:
+              playbook_name: "overlay_ipv6_downgrade"
+              playbook_mode: ""
+
+          - name: Load and process nve vxlan encapsulation
+            when: inventory_hostname in groups['leaf']
+            block:
+            # Collect and parse the show run nve data
+#            - name: Run and parse show run nve
+#              ansible.utils.cli_parse:
+#                command: "show run nve"
+#                parser:
+#                  name: ansible.netcommon.pyats
+#                set_fact: nve_output_parsed
+
+            ########## Replace with genie parser
+
+            # Remove this block and uncommment the task above
+            - name: Collect "show run nve"
+              cli_command:
+                command: show run nve
+              register: nve_output
+
+            - name: Call python module to parse NVE output
+              sh_run_nve_parse:
+                command_output: "{{ nve_output.stdout }}"
+              register: nve_parsed
+
+            - name: Get sh run nve parsed dictionary from python module output
+              set_fact:
+                nve_output_parsed: "{{ nve_parsed.parsed }}"
+
+            ########## Replace with genie parser
+
+            # Collecting the vxlan encapsulation type
+            - name: getting the vxlan encapsulation type
+              dual_stack_underlay_conversion: 
+                nve_output: "{{ nve_output_parsed }}"
+              register: nve_result
+
+            - name: Get encapsulation type from python module output
+              set_fact:
+                vxlan_encap_type: "{{ nve_result['nve_output']['type'] | default('not dual-stack')}}"
+
+          # Collecting the vxlan encapsulation type    
+          - name: Check for encap type
+            run_once: true
+            set_fact:
+              vxlan_encap_type: "{{ hostvars[item]['vxlan_encap_type'] }}"
+            loop: "{{ groups['leaf'] }}"
+            when: vxlan_encap_type == 'dual-stack'
+
+          # set_fact the vxlan encapsulation type for both leafs and spines    
+          - name: set fact the encap type
+            run_once: true
+            set_fact:
+              vxlan_encap_type: "{{ vxlan_encap_type }}"
+
+          - name: Print vxlan_encap_type
+            debug:
+              msg: "vxlan_encap_type : {{ vxlan_encap_type}}'"
+
+          - name: Load and process underlay input file
+            when:  vxlan_encap_type == "dual-stack"
+            block:  
+            - name: Load vars from host_vars/node_vars/<host>.yml input file
+              include_vars: 
+                file: "host_vars/node_vars/{{ inventory_hostname }}.yml"
+
+            - name: Load vars from overlay input file
+              include_vars: 
+                file: "group_vars/overlay_db.yml"
+                
+            - name: Set underlay_config_type value
+              set_fact:
+                underlay_config_type: "downgrade_to_ipv6"
+
+            - name: Read overlay related template files for nve 
+              when: inventory_hostname in groups['leaf'] and underlay_config_type == 'downgrade_to_ipv6'
+              set_fact:
+                overlay_block: "{{ overlay_block }} ! {{ nve_dict[item.key] }} {{ lookup('template', item.key) }}"
+              with_dict: "{{ nve_dict }}"
+
+            - name: Read overlay related template files for bgp
+              when: underlay_config_type == 'downgrade_to_ipv6'
+              set_fact:
+                overlay_block: "{{ overlay_block }} ! {{ bgp_dict[item.key] }} {{ lookup('template', item.key) }}"
+              with_dict: "{{ bgp_dict }}"
+
+#            - name: Read overlay related template files for overlay_intf
+#              when: inventory_hostname in groups['leaf'] and underlay_config_type == 'downgrade_to_ipv6'
+#              set_fact:
+#                overlay_block: "{{ overlay_block }} ! {{ overlay_dict[item.key] }} {{ lookup('template', item.key) }}"
+#              with_dict: "{{ overlay_dict }}"
+
+            - name: Render template files output
+              set_fact:
+                rendered: "{{  overlay_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n! ') }}"
+
+          - name: Copy configurations to respective file ( <hostname>-overlay_dual_stack_convertion_to_ipv6.txt ) under 'preview_files' folder
+            copy:
+              dest: preview_files/{{inventory_hostname}}-overlay_dual_stack_convertion_to_ipv6.txt
+              content: "{{ rendered }}"
+
+          rescue:
+            - name: Record failure
+              include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
+
+- name: Display output file info
+  hosts: localhost
+  gather_facts: no
+  run_once: True
+
+  tasks:
+    - debug:
+        msg: 
+        - "Please refer the following folders/files"
+        - "'<hostname>-overlay_dual_stack_convertion_to_ipv6.txt' in 'preview_files' folder for preview files"
+        - "'overlay_ipv6_downgrade-err.log' in 'log_directory' folder for error informations if any"

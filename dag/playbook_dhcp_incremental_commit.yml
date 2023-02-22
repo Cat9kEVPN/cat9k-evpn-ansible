@@ -8,5 +8,14 @@
               dhcp_inc: true
             run_once: true
 
+- name: Initialising variable for localhost
+  hosts: localhost
+  gather_facts: no
+  run_once: true
+  tasks:    
+          - set_fact:
+              dhcp_inc: true
+              playbook_mode: '-inc'
+
 - name: Import tasks from playbook_dhcp_commit.yml
   import_playbook: playbook_dhcp_commit.yml

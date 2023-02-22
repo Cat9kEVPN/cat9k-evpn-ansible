@@ -6,7 +6,6 @@
   tasks:    
           - set_fact:
               trm_inc: true
-              playbook_mode: '-inc'
             run_once: true
 
 - name: Initialising variable for localhost
@@ -15,7 +14,6 @@
   run_once: true
   tasks:    
           - set_fact:
-              trm_inc: true
               playbook_mode: '-inc'
 
 - name: Import tasks from playbook_trm_overlay_preview.yml

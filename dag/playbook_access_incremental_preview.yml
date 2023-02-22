@@ -5,7 +5,7 @@
   gather_facts: no
   tasks:    
           - set_fact:
-              playbook_mode: '-inc'
+              acc_inc: true
 
 - name: Initialising variable for localhost
   hosts: localhost

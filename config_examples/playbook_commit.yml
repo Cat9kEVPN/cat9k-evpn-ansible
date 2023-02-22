@@ -1,44 +1,75 @@
-- name: Display output info
+- name: Automated VXLAN deployment with BGP EVPN
   hosts: localhost
   gather_facts: no
   run_once: true
   vars:
     design: '{{ design }}'
+    playbook_run_info: ''
+    total_time: 0
+    ansible_default_inventory: '/etc/ansible/hosts'
 
   tasks:
 
-          - name: Get list of playbooks to be run
+          - name: Cleanup 'log_directory' folder
+            file:
+              state: "{{ item }}"
+              path: "./log_directory"
+            with_items:
+              - absent
+              - directory
+
+          - name: Write readme file in 'log_directory' folder
+            copy:
+              dest: "{{ item.key }}/README.md"
+              content: "This folder contains {{ item.value }} for {{ design }}"
+            with_dict: { log_directory: playbook recap and error informations }
+
+          - name: Get list of playbooks to be run from design folder
             include_vars:
               file: "{{ design }}/playbook_list.yml"
               name: config_ex_playbook_list
 
-          - name: Set playbook path
-            block:
-            - name: Get playbook folder name from playbook_list.yml
-              set_fact:
-                playbook_folder: "{{ config_ex_playbook_list['playbook_folder'] | default('dag') }}"
+          - name: Get playbook folder name from playbook_list.yml
+            set_fact:
+              playbook_folder: "{{ config_ex_playbook_list['playbook_folder'] | default('dag') }}"
 
-            # Initialise the playbook folder
-            - name: Set path for playbooks
-              set_fact:
-                playbook_folder:
-                  'underlay': '../{{ playbook_folder }}'
-                  'overlay': '../{{ playbook_folder }}'
-                  'access_add': '../{{ playbook_folder }}'
-                  'dhcp': '../{{ playbook_folder }}'
-                  'trm_overlay': '../{{ playbook_folder }}'
-                  'aaa_auth': '../auth'
-                  'access_auth': '../auth'
+          - name: Initialise variables
+            set_fact:
+              # Initialise the playbook folder
+              playbook_folder:
+                'underlay': '../{{ playbook_folder }}'
+                'overlay': '../{{ playbook_folder }}'
+                'access_add': '../{{ playbook_folder }}'
+                'dhcp': '../{{ playbook_folder }}'
+                'trm_overlay': '../{{ playbook_folder }}'
+                'aaa_auth': '../auth'
+                'access_auth': '../auth'
+              extra_vars_dict: 
+                "input_vars_path": "../config_examples/{{ design }}/" 
+                "design": true
+                "access_dir": "config_examples/{{ design }}"
+              playbook_type: "commit"
+              inventory_path: "{{ design }}/inventory.yml"
 
-                extra_vars: 
-                  "input_vars_path": "../config_examples/{{ design }}/" 
-                  "design": true 
-                  "access_dir": "config_examples/{{ design }}"
+          - name: Set inventory path if given in CLI
+            block: 
+            - set_fact:
+                inventory_path: "{{ hostvars['localhost']['ansible_inventory_sources'][0] }} "
+              when: "ansible_default_inventory not in hostvars['localhost']['ansible_inventory_sources']"
 
-          # Loop through the playbooks mentioned in design/playbook_list.yml
-          - name: Run playbooks
-            shell:
-              cmd: ansible-playbook -vvv -i {{ design }}/inventory.yml 
-                   {{ playbook_folder[item] }}/playbook_{{ item }}_commit.yml 
-                   --extra-vars '{{extra_vars}}'
+          # Loop through only the playbooks mentioned in <design>/playbook_list.yml
+          - name: Run playbooks in shell
+            include_tasks: ../subtasks/config_ex_subtasks/subtask_task_per_playbook.yml
             loop: "{{ config_ex_playbook_list.playbooks_to_run }}"
+
+          - name: Write run information in log_directory/<design>_recap.log
+            copy:
+              dest: "log_directory/{{ design }}_recap.txt"
+              content: "{{ playbook_run_info + '\nTotal run time: '+ total_time +' seconds'}}"
+
+          - debug:
+              msg: 
+              - "Please refer the following folders folders/files"
+              - "'log_directory' folder for playbook recap and error informations"
+              - "log_directory/<design>_recap.log for run information"
+

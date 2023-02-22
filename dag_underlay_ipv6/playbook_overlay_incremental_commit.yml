@@ -34,7 +34,12 @@
 
   tasks:
 
-          
+        - block:
+
+          - name: Set playbook name and mode
+            set_fact:
+              playbook_name: "overlay"
+              playbook_mode: "-inc"
           
           - name: Load vars from group_vars/underlay_config file
             run_once: true
@@ -123,3 +128,19 @@
             when: underlay_config_type == 'brown_field_dual_stack'
             debug:
               msg: "underlay_config_type 'brown_field_dual_stack' doesn't have incremental senarios'"
+
+          rescue:
+            - name: Record failure
+              include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
+
+- name: Display output file info
+  hosts: localhost
+  gather_facts: no
+  run_once: True
+
+  tasks:
+    - debug:
+        msg: 
+        - "Please refer the following folders/files"
+        - "'overlay-inc-err.log' in 'log_directory' folder for error informations if any"

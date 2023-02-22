@@ -17,6 +17,13 @@
 
   tasks:
 
+        - block:
+
+          - name: Set playbook name and mode
+            set_fact:
+              playbook_name: "access_auth"
+              playbook_mode: "-del"
+
           - name: Load vars from auth_db input file
             run_once: true
             include_vars: 
@@ -43,10 +50,15 @@
             set_fact:
               rendered: "{{  delete_access_auth_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n\n! ') }}"
 
-          - name: Copy configurations to respective file ( <hostname>-delete_access_auth.txt ) under 'preview_files' folder
+          - name: Copy configurations to respective file ( <hostname>-del-access_auth.txt ) under 'preview_files' folder
             copy:
-              dest: preview_files/{{inventory_hostname}}-delete_access_auth.txt
+              dest: preview_files/{{inventory_hostname}}-del-access_auth.txt
               content: "{{ rendered }}"
+
+          rescue:
+            - name: Record failure
+              include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
 
 - name: Display output file info
   hosts: leaf
@@ -55,4 +67,7 @@
 
   tasks:
     - debug:
-        msg: Please refer to <hostname>-delete_access_auth.txt in 'preview_files' folder
+        msg: 
+        - "Please refer the following folders/files"
+        - "'<hostname>-del-access_auth.txt' in 'preview_files' folder for preview files"
+        - "'access_auth-del-err.log' in 'log_directory' folder for error informations if any"

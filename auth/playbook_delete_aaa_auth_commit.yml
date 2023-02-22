@@ -14,6 +14,13 @@
 
   tasks:
 
+        - block:
+
+          - name: Set playbook name and mode
+            set_fact:
+              playbook_name: "auth"
+              playbook_mode: "-del"
+
           - name: Load vars from auth_db input file
             run_once: true
             include_vars: 
@@ -38,5 +45,17 @@
             with_dict: "{{ leaf_auth_dict }}"
             become: yes
 
-              
-            
+          rescue:
+            - name: Record failure
+              include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
+- name: Display output file info
+  hosts: leaf
+  gather_facts: no
+  run_once: True
+
+  tasks:
+    - debug:
+        msg: 
+        - "Please refer the following folders/files"
+        - "'auth-del-err.log' in 'log_directory' folder for error informations if any"

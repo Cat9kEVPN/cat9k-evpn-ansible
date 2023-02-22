@@ -9,6 +9,16 @@
     access_dir: 'auth'
 
   tasks:
+
+        - block:
+
+        - block:
+
+          - name: Set playbook name and mode
+            set_fact:
+              playbook_name: "access_auth"
+              playbook_mode: "-del-gen"
+
           - name: Cleanup 'delete_auth_vars' folder
             run_once: true
             file:
@@ -46,3 +56,19 @@
             copy:
               dest: host_vars/delete_auth_vars/{{ inventory_hostname }}.yml
               content: "{{ module_output['yaml'] }}"
+
+          rescue:
+            - name: Record failure
+              include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
+
+- name: Display output file info
+  hosts: leaf
+  gather_facts: no
+  run_once: True
+
+  tasks:
+    - debug:
+        msg: 
+        - "Please refer the following folders/files"
+        - "'access_auth-del-gen-err.log' in 'log_directory' folder for error informations if any"

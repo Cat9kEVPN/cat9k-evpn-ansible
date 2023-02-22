@@ -154,4 +154,14 @@ This module is configuring global BGP process and neighbor parameters
             no neighbor {{neighbor }}
         {% endfor %}
       {% endif %}
+
+{% elif underlay_config_type == 'downgrade_to_ipv6' %}
+  router bgp {{ bgp.as_number }}
+  
+      {# BGP neighbors configuration #}
+      {% if bgp is defined %}
+        {% for neighbor in bgp.neighbors%}
+            no neighbor {{neighbor }}
+        {% endfor %}
+      {% endif %}
 {% endif %}

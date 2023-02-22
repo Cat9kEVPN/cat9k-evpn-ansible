@@ -13,6 +13,14 @@
 
 
   tasks:
+
+        - block:
+
+          - name: Set playbook name and mode
+            set_fact:
+              playbook_name: "overlay_ipv6"
+              playbook_mode: "-del"
+
           - name: Check whether host_vars/ipv6_delete_vars/{{ inventory_hostname }}.yml is present
             local_action: stat path=./host_vars/ipv6_delete_vars/{{ inventory_hostname }}.yml
             register: file_state
@@ -34,16 +42,21 @@
             set_fact:
               rendered: "{{  svi_ipv6_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n! ') }}"
 
-          - name: Copy configurations to respective file ( <hostname>-ipv6_delete.txt ) under 'preview_files' folder
+          - name: Copy configurations to respective file ( <hostname>-del-overlay_ipv6.txt ) under 'preview_files' folder
             copy:
-              dest: preview_files/{{inventory_hostname}}-ipv6_delete.txt
+              dest: preview_files/{{inventory_hostname}}{{ playbook_mode }}-{{ playbook_name }}.txt
               content: "{{ rendered }}"
               
-          - name: Clearing configurations in preview_files/<hostname>-ipv6_delete.txt if device config is skipped
+          - name: Clearing configurations in preview_files/<hostname>-del-overlay_ipv6.txt if device config is skipped
             when: not file_state.stat.exists
             copy:
-              dest: preview_files/{{inventory_hostname}}-ipv6_delete.txt
+              dest: preview_files/{{inventory_hostname}}{{ playbook_mode }}-{{ playbook_name }}.txt
               content: ""
+
+          rescue:
+            - name: Record failure
+              include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
 
 - name: Display output file info
   hosts: localhost
@@ -52,4 +65,7 @@
 
   tasks:
     - debug:
-        msg: Please refer to <hostname>-ipv6_delete.txt in 'preview_files' folder
+        msg: 
+        - "Please refer the following folders/files"
+        - "'<hostname>-del-overlay_ipv6.txt' in 'preview_files' folder for preview files"
+        - "'overlay_ipv6-del-err.log' in 'log_directory' folder for error informations if any"

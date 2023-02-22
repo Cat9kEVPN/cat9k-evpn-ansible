@@ -1,0 +1,31 @@
+  - name: Start time
+    set_fact:
+      start_time: "{{ lookup('pipe', 'date +%Y-%m-%d@%H:%M:%S') }}"
+
+  - name: Get devices to be configured
+    shell:
+      cmd: ansible-playbook -vvv -i {{inventory_path}} 
+           {{ playbook_folder[item] }}/playbook_{{ item }}_{{ playbook_type }}.yml 
+           --extra-vars '{{ extra_vars_dict }}' |& tee >(sed -n '/PLAY RECAP/,$p' >{{item}}.log)
+    args:
+      executable: /bin/bash
+
+  - name: Calculate playbook runtime
+    set_fact:
+      time_diff: "{{ (
+          (lookup('pipe', 'date +%Y-%m-%d@%H:%M:%S') | to_datetime('%Y-%m-%d@%H:%M:%S')) - (start_time | to_datetime('%Y-%m-%d@%H:%M:%S'))).total_seconds() 
+        }}"
+
+  - name: Total runtime
+    set_fact:
+      total_time: "{{ (total_time|int) + (time_diff|int) }}"
+
+  - set_fact:
+      playbook_run_info: "{{ playbook_run_info }} \nPlaybook: playbook_{{ item }}_{{ playbook_type }}.yml 
+      \nRun time: {{ time_diff }} seconds
+      \n{{ lookup('ansible.builtin.file', item ~ '.log') }}\n\n"
+
+  - name: Delete file
+    file:
+      state: absent
+      path: "{{item}}.log"

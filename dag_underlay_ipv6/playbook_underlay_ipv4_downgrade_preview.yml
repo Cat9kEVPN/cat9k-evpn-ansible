@@ -1,0 +1,115 @@
+---
+
+# This playbook assumes the current playbook is in dual_stack
+# After running this playbook it converts the fabric to single stack ipv4
+
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
+  hosts: all
+  gather_facts: no
+
+  vars:
+
+    vxlan_encap_type: 'dual-stack'
+    underlay_block: ""
+    rendered: ""
+
+    underlay_dict:
+      '../templates/global_routing.j2': 'global routing block'
+      '../templates/underlay_interfaces.j2': 'underlay interface block'
+      '../templates/ospf_interfaces.j2': 'ospf interface block'
+      '../templates/pim_rp.j2': 'pim rp block'
+
+
+  tasks:
+
+        - block:
+
+          - name: Set playbook name and mode
+            set_fact:
+              playbook_name: "underlay_ipv4_downgrade"
+              playbook_mode: ""
+
+          - name: Load and process nve vxlan encapsulation
+            when: inventory_hostname in groups['leaf']
+            block:
+            - name: Collect vars from overlay_db.yml
+              run_once: true
+              include_vars:
+                file: group_vars/overlay_db.yml
+                name: overlay_db
+
+            - name: Collect "show run | sec ^int"
+              cli_command:
+                command: show run | sec ^int
+              register: sec_int_output
+
+            # Collecting the vxlan encapsulation type
+            - name: Get the vxlan encapsulation type
+              dual_stack_underlay_conversion: 
+                overlay_db_output: "{{ overlay_db }}"
+                sec_int_output : "{{ sec_int_output.stdout_lines }}"
+              register: nve_result
+
+            - name: Get encapsulation type from python module output
+              set_fact:
+                vxlan_encap_type: "{{ nve_result['nve_output']['type'] | default('not dual-stack')}}"
+  
+          - name: Check for encap type
+            run_once: true
+            set_fact:
+              vxlan_encap_type: "{{ hostvars[item]['vxlan_encap_type'] }}"
+            loop: "{{ groups['leaf'] }}"
+            when: vxlan_encap_type == 'dual-stack'
+
+          # set_fact the vxlan encapsulation type for both leafs and spines    
+          - name: Set fact the encap type
+            run_once: true
+            set_fact:
+              vxlan_encap_type: "{{ vxlan_encap_type }}"
+
+          - name: Print vxlan_encap_type
+            debug:
+              msg: "vxlan_encap_type : {{ vxlan_encap_type}}'"
+
+          - name: Load and process underlay input file
+            when:  vxlan_encap_type == "dual-stack"
+            block:  
+            - name: Load vars from host_vars/node_vars/<host>.yml input file
+              include_vars: 
+                file: "host_vars/node_vars/{{ inventory_hostname }}.yml"
+
+            - name: Set underlay_config_type value
+              set_fact:
+                underlay_config_type: "downgrade_to_ipv4"
+
+            - name: Read underlay related template files
+              when: underlay_config_type == 'downgrade_to_ipv4'
+              set_fact:
+                underlay_block: "{{ underlay_block }} ! {{ underlay_dict[item.key] }} {{ lookup('template', item.key) }}"
+              with_dict: "{{ underlay_dict }}"
+
+            - name: Render template files output
+              set_fact:
+                rendered: "{{  underlay_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n! ') }}"
+
+          - name: Copy configurations to respective file ( <hostname>-underlay_dual_stack_convertion_to_ipv4.txt ) under 'preview_files' folder
+            copy:
+              dest: preview_files/{{inventory_hostname}}-underlay_dual_stack_convertion_to_ipv4.txt
+              content: "{{ rendered }}"
+
+          rescue:
+            - name: Record failure
+              include_tasks: ../subtasks/common_subtasks/subtask_rescue_task.yml
+
+
+- name: Display output file info
+  hosts: localhost
+  gather_facts: no
+  run_once: True
+
+  tasks:
+    - debug:
+        msg: 
+        - "Please refer the following folders/files"
+        - "'<hostname>-underlay_dual_stack_convertion_to_ipv4.txt' in 'preview_files' folder for preview files"
+        - "'underlay_ipv4_downgrade-err.log' in 'log_directory' folder for error informations if any"
