@@ -1,0 +1,147 @@
+l2vpn_global:
+  router_id: 'Loopback1'
+  replication_type: 'static'
+  default_gw: 'yes'
+
+vrfs:
+  green:
+    description: 'green VRF defn'
+    rd: '1:1'
+    afs:
+      ipv4:
+        rt_import: 
+          - '1:1'
+          - '1:1 stitching'
+        rt_export: 
+          - '1:1'
+          - '1:1 stitching'
+      ipv6:
+        rt_import:
+          - '1:1'
+          - '1:1 stitching'
+        rt_export:
+          - '1:1'
+          - '1:1 stitching'
+
+  blue:
+    description: 'blue VRF defn'
+    rd: '2:2'
+    afs:
+      ipv4:
+        rt_import: 
+          - '2:2'
+          - '2:2 stitching'
+        rt_export: 
+          - '2:2'
+          - '2:2 stitching'
+      ipv6:
+        rt_import: 
+          - '2:2'
+          - '2:2 stitching'
+        rt_export: 
+          - '2:2'
+          - '2:2 stitching'
+  
+vlans:
+  # vrf green vlans
+  101:
+    vlan_type: 'access'
+    description: 'Access_VLAN_101'
+    vni: '10101'
+    evi: '101'
+    type: 'vlan-based'
+    encapsulation: 'vxlan'
+    replication_type: 'static'
+    replication_mcast: '225.0.0.101'
+  
+  102:
+    vlan_type: 'access'
+    description: 'Access_VLAN_102'
+    vni: '10102'
+    evi: '102'
+    type: 'vlan-based'
+    encapsulation: 'vxlan'
+    replication_type: 'static'
+    replication_mcast: '225.0.0.101'
+  
+  901:
+    vlan_type: 'core'
+    description: 'Core_VLAN_VRF_green'
+    vni: '50901'
+    vrf: 'green'
+  
+  # vrf blue vlans
+  201:
+    vlan_type: 'access'
+    description: 'Access_VLAN_201'
+    vni: '10201'
+    evi: '201'
+    type: 'vlan-based'
+    encapsulation: 'vxlan'
+    replication_type: 'static'
+    replication_mcast: '225.0.0.101'
+ 
+  202:
+    vlan_type: 'access'
+    description: 'Access_VLAN_202'
+    vni: '10202'
+    evi: '202'
+    type: 'vlan-based'
+    encapsulation: 'vxlan'
+    replication_type: 'static'
+    replication_mcast: '225.0.0.101'
+  
+  902:
+    vlan_type: 'core'
+    description: 'Core_VLAN_VRF_blue'
+    vni: '50902'
+    vrf: 'blue'
+
+svis:
+  # vrf green svis
+  101:
+    svi_type: 'access'
+    vrf: 'green'
+    ipv4: '10.1.101.1 255.255.255.0'
+    ipv6:
+      - '2001:101::1/64'
+    mac: 'dead.beef.abcd'
+
+  102:
+    svi_type: 'access'
+    vrf: 'green'
+    ipv4: '10.1.102.1 255.255.255.0'
+    ipv6:
+      - '2001:102::1/64'
+    mac: 'dead.beef.abcd'
+   
+  901:
+    svi_type: 'core'
+    vrf: 'green'
+    src_intf: 'Loopback1'
+    ipv6_enable: 'yes'
+  
+  # vrf blue svis
+  201:
+    svi_type: 'access'
+    vrf: 'blue'
+    ipv4: '10.1.201.1 255.255.255.0'
+    ipv6:
+      - '2001:201::1/64'
+
+  202:
+    svi_type: 'access'
+    vrf: 'blue'
+    ipv4: '10.1.202.1 255.255.255.0'
+    ipv6:
+      - '2001:202::1/64'
+
+  902:
+    svi_type: 'core'
+    vrf: 'blue'
+    src_intf: 'Loopback1'
+    ipv6_enable: 'yes'
+
+nve_interfaces:
+  1:
+    source_interface: 'Loopback1'

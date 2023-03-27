@@ -1,0 +1,23 @@
+# This is the input file for all the templates to configure which underlay_config_type
+# ______________________________________________
+# __________ EXAMPLE SCENARIOS _________________
+# ______________________________________________
+#
+#
+# Example 1: 'green_field_ipv4'
+# 
+# underlay_config_type: 'green_field_ipv4'    <--------- configures ipv4 to all leafes,spines and makes the fabric as ipv4
+#
+# ------------
+#
+# Example 2: 'green_field_ipv4'
+# 
+# underlay_config_type: ''    <--------- configures ipv4 to all leafes,spines and makes the fabric as ipv4
+#
+# ------------
+#
+# ______________________________________________
+# ______________________________________________
+# ______________________________________________
+
+underlay_config_type: 'green_field_ipv4'

@@ -1,0 +1,20 @@
+---
+
+- name: Collect outputs after config
+  hosts: all
+  gather_facts: no
+  connection: network_cli
+
+  vars:
+    design: '{{ design }}'
+    input_vars_path: '../config_examples/{{ design }}/'
+
+  tasks:
+          - name: Write readme file under 'output' folder
+            run_once: true
+            copy:
+              dest: output/README.md
+              content: "This folder contains show commands output for {{ design }}"
+
+- name: Import tasks from playbook_output.yml
+  import_playbook: ../dag/playbook_output.yml
