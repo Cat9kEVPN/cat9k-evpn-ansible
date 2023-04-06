@@ -18,6 +18,22 @@ Project has a modular structure which gives an ability to introduce new features
   * [L3VNI github](https://github.com/Cat9kEVPN/cat9k-evpn-ansible/tree/main/l3vni)
   * [L3VNI documentation](https://cat9k-evpn-ansible.readthedocs.io/en/latest/input_l3vni.html) 
 
+# Prerequisites #
+
+To run Cisco cat9k EVPN ansible playbook, you will require:  
+
+**Hardware**:
+
+* A linux  server (Fedroa, Ubuntu, RedHat, etc) 
+* Cat9k Switches  supporting EVPN (from x release) 
+ 
+**Network-Expertise**:
+
+* Basic network knowledge (network design, bring up of cat9k switches)  
+* Basic understanding of YAML  
+* Basic understanding of Python  
+* Basic linux command line use  
+
 # General description #
 
 <img width="1192" alt="ansible" src="https://user-images.githubusercontent.com/107021162/175528526-5d8b59ea-7f39-4d78-ac95-b08fed9ebbf6.png">
