@@ -113,7 +113,8 @@ Ansible configuration
 
 .. code-block::
 
-    $ cat all.yaml
+    ansible:~/cat9k-evpn-ansible/dag_add/group_vars$ cat all.yaml
+    
     ansible_connection: ansible.netcommon.network_cli
     ansible_network_os: cisco.ios.ios
     ansible_python_interpreter: "python"
