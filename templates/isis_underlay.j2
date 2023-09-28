@@ -1,0 +1,37 @@
+{#
+This module configures underlay ISIS process and interfaces.
+Default ISIS network type in underlay is P2P for speeding up the convergence time.
+#}
+
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+
+{# check if ISIS process is defined#}
+{% if isis is defined %}
+
+    {% set process_id = isis.process_id | default ('UNDERLAY') %}
+
+    {# configure ISIS process #}
+    router isis {{process_id}}
+
+        {# configure ISIS NET #}
+        net {{isis.net}}
+
+        {% for p_int in isis.passive_interfaces %}
+            passive-interface {{p_int}}
+        {% endfor %}
+        {# default parameters #}
+        is-type level-2-only
+        advertise passive-only
+        metric-style wide
+        log-adjacency-changes
+{% endif %}
+
+{# configure ISIS under interface and set ISIS interface P2P if not loopback #}
+{% for interface in interfaces%}
+    !
+    interface  {{ interface }}
+    {% if interfaces[interface].loopback == 'no'%}
+        ip router isis {{process_id}}
+        isis network point-to-point
+    {% endif %}
+{% endfor %}

@@ -43,6 +43,12 @@
               diff_match: none 
             register: result
 
+          - name: Configure ISIS
+            cli_config:
+              config: "{{ lookup('template', '../templates/isis_underlay.j2') }}"
+              diff_match: none 
+            register: result
+
           - name: Configure PIM on interfaces
             cli_config:
               config: "{{ lookup('template', '../templates/pim_interfaces.j2') }}"

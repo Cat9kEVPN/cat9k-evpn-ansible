@@ -12,6 +12,7 @@
       '../templates/ospf_interfaces.j2': 'ospf interface block'
       '../templates/pim_interfaces.j2': 'pim interface block'
       '../templates/pim_rp.j2': 'pim rp block'
+      '../templates/isis_underlay.j2': 'pim rp block'
 
   tasks:
 
