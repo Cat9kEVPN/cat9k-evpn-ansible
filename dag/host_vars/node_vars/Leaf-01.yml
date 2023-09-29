@@ -51,14 +51,15 @@ pim:
 bgp:
   as_number: '65001'
   router_id: 'Loopback0'
+  #source_interface: 'Loopback1'
   neighbors:
     '172.16.255.1':
-     peer_as_number: '65001'
-     source_interface: 'Loopback0'
+     #peer_as_number: '65001'
+     #source_interface: 'Loopback0'
 
     '172.16.255.2':
-     peer_as_number: '65001'
-     source_interface: 'Loopback0'
+     #peer_as_number: '65004'
+     #source_interface: 'Loopback0'
 
 #layer 3 interface
 overlay_interfaces:
