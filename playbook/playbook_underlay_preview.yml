@@ -1,0 +1,47 @@
+---
+
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
+  hosts: all
+  gather_facts: no
+  vars:
+    underlay_block: ""
+    common_template_list:
+      - '../templates/hostname.j2'
+      - '../templates/global_routing.j2'
+      - '../templates/underlay_interfaces.j2'
+      - '../templates/ospf_interfaces.j2'
+      - '../templates/pim_rp.j2'
+      - '../templates/isis_underlay.j2'
+
+    spine_template_list:
+      - '../templates/msdp_peering.j2'
+
+  tasks:
+
+          - name: Load vars from host_vars/node_vars/<hostname>.yml
+            include_vars: 
+              file: "./host_vars/node_vars/{{ inventory_hostname }}.yml"
+
+          - name: Read underlay template files
+            set_fact:
+              underlay_block: "{{ underlay_block }}{{ lookup('template', item ) }}"
+            loop: "{{ common_template_list }}"
+
+          - name: Read underlay template files specific to spine
+            when: inventory_hostname in (groups['spine'] | default([]))
+            set_fact:
+              underlay_block: "{{ underlay_block }}{{ lookup('template', item ) }}"
+            loop: "{{ spine_template_list }}"
+
+          - name: Copy configurations to the respective file ( <hostname>-underlay.txt ) under 'preview_files' folder
+            copy:
+              dest: preview_files/{{inventory_hostname}}-underlay.txt
+              content: "{{ underlay_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n\n! ') }}"
+
+- name: Display preview files info
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+          - debug:
+              msg: Please refer to <hostname>-underlay.txt in 'preview_files' folder

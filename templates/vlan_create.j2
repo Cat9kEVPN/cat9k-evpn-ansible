@@ -6,6 +6,7 @@ If action is not set in the configurations, it is "add" by default.
 #jinja2: lstrip_blocks: "True", trim_blocks: "True"
 
 {% if vlans is defined%}
+    ! VLAN block
     {% for vlan in vlans %}
         {# Checking an action for the vlan - action_vlan. #}
         {% set action = vlans[vlan].action | default ('add') %}

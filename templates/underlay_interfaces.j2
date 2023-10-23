@@ -3,17 +3,23 @@ This module configures ip addresses for underlay interfaces
 #}
 
 #jinja2: lstrip_blocks: "True", trim_blocks: "True"
+{% if interfaces is defined %}
+    ! Underlay interface block
+    {% for interface in interfaces %}
+        !
+        interface  {{ interface }}
+        {% if interfaces[interface].name is defined %}
+            description {{ interfaces[interface].name }}
+        {% endif %}
+        {% set pim_enable = interfaces[interface].pim_enable | default ('no')%}
+        {% if pim_enable == 'yes' %}
+            ip pim sparse-mode
+        {% endif %}
 
-{% for interface in interfaces%}
-    !
-    interface  {{ interface }}
-    {% if interfaces[interface].name is defined %}
-        description {{ interfaces[interface].name }}
-    {% endif %}
-
-    {% if interfaces[interface].loopback == 'no'%}
-        no switchport
-    {% endif %}
-        ip address {{ interfaces[interface].ip_address }} {{ interfaces[interface].subnet_mask }}
-        no shut
-{% endfor %}
+        {% if interfaces[interface].loopback == 'no' %}
+            no switchport
+        {% endif %}
+            ip address {{ interfaces[interface].ip_address }} {{ interfaces[interface].subnet_mask }}
+            no shut
+    {% endfor %}
+{% endif %}

@@ -9,6 +9,7 @@ Note: after deleting vrf, respective subsection for vrf under bgp will be delete
 #jinja2: lstrip_blocks: "True", trim_blocks: "True"
 
 {% if vrfs is defined %}
+    ! VRF block
     {% for vrf in vrfs %}
         {# Checking an action for all vrf #}
         

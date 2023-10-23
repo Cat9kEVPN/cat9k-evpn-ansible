@@ -1,0 +1,39 @@
+---
+
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
+  hosts: all
+  gather_facts: no
+  connection: network_cli
+  vars:
+    common_template_list:
+      - '../templates/hostname.j2'
+      - '../templates/global_routing.j2'
+      - '../templates/underlay_interfaces.j2'
+      - '../templates/ospf_interfaces.j2'
+      - '../templates/pim_interfaces.j2'
+      - '../templates/pim_rp.j2'
+      - '../templates/isis_underlay.j2'
+
+    spine_template_list:
+      - '../templates/msdp_peering.j2'
+
+  tasks:  
+
+          - name: Load vars from host_vars/node_vars/<hostname>.yml
+            include_vars: 
+              file: "./host_vars/node_vars/{{ inventory_hostname }}.yml"
+
+          - name: Configure underlay
+            cli_config:
+              config: "{{ lookup('template', item) }}"
+              diff_match: none 
+            register: result
+            loop: "{{ common_template_list }}"
+          
+          - name: Configure underlay specific to spine
+            when: inventory_hostname in (groups['spine'] | default([]))
+            cli_config:
+              config: "{{ lookup('template', item) }}"
+              diff_match: none 
+            register: result
+            loop: "{{ spine_template_list }}"

@@ -4,8 +4,11 @@ This module configures MSDP peering
 
 #jinja2: lstrip_blocks: "True", trim_blocks: "True"
 
-{% for index,idata in msdp.items() %}
-    !
-    ip msdp peer {{ idata.peer_ip }} connect-source {{ idata.source_interface }} remote-as {{ idata.remote_as }}
-    ip msdp cache-sa-state
-{% endfor %}
+{% if msdp is defined %}
+    ! MSDP peering block
+    {% for index,idata in msdp.items() %}
+        !
+        ip msdp peer {{ idata.peer_ip }} connect-source {{ idata.source_interface }} remote-as {{ idata.remote_as }}
+        ip msdp cache-sa-state
+    {% endfor %}
+{% endif %}

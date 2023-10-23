@@ -109,6 +109,8 @@ def get_delete_dict(parsed_output, interface_parsed, to_del):
         dags = to_del['dag']
     elif 'l3vni' in to_del:
         dags = to_del['l3vni']
+    else:
+        dags = []
     
     if dags:
         to_del['svis'] = []
@@ -176,7 +178,7 @@ def get_delete_dict(parsed_output, interface_parsed, to_del):
                 if ret_val:
                     ret_dict[ele] = ret_val
 
-    return ret_dict
+    return {k:v for k, v in ret_dict.items() if v}
 
 def run_module():
     module = AnsibleModule(

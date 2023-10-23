@@ -5,9 +5,9 @@ Default ISIS network type in underlay is P2P for speeding up the convergence tim
 
 #jinja2: lstrip_blocks: "True", trim_blocks: "True"
 
-{# check if ISIS process is defined#}
 {% if isis is defined %}
-
+    ! ISIS underlay block
+    {# check if ISIS process is defined#}
     {% set process_id = isis.process_id | default ('UNDERLAY') %}
 
     {# configure ISIS process #}
@@ -24,14 +24,14 @@ Default ISIS network type in underlay is P2P for speeding up the convergence tim
         advertise passive-only
         metric-style wide
         log-adjacency-changes
+        
+    {# configure ISIS under interface and set ISIS interface P2P if not loopback #}
+    {% for interface in interfaces%}
+        !
+        interface  {{ interface }}
+        {% if interfaces[interface].loopback == 'no'%}
+            ip router isis {{process_id}}
+            isis network point-to-point
+        {% endif %}
+    {% endfor %}
 {% endif %}
-
-{# configure ISIS under interface and set ISIS interface P2P if not loopback #}
-{% for interface in interfaces%}
-    !
-    interface  {{ interface }}
-    {% if interfaces[interface].loopback == 'no'%}
-        ip router isis {{process_id}}
-        isis network point-to-point
-    {% endif %}
-{% endfor %}

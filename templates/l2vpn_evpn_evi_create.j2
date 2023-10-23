@@ -16,7 +16,7 @@ Immutable paramiters:
 
 #jinja2: lstrip_blocks: "True", trim_blocks: "True"
 {% if vlans is defined %}
-
+    ! L2VPN EVPN EVI block
     {% for vlan in vlans %}
         {% if vlans[vlan].vlan_type == 'access' %}
             {# Checking an action for evi#}

@@ -6,6 +6,7 @@ If action is not set in the configurations, it is "add" by default.
 #jinja2: lstrip_blocks: "True", trim_blocks: "True"
 
 {% if svis is defined %}
+    ! SVI block
     {% for svi in svis %}
         {% set action = svis[svi].action | default ('add') %}
         {% if action == 'delete' %}

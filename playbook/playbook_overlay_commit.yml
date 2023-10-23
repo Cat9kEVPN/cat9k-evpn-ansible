@@ -1,0 +1,46 @@
+---
+
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
+  hosts: all
+  gather_facts: no
+  vars:
+    leaf_template_list:
+      - '../templates/vrf_definition.j2'
+      - '../templates/bgp_l2vpn_ipv46_per_vrf.j2'
+      - '../templates/vlan_create.j2'
+      - '../templates/svi_create.j2'
+      - '../templates/l2vpn_evpn_global.j2'
+      - '../templates/l2vpn_evpn_evi_create.j2'
+      - '../templates/evi_vni_vlan_stiching.j2'
+      - '../templates/overlay_interfaces.j2'
+      - '../templates/nve_create.j2'
+
+    common_template_list:
+      - '../templates/bgp_global.j2'
+      - '../templates/bgp_l2vpn_evpn_af.j2'
+
+  tasks:
+
+          - name: Load vars from group_vars/overlay_db.yml
+            run_once: true
+            include_vars: 
+              file: "./group_vars/overlay_db.yml"
+
+          - name: Load vars from host_vars/node_vars/<hostname>.yml
+            include_vars: 
+              file: "./host_vars/node_vars/{{ inventory_hostname }}.yml"
+          
+          - name: Configure overlay
+            cli_config:
+              config: "{{ lookup('template', item) }}"
+              diff_match: none 
+            register: result
+            loop: "{{ common_template_list }}"
+
+          - name: Configure overlay specific to leaf
+            when: inventory_hostname in (groups['leaf'] | default([]))
+            cli_config:
+              config: "{{ lookup('template', item) }}"
+              diff_match: none 
+            register: result
+            loop: "{{ leaf_template_list }}"

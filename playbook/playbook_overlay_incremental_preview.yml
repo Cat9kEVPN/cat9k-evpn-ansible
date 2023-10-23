@@ -1,0 +1,100 @@
+---
+
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
+  hosts: leaf
+  gather_facts: no
+
+  vars:
+    inc_block: ""
+    template_list:
+      - '../templates/vrf_definition.j2'
+      - '../templates/bgp_l2vpn_ipv46_per_vrf.j2'
+      - '../templates/vlan_create.j2'
+      - '../templates/l2vpn_evpn_evi_create.j2'
+      - '../templates/evi_vni_vlan_stiching.j2'
+      - '../templates/nve_create.j2'
+      - '../templates/svi_create.j2'
+      - '../templates/overlay_interfaces.j2'
+
+  tasks:
+
+          - name: Set playbook_mode
+            run_once: true
+            set_fact:
+              playbook_mode: "-inc"
+              host_vars_path: "{{ playbook_dir }}"
+       
+          - name: Collect vars from group_vars/create_vars.yml
+            run_once: true
+            include_vars:
+              file: group_vars/create_vars.yml
+              name: create_vars
+              
+          - name: Collect vars from group_vars/overlay_db.yml
+            run_once: true
+            include_vars:
+              file: group_vars/overlay_db.yml
+              name: overlay_db_vars
+
+          - name: Include nve_interfaces and l2vpn_global vars
+            run_once: true
+            set_fact:
+              nve_interfaces: "{{ overlay_db_vars.nve_interfaces | default({}) }}"
+              l2vpn_global: "{{ overlay_db_vars.l2vpn_global | default({}) }}"
+
+          - name: Collect vars from host_vars/node_vars/<hostname>.yml
+            include_vars:
+              file: host_vars/node_vars/{{ inventory_hostname }}.yml
+              name: hostvars_data
+
+          - name: Include bgp vars
+            set_fact:
+              bgp: "{{ hostvars_data.bgp | default({}) }}"
+
+          - name: Run and parse show run nve
+            ansible.utils.cli_parse:
+              command: "show run nve"
+              parser:
+                name: ansible.netcommon.pyats
+              set_fact: nve_output
+                
+          - name: Process incremental data
+            overlay_inc_preprocess:
+              create_vars: "{{ create_vars }}"
+              overlay_db_vars: "{{ overlay_db_vars }}"
+              hostvars_vars: "{{ hostvars_data }}"
+              sh_run_parsed: "{{ nve_output }}"
+            register: module_output
+
+          - name: Include vars and configure overlay
+            when: module_output != {}
+            block:
+            - name: Include vars from module output
+              set_fact:
+                "{{ item.key }}": "{{ item.value }}"
+              with_dict: "{{ module_output }}"
+
+            - name: Read template files
+              set_fact:
+                inc_block: "{{ inc_block }}{{ lookup('template', item) }}"
+              loop: "{{ template_list }}"
+
+          - name: Copy configurations to respective file (<hostname>-inc.txt) under 'preview_files' folder
+            copy:
+              dest: preview_files/{{inventory_hostname}}-inc.txt
+              content: "{{ inc_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n! ') }}"
+
+- name: Display output file info
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+          - name: Set playbook_mode
+            set_fact:
+              playbook_mode: "-inc"
+
+          - debug:
+              msg: Please refer to <hostname>-inc.txt in 'preview_files' folder
+
+- name: Import playbook_access_preview.yml
+  import_playbook: ../playbook/playbook_access_preview.yml

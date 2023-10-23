@@ -9,11 +9,11 @@ DOCUMENTATION = r'''
 ---
 module: overlay_inc_preprocess
 
-short_description: This module is used for getting the extra values  by comparing all.yml and show run nve parser  
+short_description: This module is used for getting the extra vs  by comparing all.yml and show run nve parser  
                    configurations and return the modified dictionary
 '''
 
-def compare(userinput, parsed_output, tocompare, overlay_intf):
+def compare(create_vars, overlay_db_vars, hostvars_vars, parsed_output):
 
     vrf_dict = {}
     vlan_dict = {}
@@ -21,75 +21,77 @@ def compare(userinput, parsed_output, tocompare, overlay_intf):
     access_inft_dict = {} 
     overlay_intf_dict = {}
 
-    if 'dag' in userinput:
-        dags = userinput.get['dag']
-    elif 'l3vni' in userinput:
-        dags = userinput.get['l3vni']
+    if 'dag' in create_vars:
+        dags = create_vars['dag']
+    elif 'l3vni' in create_vars:
+        dags = create_vars['l3vni']
     else:
         dags = {}
 
-    for dag in dags:
-        vrf_present = parsed_output.get('vrf', {})
-        if dag == "all" :
-            vrf_dict = {key:value for key, value in tocompare['vrfs'].items() \
-                        if key not in vrf_present}
-        else:
-            vrf_dict = {key:value for key, value in tocompare['vrfs'].items() \
-                        if key not in vrf_present and key in dag}
+    if dags:
+        for dag in dags:
+            vrf_present = parsed_output.get('vrf', {})
+            if dag == "all" :
+                vrf_dict = {k:v for k, v in overlay_db_vars['vrfs'].items() \
+                            if k not in vrf_present}
+            else:
+                vrf_dict = {k:v for k, v in overlay_db_vars['vrfs'].items() \
+                            if (k not in vrf_present and k in dags)}
 
-    overlay_intf = overlay_intf.get('overlay_interfaces', {})
-    if overlay_intf:
-        overlay_intf_present = parsed_output.get('overlay_interfaces', {})
+        overlay_intf = hostvars_vars.get('overlay_interfaces', {})
+        if overlay_intf:
+            overlay_intf_present = parsed_output.get('overlay_interfaces', {})
 
-        overlay_intf_dict = { key:value for key, value in overlay_intf.items() \
-                             if value['vrf'] in vrf_dict and key not in overlay_intf_present}
-    
-    svis_all = tocompare.get('svis', {})
-    if svis_all:
-        svis_have = parsed_output.get('svis', {})
-        svi_dict = {key:value for key, value in svis_all.items() \
-                    if value['vrf'] in vrf_dict and key not in svis_have}
-    
-    vlans_all = tocompare.get('vlans', {})
-    if userinput.get('vlans'):
-        vlans_all = {key:value for key, value in vlans_all.items() \
-                     if int(key) in userinput['vlans']}
+            overlay_intf_dict = { k:v for k, v in overlay_intf.items() \
+                                 if v['vrf'] in vrf_dict and k not in overlay_intf_present}
+
+        svis_all = overlay_db_vars.get('svis', {})
+        if svis_all:
+            svis_have = parsed_output.get('svis', {})
+            svi_dict = {k:v for k, v in svis_all.items() \
+                        if v['vrf'] in vrf_dict and k not in svis_have}
+
+    vlans_all = overlay_db_vars.get('vlans', {})
+    if create_vars.get('vlans'):
+        vlans_all = {k:v for k, v in vlans_all.items() \
+                     if int(k) in create_vars['vlans']}
         
     if vlans_all:
         vlans_have = parsed_output.get('vlans', {})
-        vlan_dict = {key:value for key, value in vlans_all.items() \
-                     if key not in vlans_have}
-        access_inft_dict = [key for key, value in vlan_dict.items() \
-                            if value['vlan_type'] == 'access']
-        
-    yml_dict =  {
+        vlan_dict = {k:v for k, v in vlans_all.items() \
+                     if k not in vlans_have}
+        access_inft_dict = [k for k, v in vlan_dict.items() \
+                            if v['vlan_type'] == 'access']
+ 
+    vars_dict =  {
         'vrfs': vrf_dict, 
         'vlans': vlan_dict, 
         'svis': svi_dict, 
-        'access_interfaces': access_inft_dict, 
+        'access_side_vlans': access_inft_dict, 
         'overlay_interfaces': overlay_intf_dict
     }
 
-    return yml_dict
+    vars_dict = {k:v for k, v in vars_dict.items() if v}
+
+    return vars_dict
     
   
 def run_module():
     module = AnsibleModule(
         argument_spec=dict(
-            userinput=dict(required=False,type='dict'),
-            hostvars=dict(required=False,type='dict'),
-            tocompare=dict(required=False,type='dict'),
-            overlay_intf=dict(required=False,type='dict'),
-            
+            create_vars=dict(required=True,type='dict'),
+            overlay_db_vars=dict(required=True,type='dict'),
+            hostvars_vars=dict(required=True,type='dict'),
+            sh_run_parsed=dict(required=True,type='dict'),
     ),
         supports_check_mode=True
     )   
 
     result = compare(
-      module.params['userinput'],
-      module.params['hostvars'],
-      module.params['tocompare'],
-      module.params['overlay_intf']
+      module.params['create_vars'],
+      module.params['overlay_db_vars'],
+      module.params['hostvars_vars'],
+      module.params['sh_run_parsed']
     )
     module.exit_json(**result)
 
