@@ -5,22 +5,17 @@ Default OSPF network type in underlay is P2P for speeding up the convergence tim
 
 #jinja2: lstrip_blocks: "True", trim_blocks: "True"
 
-{# check if OSPF process is defined in the config for the Leaf/Spine #}
-{% if ospf is defined %}
-
-    {% set process_id = ospf.process_id | default ('1') %}
-    {# configure ospf under interface and set ospf interface P2P if not loopback #}
-    {% for interface in interfaces%}
-        !
-        interface  {{ interface }}
-        {% if interfaces[interface].loopback == 'no'%}
-            ip ospf network point-to-point
-        {% endif %}
-        ip ospf 1 area 0
-    {% endfor %}
-
-    {# configure ospf process and ospf router-id #}
+{# configure ospf under interface and set ospf interface P2P if not loopback #}
+{% for interface in interfaces%}
     !
-    router ospf {{ ospf.process_id }}
-        router-id {{ ospf.router_id }}
-{% endif %}
+    interface  {{ interface }}
+    {% if interfaces[interface].loopback == 'no'%}
+        ip ospf network point-to-point
+    {% endif %}
+    ip ospf 1 area 0
+{% endfor %}
+
+{# configure ospf process and ospf router-id #}
+!
+router ospf 1
+    router-id {{ ospf.router_id }}

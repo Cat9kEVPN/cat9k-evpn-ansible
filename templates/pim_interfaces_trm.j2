@@ -19,8 +19,8 @@ This module enable/disable PIM on the interfaces for incremetal TRM add/delete
     {% endfor %}
 {% endif %}
 
-{% if rp_per_device is defined %}
-    {% for rp_lpbk in rp_per_device %}
+{% if rp_loopbacks is defined %}
+    {% for rp_lpbk in rp_loopbacks %}
         !
         interface {{rp_lpbk}}
             {{ prefix }} ip pim sparse-mode

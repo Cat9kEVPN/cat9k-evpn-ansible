@@ -1,46 +1,84 @@
 ---
 
-- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
+- name: Automated VXLAN deployment with BGP EVPN L2 underlay w/ Spine
   hosts: all
   gather_facts: no
   vars:
-    leaf_ol_dict:
-      #'../templates/vrf_definition.j2': 'vrf definition block'
-      #'../templates/bgp_l2vpn_ipv46_per_vrf.j2': 'bgp per vrf block'
-      '../templates/vlan_create.j2': 'vlan block'
-      #'../templates/svi_create.j2': 'svi block'
-      '../templates/l2vpn_evpn_global.j2': 'l2vpn evpn global block'
-      '../templates/l2vpn_evpn_evi_create.j2': 'l2vpn evpn evi block'
-      '../templates/evi_vni_vlan_stiching.j2': 'evi vni vlan stiching block'
-      #'../templates/overlay_interfaces.j2': 'overlay interface block'
-      '../templates/nve_create.j2': 'nve block'
-
-    common_ol_dict:
-      '../templates/bgp_global.j2': 'bgp global block'
-      '../templates/bgp_l2vpn_evpn_af.j2': 'bgp l2vpn evpn af block'
-
-  tasks:
-
-          - name: Load vars from group_vars/overlay_db.yml
+    save_configuration: false
+  vars_files:
+    - "group_vars/overlay_db.yml"
+  tasks:  
+          # Set db file path and load overlay_db
+          - name: Load and process overlay input file
             run_once: true
-            include_vars: 
-              file: "./group_vars/overlay_db.yml"
+            block:
+            - name: set overlay db input file path if not already set
+              when: input_vars_path is not defined
+              set_fact: 
+                input_vars_path: "./"
 
-          - name: Load vars from host_vars/node_vars/<hostname>.yml
+            - name: Load vars from overlay input file
+              include_vars: 
+                file: "{{ input_vars_path }}group_vars/overlay_db.yml"
+
+          - name: Load vars from node_vars/<host>.yml input file
             include_vars: 
-              file: "./host_vars/node_vars/{{ inventory_hostname }}.yml"
+              file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
+            
+          - name: Configuring neighbors globally for BGP
+            cli_config:
+              config: "{{ lookup('template', '../templates/bgp_global.j2') }}"
+              diff_match: none
+            register: result
           
-          - name: Configure overlay
+          - name: Activating BGP neighbor under L2VPN/EVPN AFI/SAFI
             cli_config:
-              config: "{{ lookup('template', item.key) }}"
+              config: "{{ lookup('template', '../templates/bgp_l2vpn_evpn_af.j2') }}"
+              diff_match: none
+            register: result
+          
+          - name: Access/Core VLAN creating
+            when: inventory_hostname in groups['leaf']
+            cli_config:
+              config: "{{ lookup('template', '../templates/vlan_create.j2') }}"
+              diff_match: none 
+            register: result           
+          
+          - name: Global L2VPN EVPN configuration
+            when: inventory_hostname in groups['leaf']
+            cli_config:
+              config: "{{ lookup('template', '../templates/l2vpn_evpn_global.j2') }}"
               diff_match: none 
             register: result
-            with_dict: "{{ common_ol_dict }}"
 
-          - name: Configure overlay specific to leaf
-            when: inventory_hostname in (groups['leaf'] | default([]))
+          - name: EVPN EVI creation
+            when: inventory_hostname in groups['leaf']
             cli_config:
-              config: "{{ lookup('template', item.key) }}"
+              config: "{{ lookup('template', '../templates/l2vpn_evpn_evi_create.j2') }}"
               diff_match: none 
             register: result
-            with_dict: "{{ leaf_ol_dict }}"
+          
+          - name: EVI/VNI/VLAN stiching
+            when: inventory_hostname in groups['leaf']
+            cli_config:
+              config: "{{ lookup('template', '../templates/evi_vni_vlan_stiching.j2') }}"
+              diff_match: none 
+            register: result
+          
+          - name: NVE interface configuration
+            when: inventory_hostname in groups['leaf']
+            cli_config:
+              config: "{{ lookup('template', '../templates/nve_create.j2') }}"
+              diff_match: none 
+            register: result          
+
+          - name: Pause for 60 seconds for convergence  
+            wait_for:
+              delay: 60
+              timeout: 0
+          
+          - name: save the configuration in the device
+            when: save_configuration
+            cli_command:
+              command: write memory
+            register: result

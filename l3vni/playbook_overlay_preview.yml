@@ -1,8 +1,10 @@
 ---
 
-- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
+- name: Automated VXLAN deployment with BGP EVPN L3 underlay w/ Spine
   hosts: all
   gather_facts: no
+  vars_files:
+    - "group_vars/overlay_db.yml"
   vars: 
     overlay_block: ""
     leaf_ol_dict:
@@ -11,7 +13,6 @@
       '../templates/vlan_create.j2': 'vlan block'
       '../templates/svi_create.j2': 'svi block'
       '../templates/l2vpn_evpn_global.j2': 'l2vpn evpn global block'
-      #'../templates/l2vpn_evpn_evi_create.j2': 'l2vpn evpn evi block'
       '../templates/evi_vni_vlan_stiching.j2': 'evi vni vlan stiching block'
       '../templates/overlay_interfaces.j2': 'overlay interface block'
       '../templates/nve_create.j2': 'nve block'
@@ -21,36 +22,54 @@
       '../templates/bgp_l2vpn_evpn_af.j2': 'bgp l2vpn evpn af block'
 
   tasks:
-
-          - name: Load vars from group_vars/overlay_db.yml
+          # Set db file path and load overlay_db
+          - name: Load and process overlay input file
             run_once: true
-            include_vars: 
-              file: "./group_vars/overlay_db.yml"
+            block:
+            - name: set overlay db input file path if not already set
+              when: input_vars_path is not defined
+              set_fact: 
+                input_vars_path: "./"
 
-          - name: Load vars from host_vars/node_vars/<hostname>.yml
-            include_vars: 
-              file: "./host_vars/node_vars/{{ inventory_hostname }}.yml"
+            - name: Load vars from overlay input file
+              include_vars: 
+                file: "{{ input_vars_path }}group_vars/overlay_db.yml"
 
-          - name: Read overlay template files
+            - name: Check for IPv6 config under VRFs
+              set_fact: 
+                ipv6_unicast: 'enable'
+              when: '"ipv6" in item.value.afs and ipv6_unicast is not defined'
+              with_dict: "{{ vrfs }}"
+
+          - name: Load vars from node_vars/<host>.yml input file
+            include_vars: 
+              file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
+
+          - name: Read template files
+            when: inventory_hostname in groups['leaf']
             set_fact:
-              overlay_block: "{{ overlay_block }} ! {{ item.value }} {{ lookup('template', item.key) }}"
+              overlay_block: "{{ overlay_block }} ! {{ leaf_ol_dict[item.key] }} {{ lookup('template', item.key ) }}"
+            with_dict: "{{ leaf_ol_dict }}"
+
+          - name: Read template files - BGP related
+            set_fact:
+              overlay_block: "{{ overlay_block }} ! {{ common_ol_dict[item.key] }} {{ lookup('template', item.key ) }}"
             with_dict: "{{ common_ol_dict }}"
 
-          - name: Read overlay template files specific to leaf
-            when: inventory_hostname in (groups['leaf'] | default([]))
+          - name: Render template files output
             set_fact:
-              overlay_block: "{{ overlay_block }} ! {{ item.value }} {{ lookup('template', item.key) }}"
-            with_dict: "{{ leaf_ol_dict }}"
+              rendered: "{{  overlay_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n! ') }}"
 
           - name: Copy configurations to respective file ( <hostname>-overlay.txt ) under 'preview_files' folder
             copy:
               dest: preview_files/{{inventory_hostname}}-overlay.txt
-              content: "{{ overlay_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n\n! ') }}"
+              content: "{{ rendered }}"
 
-- name: Display preview file info
+- name: Display output file info
   hosts: localhost
   gather_facts: no
+  run_once: True
 
   tasks:
-          - debug:
-              msg: Please refer to <hostname>-overlay.txt in 'preview_files' folder
+    - debug:
+        msg: Please refer to <hostname>-overlay.txt in 'preview_files' folder

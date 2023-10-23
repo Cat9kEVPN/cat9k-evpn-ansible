@@ -7,45 +7,60 @@ If action is not set in the configurations, it is "add" by default.
 
 {% if svis is defined %}
     {% for svi in svis %}
-        {% set action = svis[svi].action | default ('add') %}
-        {% if action == 'delete' %}
-            !
-            no interface Vlan{{svi}}
-        {% elif action == 'add' %}
-            !
-            interface Vlan{{svi}}
-            vrf forwarding {{ svis[svi].vrf }}
-            
-            {% set svi_type = svis[svi].svi_type %}
-            {% if svi_type == 'access' or svi_type == 'non_vxlan'%}
-                ip address {{svis[svi].ipv4}}
-                {% if svis[svi].ipv6 is defined %}
-                    {% for ipv6_addr in svis[svi].ipv6 %}
-                        ipv6 address {{ipv6_addr}}
-                    {% endfor %}
+        {% if ( (svi_cli is defined and svi in svi_cli) or (svi_cli is not defined) ) %}
+            {% set action = svis[svi].action | default ('add') %}
+            {% if action == 'delete' %}
+                !
+                no interface Vlan{{svi}}
+            {% elif action == 'add' %}
+                {% if svis[svi].svi_type == 'access' %}
+                    !
+                    interface Vlan{{svi}}
+                    vrf forwarding {{ svis[svi].vrf }}
+                    ip address {{svis[svi].ipv4}}
+                    {% if svis[svi].ipv6 is defined %}
+                        {% for ipv6_addr in svis[svi].ipv6 %}
+                            ipv6 address {{ipv6_addr}}
+                        {% endfor %}
+                    {% endif %}
+                    no shut
+                {% elif svis[svi].svi_type == 'core' %}
+                    !
+                    interface Vlan{{svi}}
+                    vrf forwarding {{ svis[svi].vrf }}
+                    ip unnumbered  {{ svis[svi].src_intf }}
+                    {% if svis[svi].ipv6_enable is defined %}
+                        ipv6 enable
+                    {% endif %}
+                    no autostate
+                    no shut        
+                {% elif svis[svi].svi_type == 'non_vxlan' %}
+                    !
+                    interface Vlan{{svi}}
+                    vrf forwarding {{ svis[svi].vrf }}
+                    ip address {{svis[svi].ipv4}}
+                    {% if svis[svi].ipv6 is defined %}
+                        {% for ipv6_addr in svis[svi].ipv6 %}
+                            ipv6 address {{ipv6_addr}}
+                        {% endfor %}
+                    {% endif %}
+                    no shut
                 {% endif %}
-            {% elif svi_type == 'core' %}
-                ip unnumbered  {{ svis[svi].src_intf }}
-                {% if svis[svi].ipv6_enable is defined %}
-                    ipv6 enable
+
+                {# Check if PIM configuration is needed on the SVI #}
+                {% set pim_enable = svis[svi].pim_enable | default('no') %}
+                {% if pim_enable == 'yes' %}
+                    ip pim sparse-mode
+                {% elif pim_enable == 'no' %}
+                    no ip pim sparse-mode
                 {% endif %}
-                no autostate
-            {% endif %}
-            no shut
 
-            {# Check if PIM configuration is needed on the SVI #}
-            {% set pim_enable = svis[svi].pim_enable | default('no') %}
-            {% if pim_enable == 'yes' %}
-                ip pim sparse-mode
-            {% elif pim_enable == 'no' %}
-                no ip pim sparse-mode
-            {% endif %}
+                {# Check if static MAC configuration is needed on the SVI #}
+                {% if svis[svi].mac is defined and l2vpn_global.default_gw == "no" %}
+                    mac-address {{ svis[svi].mac }}
+                {% endif %}
 
-            {# Check if static MAC configuration is needed on the SVI #}
-            {% if svis[svi].mac is defined and l2vpn_global.default_gw == "no" %}
-                mac-address {{ svis[svi].mac }}
             {% endif %}
-
         {% endif %}
     {% endfor %}
 {% endif %}

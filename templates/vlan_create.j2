@@ -7,17 +7,19 @@ If action is not set in the configurations, it is "add" by default.
 
 {% if vlans is defined%}
     {% for vlan in vlans %}
-        {# Checking an action for the vlan - action_vlan. #}
-        {% set action = vlans[vlan].action | default ('add') %}
-        {% if action == 'delete' %}
-            !
-            no vlan {{vlan}}
-            no vlan configuration {{vlan}}
-        {% elif action == 'add' %}
-            !
-            vlan {{vlan}}
-            {% if vlans[vlan].description is defined %}
-                name {{ vlans[vlan].description }}
+        {% if ( (vlan_cli is defined and vlan in vlan_cli) or (vlan_cli is not defined) ) %}
+            {# Checking an action for the vlan - action_vlan. #}
+            {% set action = vlans[vlan].action | default ('add') %}
+            {% if action == 'delete' %}
+                !
+                no vlan {{vlan}}
+                no vlan configuration {{vlan}}
+            {% elif action == 'add' %}
+                !
+                vlan {{vlan}}
+                {% if vlans[vlan].description is defined %}
+                    name {{ vlans[vlan].description }}
+                {% endif %}
             {% endif %}
         {% endif %}
     {% endfor %}

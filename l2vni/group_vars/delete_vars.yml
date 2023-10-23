@@ -14,7 +14,7 @@
 #      - 101             <--------- deletes 101 and 102 VLANs
 #      - 102
 #
-#   update_access_intf: true   <--------- removes the respective VLANs from the access interfaces
+#   update_access: true   <--------- removes the respective VLANs from the access interfaces
 #
 #
 # Example 2: Deletes all the VLANs and makes NO changes to the access interfaces
@@ -22,7 +22,7 @@
 #   vlans:
 #      - all               <--------- deletes all the VLANs
 # 
-#   update_access_intf: false   <--------- makes NO changes to the access interfaces
+#   update_access: false   <--------- makes NO changes to the access interfaces
 #
 # ______________________________________________
 # ______________________________________________
@@ -30,6 +30,6 @@
 
 
  vlans:
-  - 104
+    - 104
 
- update_access_intf: true
+ update_access: true
