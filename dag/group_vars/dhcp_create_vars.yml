@@ -1,0 +1,107 @@
+# This is the input file for playbook_dhcp_add_preview.yml, playbook_dhcp_add_commit.yml,
+# playbook_dhcp_delete_preview.yml, playbook_dhcp_delete_commit.yml
+#
+#
+# dhcp:
+#   dhcp_options:
+#     option_82_link_selection_standard: standard       # ip dhcp compatibility suboption link-selection standard (sub-option 150 -> 5)
+#     option_82_server_id_override: standard            # ip dhcp compatibility suboption server-override standard (sub-option 152 -> 11)
+#
+#    vrfs:
+#      all:
+#        helper_address: 
+#          - 10.1.1.11
+#
+#
+# ______________________________________________
+# __________ EXAMPLE SCENARIOS _________________
+# ______________________________________________  
+#
+# 1) DHCP Server is in the Layer 3 Default VRF and the DHCP Client is in the Tenant VRF
+# 
+#
+#    Example 1:
+#    ----------
+#      
+#        vrfs:  
+#          all:                                             <--------- Applies config to all DAGs
+#            helper_address:                                <--------- configs 'ip helper-address global 10.1.1.1' for all SVIs
+#              - 10.1.1.1                       
+#            helper_vrf: global                             <--------- Specifies the server tenant location
+#            relay_src_intf: Loopback1                      <--------- configs 'Loopback1' as DHCP relay source for all SVIs
+#      
+#  
+#    Example 2:  
+#    ----------  
+#              
+#        vrfs:  
+#          all:                                             <--------- Applies configs to all except 'green' DAG 
+#            helper_address:                                <--------- configs 'ip helper-address global 10.1.1.1' for all SVIs except green's
+#              - 10.1.1.1   
+#            helper_vrf: global                     
+#            relay_src_intf: Loopback1                      <--------- configs 'Loopback1' as DHCP relay source for all SVIs except green's
+#      
+#          green:                                           <--------- Applies configs to 'green' DAG 
+#            helper_address:                                <--------- configs 'ip helper-address global 10.1.1.2' for all 'green' DAG SVIs
+#              - 10.1.1.2                       
+#            helper_vrf: global  
+#            relay_src_intf: Loopback1                      <--------- configs 'Loopback1' as DHCP relay source for 'green' SVIs
+# 
+#
+#
+# 2) DHCP Client and DHCP Server are in Different Tenant VRFs
+#    
+#    Example 3: 
+#    ----------
+#            
+#        vrfs:
+#          all:
+#            helper_address: 
+#              - 10.1.1.1
+#            helper_vrf: green                               <--------- Specifies the server tenant location
+#            relay_src_intf: Loopback1
+#    
+#
+#
+# 3) DHCP Server and DHCP Client are in the Same Tenant VRF
+# 
+#
+#    Example 4: 
+#    ----------
+#    
+#        vrfs:
+#          all:                                              <--------- Applies configs to all DAGs
+#            helper_address:                                 <--------- configs 'ip helper-address 10.1.1.1' and 'ip helper-address 10.1.1.2' for all SVIs
+#              - 10.1.1.1
+#              - 10.1.1.2
+#    
+#    Repective DAG's interface from the overlay_interface section of host_vars/<inventory>.yml file is set as DHCP relay source interface for each SVIs
+#    
+#
+#    Example 5: 
+#    ----------
+#            
+#        vrfs:
+#          green:                                            <--------- Applies configs to 'green' DAG 
+#            helper_address:                                 <--------- configs 'ip helper-address 10.1.1.1' and 'ip helper-address 10.1.1.2' for all 'green' SVIs
+#              - 10.1.1.1
+#              - 10.1.1.2
+#            helper_vrf: green
+#            relay_src_intf: Loopback1                       <--------- configs 'Loopback1' as DHCP relay source for all 'green' SVIs
+# 
+#          blue:                                             <--------- Applies configs to 'blue' DAG 
+#            helper_address:                                 <--------- configs 'ip helper-address 10.1.1.3' for 'blue' SVIs
+#              - 10.1.1.3 
+#            helper_vrf: blue 
+#            relay_src_intf: Loopback2                       <--------- configs 'Loopback2' as DHCP relay source for all 'blue' SVIs
+#
+#   Since 'relay_src_intf' key is explicitly mentioned in this case, Loopback1 is set as DHCP relay source interface for all 'green' SVIs and
+#   Loopback2 is set as DHCP relay source interface for all 'blue' SVIs
+# 
+#
+# ______________________________________________
+# ______________________________________________
+# ______________________________________________
+    
+vrfs:
+  - green

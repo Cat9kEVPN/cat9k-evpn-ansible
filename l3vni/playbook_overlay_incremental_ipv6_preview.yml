@@ -1,55 +1,73 @@
----
-- name: Write l3vni ipv6 incremental info to files in host_vars/ipv6_inc_vars folder
-  import_playbook: playbook_overlay_incremental_ipv6_generate.yml
 
-- name: Automated VXLAN deployment with BGP EVPN L3 underlay w/ Spine
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
   hosts: leaf
   gather_facts: no
-#  vars_files:
-#    - "group_vars/overlay_db.yml"
   vars:
-    svi_ipv6_block : " " 
-    svi_ipv6_dict:
-      '../templates/ipv6_incremental.j2': 'svi ipv6 block'
+    playbook_mode: inc
+    ipv6_block : ''
+    ipv6_dict:
+      '../templates/ipv6_incremental.j2': 'ipv6 block'
+
   tasks:
-          - name: Check whether host_vars/ipv6_inc_vars/{{ inventory_hostname }}.yml is present
-            local_action: stat path=./host_vars/ipv6_inc_vars/{{ inventory_hostname }}.yml
-            register: file_state
-            become: no 
 
-          - name: Executing tasks if host_vars/ipv6_inc_vars/{{ inventory_hostname }}.yml is present
-            when: file_state.stat.exists and inventory_hostname in groups['leaf']
-            block:
-            - name: Load variables from files under host_vars/ipv6_inc_vars folder
-              include_vars: host_vars/ipv6_inc_vars/{{ inventory_hostname }}.yml
+          - name: Collect vars from group_vars/overlay_db.yml
+            run_once: true
+            include_vars:
+              file: group_vars/overlay_db.yml
+              name: overlay_db_vars
+
+          - name: Collect vars from group_vars/ipv6_create_vars.yml
+            run_once: true
+            include_vars:
+              file: group_vars/ipv6_create_vars.yml
+              name: ipv6_vars
             
-          - name: SVI configuration
-            when: inventory_hostname in groups['leaf']
-            set_fact:
-              svi_ipv6_block: "{{ svi_ipv6_block }} ! {{ svi_ipv6_dict[item.key] }} {{ lookup('template', item.key ) }}"
-            with_dict: "{{ svi_ipv6_dict }}"
+          - name: Collect vars from host_vars/node_vars/<hostname>.yml
+            run_once: true
+            include_vars:
+              file: host_vars/node_vars/{{ inventory_hostname }}.yml
+              name: hostvars_data
 
-              
-          - name: Render template files output
-            set_fact:
-              rendered: "{{  svi_ipv6_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n! ') }}"
+          - name: Run and parse show run nve
+            ansible.utils.cli_parse:
+              command: "show run nve"
+              parser:
+                name: ansible.netcommon.pyats
+              set_fact: nve_output
 
-          - name: Copy configurations to respective file ( <hostname>-overlay.txt ) under 'preview_files' folder
+          - name: Process IPv6 data
+            ipv6_preprocess:
+              hostvars: "{{ nve_output }}"
+              leaf_data:  "{{ hostvars_data }}"
+              overlay_db: "{{ overlay_db_vars }}"
+              userinput: "{{ ipv6_vars }}"
+              playbook_mode: "{{ playbook_mode }}"
+            register: module_output
+
+          - name: Include vars and configure IPv6
+            when: module_output != {}
+            block:
+            - name: Include vars from module output
+              set_fact:
+                "{{ item.key }}": "{{ item.value }}"
+              with_dict: "{{ module_output }}"
+            
+            - name: Read template files
+              set_fact:
+                ipv6_block: "{{ ipv6_block }} ! {{ item.value }} {{ lookup('template', item.key ) }}"
+              with_dict: "{{ ipv6_dict }}"
+
+          - name: Copy configurations to respective file (<hostname>-ipv6-{{ playbook_mode }}.txt) under 'preview_files' folder
             copy:
-              dest: preview_files/{{inventory_hostname}}-ipv6_inc.txt
-              content: "{{ rendered }}"
+              dest: preview_files/{{ inventory_hostname }}-ipv6-{{ playbook_mode }}.txt
+              content: "{{ ipv6_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n! ') }}"
               
-          - name: Clearing configurations in preview_files/<hostname>-ipv6_inc.txt if device config is skipped
-            when: not file_state.stat.exists
-            copy:
-              dest: preview_files/{{inventory_hostname}}-ipv6_inc.txt
-              content: ""
-
-- name: Display output file info
+- name: Display preview file info
   hosts: localhost
   gather_facts: no
-  run_once: True
-
+  vars:
+    playbook_mode: inc
+    
   tasks:
-    - debug:
-        msg: Please refer to <hostname>-ipv6_inc.txt in 'preview_files' folder
+          - debug:
+              msg: Please refer to <hostname>-ipv6-{{ playbook_mode }}.txt in 'preview_files' folder

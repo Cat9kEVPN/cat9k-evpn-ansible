@@ -1,62 +1,39 @@
 ---
 
-- name: Automated VXLAN deployment with BGP EVPN L3 underlay w/ Spine
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
   hosts: all
   gather_facts: no
   connection: network_cli
+  vars:
+    underlay_dict:
+      '../templates/hostname.j2': 'hostname block'
+      '../templates/global_routing.j2': 'global routing block'
+      '../templates/underlay_interfaces.j2': 'underlay interface block'
+      '../templates/ospf_interfaces.j2': 'OSPF interface block'
+      '../templates/pim_interfaces.j2': 'PIM interface block'
+      '../templates/pim_rp.j2': 'PIM RP block'
+      '../templates/isis_underlay.j2': 'ISIS underlay block'
+
+    underlay_spine_dict:
+      '../templates/msdp_peering.j2': 'MSDP peering block'
+
   tasks:  
-          # Set db file path and load underlay vars
-          - name: Load and process underlay input file
-            run_once: true
-            block:
-            - name: set underlay vars input file path if not already set
-              when: input_vars_path is not defined
-              set_fact: 
-                input_vars_path: "./"
 
-          - name: Load vars from node_vars/<host>.yml input file
+          - name: Load vars from host_vars/node_vars/<hostname>.yml
             include_vars: 
-              file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
-              
-          - name: Configure hostnames
-            cli_config:
-              config: "{{ lookup('template', '../templates/hostname.j2') }}"
-              diff_match: none 
-            register: result
+              file: "./host_vars/node_vars/{{ inventory_hostname }}.yml"
 
-          - name: Enable Unicast/Multicast routing
+          - name: Configure underlay
             cli_config:
-              config: "{{ lookup('template', '../templates/global_routing.j2') }}"
+              config: "{{ lookup('template', item.key) }}"
               diff_match: none 
             register: result
+            with_dict: "{{ underlay_dict }}"
           
-          - name: Configure ip addresses
+          - name: Configure underlay specific to spine
+            when: inventory_hostname in (groups['spine'] | default([]))
             cli_config:
-              config: "{{ lookup('template', '../templates/underlay_interfaces.j2') }}"
+              config: "{{ lookup('template', item.key) }}"
               diff_match: none 
             register: result
-
-          - name: Configure OSPF
-            cli_config:
-              config: "{{ lookup('template', '../templates/ospf_interfaces.j2') }}"
-              diff_match: none 
-            register: result
-
-          - name: Configure PIM on interfaces
-            cli_config:
-              config: "{{ lookup('template', '../templates/pim_interfaces.j2') }}"
-              diff_match: none 
-            register: result
-
-          - name: Configure RP
-            cli_config:
-              config: "{{ lookup('template', '../templates/pim_rp.j2') }}"
-              diff_match: none 
-            register: result
-          
-          - name: Configure MSDP peering
-            when: inventory_hostname in groups['spine']
-            cli_config:
-              config: "{{ lookup('template', '../templates/msdp_peering.j2') }}"
-              diff_match: none 
-            register: result
+            with_dict: "{{ underlay_spine_dict }}"

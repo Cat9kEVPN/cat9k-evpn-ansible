@@ -1,6 +1,6 @@
 {#
-This module is adding or deleting vlans on trunk access port.
-Three types of actions are supported:
+This module is adding or deleting vlans on trunk and access port.
+Three types of actions for trunk are supported:
     - "init" -- switchport trunk allowed vlan <vlan>. VLANs list will be OVERWRITTEN only with <vlan>.
     - "add" -- switchport trunk allowed vlan add <vlan>. VLAN will be ADDED to the list of existent vlans.
     - "delete" -- switchport trunk allowed vlan remove <vlan>. VLAN will be REMOVED to the list of existent vlans.
@@ -11,121 +11,58 @@ Three types of actions are supported:
     {# for each interface getting list of vlans and action type #}
     {% if access_interfaces.trunks is defined %}
         {% for intf, params in access_interfaces.trunks | dictsort -%}
-            {% set vlans = params.vlans -%}
+            {% set vlan_list = params.vlans -%}
             {% set action = params.action -%}
-        
-            {% if access_inft_cli is defined %}
-                {% for intf, params in access_inft_cli.trunks | dictsort -%}
-                    {% set vlans = params.vlans -%}
-                    {% set action = params.action -%}
+            {# initial interface config #}
+            !
+            interface {{ intf }}
+            description host interface
+            switchport mode trunk
 
-                    {% if access_inft_cli is defined %}
-                        {% set vlan_access_list = vlans %}
-                    {% endif %}
+            {# 
+            if there is no add/delete action, we assume that it is initial configuration and list of vlans on trunk will be overwritten.
+            case for multiple vlans definition. 
+            #}
 
-                    {# initial interface config #}
-                    !
-                    interface {{ intf }}
-                    description host interface
-                    switchport mode trunk
-
-                    {% if vlan_access_list is iterable -%}
-                        {% if action == 'add' -%}
-                            switchport trunk allowed vlan add {{ vlan_access_list | join(',') }}
-                        {% elif action == 'delete' -%}
-                            switchport trunk allowed vlan remove {{ vlan_access_list | join(',') }}
-                        {% endif %}
-                    {% endif %}
-                {% endfor %}
-            {% endif %}
-        
-            {% if (access_inft_cli is not defined)  %}
-                {# initial interface config #}
-                !
-                interface {{ intf }}
-                description host interface
-                switchport mode trunk
-        
-                {% set vlan_list = vlans %}
-        
-                {# 
-                if there is no add/delete action, we assume that it is initial configuration and list of vlans on trunk will be overwritten.
-                case for multiple vlans definition. 
-                #}   
-                {% if vlan_list is iterable -%}
-                    {% if action == 'add' -%}
-                        switchport trunk allowed vlan add {{ vlan_list | join(',') }}
-                    {% elif action == 'delete' -%}
-                        switchport trunk allowed vlan remove {{ vlan_list | join(',') }}
-                    {% else %}
-                        switchport trunk allowed vlan {{ vlan_list | join(',') }}
-                    {% endif %}
+            {% if vlan_list is iterable -%}
+                {% if action == 'add' -%}
+                    switchport trunk allowed vlan add {{ vlan_list | join(',') }}
+                {% elif action == 'delete' -%}
+                    switchport trunk allowed vlan remove {{ vlan_list | join(',') }}
+                {% else %}
+                    switchport trunk allowed vlan {{ vlan_list | join(',') }}
                 {% endif %}
-                {# unshut interface #}
-                no shutdown
             {% endif %}
+            {# unshut interface #}
+            no shutdown
         {% endfor %}
     {% endif %}
     
     {% if access_interfaces.access is defined %}
         {# for each interface getting list of vlans and action type #}
         {% for intf, params in access_interfaces.access | dictsort -%}
-            {% set vlans = params.vlans -%}
+            {% set vlan_list = params.vlans -%}
             {% set action = params.action -%}
+            {# initial interface config #}
+            !
+            interface {{ intf }}
+            description host interface
+            switchport mode access
+            
+            {# 
+            if there is no add/delete action, we assume that it is initial configuration and list of vlans on trunk will be overwritten.
+            case for multiple vlans definition. 
+            #}
 
-            {% if access_inft_cli is defined %}
-                {% for intf, params in access_inft_cli.access | dictsort -%}
-                    {% set vlans = params.vlans -%}
-                    {% set action = params.action -%}
-
-                    {% if access_inft_cli is defined %}
-                        {% set vlan_access_list = vlans %}
-                    {% endif %}
-
-                    {# initial interface config #}
-                    !
-                    interface {{ intf }}
-                    description host interface
-                    switchport mode access
-
-                    {% if vlan_access_list is iterable -%}
-                        {% if action == 'add' -%}
-                            switchport access vlan {{ vlan_access_list | join(',') }}
-                        {% elif action == 'delete' -%}
-                            no switchport access vlan {{ vlan_access_list | join(',') }}
-                        {% endif %}
-                    {% endif %}
-                {% endfor %}
-            {% endif %}
-
-            {% if (access_inft_cli is not defined)  %}
-
-                {# initial interface config #}
-                !
-                interface {{ intf }}
-                description host interface
-                switchport mode access
-
-                {% if access_inft_cli is not defined %}
-                    {% set vlan_list = vlans %}
+            {% if vlan_list is iterable -%}
+                {% if action == 'delete' -%}
+                    no switchport access vlan {{ vlan_list | join(',') }}
+                {% else -%}
+                    switchport access vlan {{ vlan_list | join(',') }}
                 {% endif %}
-
-                {# 
-                if there is no add/delete action, we assume that it is initial configuration and list of vlans on trunk will be overwritten.
-                case for multiple vlans definition. 
-                #}   
-                {% if vlan_list is iterable -%}
-                    {% if action == 'add' -%}
-                       switchport access vlan {{ vlan_list | join(',') }}
-                    {% elif action == 'delete' -%}
-                       no switchport access vlan {{ vlan_list | join(',') }}
-                    {% else %}
-                        switchport access vlan {{ vlan_list | join(',') }}
-                    {% endif %}
-                {% endif %}
-                {# unshut interface #}
-                no shutdown
             {% endif %}
+            {# unshut interface #}
+            no shutdown
         {% endfor %}
     {% endif %}
 {% endif %}

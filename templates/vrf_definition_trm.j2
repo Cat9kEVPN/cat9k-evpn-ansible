@@ -24,6 +24,8 @@
                 {% set fabric_type = 'fabric_internal_rp' %}
             {% elif vrfs[vrf].fabric_external_rp is defined %}
                 {% set fabric_type = 'fabric_external_rp' %}
+            {% elif vrfs[vrf].fabric_default is defined %}
+                {% set fabric_type = 'fabric_default' %}
             {% endif %}
 
             {% for af in vrfs[vrf].afs %}
