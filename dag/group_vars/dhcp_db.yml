@@ -104,12 +104,11 @@
 # ______________________________________________
 
 
-dhcp:
-    dhcp_options:
-        option_82_link_selection_standard: standard
-        option_82_server_id_override: standard
+dhcp_options:
+    option_82_link_selection_standard: standard
+    option_82_server_id_override: standard
     
-    vrfs:
-        all:                   
-            helper_address: 
-                - 10.1.1.1
+vrfs:
+    all:                   
+        helper_address: 
+            - 10.1.1.1

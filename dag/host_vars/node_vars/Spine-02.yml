@@ -42,15 +42,8 @@ interfaces:
     loopback: 'no'
     pim_enable: 'yes' 
 
-# ospf:
-#   router_id: '172.16.255.2'
-
-isis:
-  process_id: 'UNDERLAY' 
-  net: 49.0001.1720.1625.5002.00
-  passive_interfaces:
-    - Loopback0
-    - Loopback1 
+ospf:
+  router_id: '172.16.255.2'
 
 pim:
   rp_address: '172.16.255.255'  

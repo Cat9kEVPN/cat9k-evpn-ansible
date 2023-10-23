@@ -4,120 +4,43 @@
   hosts: all
   gather_facts: no
   vars:
-    save_configuration: false
+    leaf_ol_dict:
+      '../templates/vrf_definition.j2': 'vrf definition block'
+      '../templates/bgp_l2vpn_ipv46_per_vrf.j2': 'bgp per vrf block'
+      '../templates/vlan_create.j2': 'vlan block'
+      '../templates/svi_create.j2': 'svi block'
+      '../templates/l2vpn_evpn_global.j2': 'l2vpn evpn global block'
+      '../templates/l2vpn_evpn_evi_create.j2': 'l2vpn evpn evi block'
+      '../templates/evi_vni_vlan_stiching.j2': 'evi vni vlan stiching block'
+      '../templates/overlay_interfaces.j2': 'overlay interface block'
+      '../templates/nve_create.j2': 'nve block'
+
+    common_ol_dict:
+      '../templates/bgp_global.j2': 'bgp global block'
+      '../templates/bgp_l2vpn_evpn_af.j2': 'bgp l2vpn evpn af block'
 
   tasks:
 
-          # Set db file path and load overlay_db
-          - name: Load and process overlay input file
+          - name: Load vars from group_vars/overlay_db.yml
             run_once: true
-            block:
-            - name: set overlay db input file path if not already set
-              when: input_vars_path is not defined
-              set_fact: 
-                input_vars_path: "./"
-
-            - name: Load vars from overlay input file
-              include_vars: 
-                file: "{{ input_vars_path }}group_vars/overlay_db.yml"
-
-            - name: Check for IPv6 config under VRFs
-              set_fact: 
-                ipv6_unicast: 'enable'
-              when: '"ipv6" in item.value.afs and ipv6_unicast is not defined'
-              with_dict: "{{ vrfs }}"
-
-          - name: Load vars from node_vars/<host>.yml input file
             include_vars: 
-              file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
+              file: "./group_vars/overlay_db.yml"
 
-          - name: Enabling IPv6 Unicast routing
-            when: ipv6_unicast is defined and ipv6_unicast == 'enable'
-            cisco.ios.ios_config:
-              lines: ipv6 unicast-routing
-
-          - name: Configure vrf definition
-            when: inventory_hostname in groups['leaf']
-            cli_config:
-              config: "{{ lookup('template', '../templates/vrf_definition.j2') }}"
-              diff_match: none 
-            register: result
-
-          - name: Configure neighbors globally for BGP
-            cli_config:
-              config: "{{ lookup('template', '../templates/bgp_global.j2') }}"
-              diff_match: none
-            register: result
+          - name: Load vars from host_vars/node_vars/<hostname>.yml
+            include_vars: 
+              file: "./host_vars/node_vars/{{ inventory_hostname }}.yml"
           
-          - name: Activate BGP neighbor under L2VPN/EVPN AFI/SAFI
+          - name: Configure overlay
             cli_config:
-              config: "{{ lookup('template', '../templates/bgp_l2vpn_evpn_af.j2') }}"
-              diff_match: none
+              config: "{{ lookup('template', item.key) }}"
+              diff_match: none 
             register: result
+            with_dict: "{{ common_ol_dict }}"
 
-          - name: Activate BGP for AF(ipv4/ipv6) per vrf
-            when: inventory_hostname in groups['leaf']
+          - name: Configure overlay specific to leaf
+            when: inventory_hostname in (groups['leaf'] | default([]))
             cli_config:
-              config: "{{ lookup('template', '../templates/bgp_l2vpn_ipv46_per_vrf.j2') }}"
-              diff_match: none
-            register: result
-          
-          - name: Create access/Core VLAN
-            when: inventory_hostname in groups['leaf']
-            cli_config:
-              config: "{{ lookup('template', '../templates/vlan_create.j2') }}"
+              config: "{{ lookup('template', item.key) }}"
               diff_match: none 
             register: result
-
-          - name: Create SVI
-            when: inventory_hostname in groups['leaf'] 
-            cli_config:
-              config: "{{ lookup('template', '../templates/svi_create.j2') }}"
-              diff_match: none 
-            register: result            
-          
-          - name: Configure global L2VPN EVPN
-            when: inventory_hostname in groups['leaf']
-            cli_config:
-              config: "{{ lookup('template', '../templates/l2vpn_evpn_global.j2') }}"
-              diff_match: none 
-            register: result
-
-          - name: Create EVPN EVI
-            when: inventory_hostname in groups['leaf']
-            cli_config:
-              config: "{{ lookup('template', '../templates/l2vpn_evpn_evi_create.j2') }}"
-              diff_match: none 
-            register: result
-          
-          - name: Stitch EVI/VNI/VLAN
-            when: inventory_hostname in groups['leaf']
-            cli_config:
-              config: "{{ lookup('template', '../templates/evi_vni_vlan_stiching.j2') }}"
-              diff_match: none 
-            register: result
-
-          - name: Create overlay interface
-            when: inventory_hostname in groups['leaf']
-            cli_config:
-              config: "{{ lookup('template', '../templates/overlay_interfaces.j2') }}"
-              diff_match: none 
-            register: result
-          
-          - name: Configure NVE interface
-            when: inventory_hostname in groups['leaf']
-            cli_config:
-              config: "{{ lookup('template', '../templates/nve_create.j2') }}"
-              diff_match: none 
-            register: result          
-
-          - name: Pause for 60 seconds for convergence  
-            wait_for:
-              delay: 60
-              timeout: 0
-          
-          - name: Save the configurations in the device
-            when: save_configuration
-            cli_command:
-              command: write memory
-            register: result
+            with_dict: "{{ leaf_ol_dict }}"

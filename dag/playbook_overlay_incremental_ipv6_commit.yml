@@ -1,34 +1,62 @@
 ---
-- name: Write DAG incremental info to files in host_vars/inc_vars folder 
-  import_playbook: playbook_overlay_incremental_ipv6_generate.yml
-
 - name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
   hosts: leaf
   gather_facts: no
-#  vars_files:
-#    - "group_vars/overlay_db.yml"
   vars:
-    svi_ipv6_dict:
-      '../templates/ipv6_incremental.j2': 'svi ipv6 block'
-  tasks:
-          - name: Check whether host_vars/ipv6_inc_vars/{{ inventory_hostname }}.yml is present
-            local_action: stat path=./host_vars/ipv6_inc_vars/{{ inventory_hostname }}.yml
-            register: file_state
-            become: no 
+    playbook_mode: inc
+    ipv6_dict:
+      '../templates/ipv6_incremental.j2': 'ipv6 block'
 
-          - name: Executing tasks if host_vars/ipv6_inc_vars/{{ inventory_hostname }}.yml is present
-            when: file_state.stat.exists and inventory_hostname in groups['leaf']
+  tasks:
+
+          - name: Collect vars from group_vars/overlay_db.yml
+            run_once: true
+            include_vars:
+              file: group_vars/overlay_db.yml
+              name: overlay_db_vars
+
+          - name: Collect vars from group_vars/ipv6_create_vars.yml
+            run_once: true
+            include_vars:
+              file: group_vars/ipv6_create_vars.yml
+              name: ipv6_vars
+            
+          - name: Collect vars from host_vars/node_vars/<host>.yml
+            run_once: true
+            include_vars:
+              file: host_vars/node_vars/{{ inventory_hostname }}.yml
+              name: hostvars_data
+
+          - name: Run and parse show run nve
+            ansible.utils.cli_parse:
+              command: "show run nve"
+              parser:
+                name: ansible.netcommon.pyats
+              set_fact: nve_output
+
+          - name: Process IPv6 data
+            ipv6_preprocess:
+              hostvars: "{{ nve_output }}"
+              leaf_data:  "{{ hostvars_data }}"
+              overlay_db: "{{ overlay_db_vars }}"
+              userinput: "{{ ipv6_vars }}"
+              playbook_mode: "{{ playbook_mode }}"
+            register: module_output
+
+          - name: Include vars and configure IPv6
+            when: module_output != {}
             block:
-            - name: Load variables from files under host_vars/ipv6_inc_vars folder
-              include_vars: host_vars/ipv6_inc_vars/{{ inventory_hostname }}.yml
-          
-          - name: SVI configuration
-            when: inventory_hostname in groups['leaf']
-            cli_config:
-              config: " {{ lookup('template', item.key) }} "
-              diff_match: none 
-            register: result
-            with_dict: "{{ svi_ipv6_dict }}"
+            - name: Include vars from module output
+              set_fact:
+                "{{ item.key }}": "{{ item.value }}"
+              with_dict: "{{ module_output }}"
+
+            - name: Configure IPv6
+              cli_config:
+                config: " {{ lookup('template', item.key) }} "
+                diff_match: none 
+              register: result
+              with_dict: "{{ ipv6_dict }}"
             
           - name: Pause for 20 seconds for convergence  
             wait_for:
