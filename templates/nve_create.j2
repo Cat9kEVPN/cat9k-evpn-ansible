@@ -12,40 +12,48 @@ Immutable paramiters:
 
 #jinja2: lstrip_blocks: "True", trim_blocks: "True"
 
+{% set vni_list = [] %}
+
+{% if vlan_cli is defined %}
+    {% for vlan in vlan_cli %}
+        {% set vni_list = vni_list.append(vlans[vlan].vni|int) %}
+    {% endfor %}
+{% endif %}
+
 {% if nve_interfaces is defined %}
 
     {% for interface in nve_interfaces %}
         !
         interface nve{{ interface }}
-
-        {% set action = nve_interfaces[interface].action | default ('') %}
-        {% if action != 'delete_vlans' %}
-            no ip address
-            source-interface {{ nve_interfaces[interface].source_interface }}
-            host-reachability protocol bgp
-        {% endif %}
+        no ip address
+        source-interface {{ nve_interfaces[interface].source_interface }}
+        host-reachability protocol bgp
 
         {% for ivlan,idata in vlans.items() %}
-            {# Checking an action for vlan - action_stitching #}
-            {% set action = vlans[ivlan].action | default ('add') %}
-            {% if action == 'delete' %}    
-                {% set prefix = 'no' %}
-            {% else %}
-                {% set prefix = '' %}
-            {% endif %}
+            {% if ((vlan_cli is defined and ivlan in vlan_cli) or (vlan_cli is not defined)) %}
 
-            {% if idata.vlan_type == 'access' %}
-                {% if idata.evi is defined %}
-                    {% if idata.replication_type  == 'static' %}
-                       {{prefix}} member vni {{ idata.vni }} mcast-group {{idata.replication_mcast}}
-                    {% elif ((idata.replication_type  == 'ingress') or (idata.replication_type  == 'ingress-replication')) %}
-                       {{prefix}} member vni {{ idata.vni }} ingress-replication
-                    {% endif %}
+                {# Checking an action for vlan - action_stitching #}
+                {% set action = vlans[ivlan].action | default ('add') %}
+
+                {% if action == 'delete' %}    
+                    {% set prefix = 'no' %}
+                {% else %}
+                    {% set prefix = '' %}
                 {% endif %}
-            {% elif idata.vlan_type == 'core' %}
-                {{prefix}} member vni {{ idata.vni }} vrf {{ idata.vrf }}
+
+                {% if idata.vlan_type == 'access' %}
+                    {% if idata.evi is defined %}
+                        {% if idata.replication_type  == 'static' %}
+                           {{prefix}} member vni {{ idata.vni }} mcast-group {{idata.replication_mcast}}
+                        {% elif ((idata.replication_type  == 'ingress') or (idata.replication_type  == 'ingress-replication')) %}
+                           {{prefix}} member vni {{ idata.vni }} ingress-replication
+                        {% endif %}
+                    {% endif %}
+                {% elif idata.vlan_type == 'core' %}
+                    {{prefix}} member vni {{ idata.vni }} vrf {{ idata.vrf }}
+                {% endif %}
+                
             {% endif %}
-            
         {% endfor %}
     {% endfor %}
 {% endif %}

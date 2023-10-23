@@ -1,60 +1,67 @@
 ---
+- name: Write DAG delete info to files in host_vars/delete_vars folder
+  import_playbook: playbook_overlay_delete_generate.yml
+
 - name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
   hosts: leaf
   gather_facts: no
-  vars:
-    overlay_block: ''
-    overlay_dict:
+  vars: 
+    whole_block: ""
+    update_acc_intf: false
+    block_dict:
       '../templates/svi_create.j2': 'svi block'
       '../templates/nve_create.j2': 'nve block'
       '../templates/vlan_create.j2': 'vlan block' 
       '../templates/l2vpn_evpn_evi_create.j2': 'l2vpn evpn evi block'
       '../templates/vrf_definition.j2': 'vrf block'
-      '../templates/access_interfaces.j2': 'access interfaces block'
-      '../templates/overlay_interfaces.j2': 'overlay interfaces block'
 
   tasks:
 
-          - name: Load variables from group_vars/delete_vars.yml
+          - name: Load variables from group_vars/delete_vars.yml file
             run_once: true
-            include_vars:
-              file: group_vars/delete_vars.yml
-              name: to_del
+            include_vars: group_vars/delete_vars.yml
 
-          - name: Run and parse "show run nve"
-            ansible.utils.cli_parse:
-              command: "show run nve"
-              parser:
-                name: ansible.netcommon.pyats
-              set_fact: nve_output
+          - name: Get "update_access" value if present in group_vars/delete_vars.yml
+            run_once: true
+            when: update_access is defined
+            set_fact:
+              update_acc_intf: "{{ update_access }}"
 
-          - name: Run and parse "show run | section ^interface"
-            ansible.utils.cli_parse:
-              command: "show run | section ^interface"
-              parser:
-                name: ansible.netcommon.pyats
-              set_fact: interface_output
+          - name: Check whether host_vars/delete_vars/<hostname>.yml is present
+            local_action: stat path=./host_vars/delete_vars/{{ inventory_hostname }}.yml
+            register: file_state
+            become: no 
 
-          - name: Process overlay data
-            overlay_delete_preprocess:
-              device_vars: "{{ {'run_nve': nve_output, 'intf_sec': interface_output | default([])} }}"
-              to_del: "{{ to_del }}"
-            register: module_output
-
-          - name: Include vars and read templates
-            when: module_output != {}
+          - name: Executing tasks if host_vars/delete_vars/<hostname>.yml is present
+            when: file_state.stat.exists
             block:
-            - name: Include variables
-              set_fact:
-                "{{ item.key }}": "{{ item.value }}"
-              with_dict: "{{ module_output }}"
+            - name: Load variables from files under host_vars/delete_vars folder
+              include_vars: host_vars/delete_vars/{{ inventory_hostname }}.yml
 
             - name: Read template files
               set_fact:
-                overlay_block: "{{ overlay_block }} ! {{ item.value }} {{ lookup('template', item.key) }}"
-              with_dict: "{{ overlay_dict }}"
+                whole_block: "{{ whole_block }} ! {{ block_dict[item.key] }} {{ lookup('template', item.key) }}"
+              with_dict: "{{ block_dict }}"
 
-          - name: Copy configurations to the respective file (<hostname>-delete.txt) under 'preview_files' folder
-            copy:
-              dest: preview_files/{{inventory_hostname}}-delete.txt
-              content: "{{ overlay_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n! ') }}"
+            - name: Read access interface template files
+              when: update_acc_intf == true
+              set_fact:
+                whole_block: "{{ whole_block }} ! access interfaces block {{ lookup('template', '../templates/access_interfaces.j2' ) }}"
+
+            - name: Render template files output
+              set_fact:
+                rendered: "{{  whole_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n! ') }}"
+
+            - name: Copy configurations to the respective file ( <hostname>-delete.txt ) under 'preview_files' folder
+              copy:
+                dest: preview_files/{{inventory_hostname}}-delete.txt
+                content: "{{ rendered }}"
+
+- name: Display output file info
+  hosts: localhost
+  gather_facts: no
+  run_once: True
+
+  tasks:
+    - debug:
+        msg: Please refer to <hostname>-delete.txt in 'preview_files' folder

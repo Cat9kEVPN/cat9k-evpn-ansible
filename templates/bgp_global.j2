@@ -10,7 +10,7 @@ router bgp {{ bgp.as_number }}
 
     {# default bgp parameters configuration #}
     bgp log-neighbor-changes
-    bgp router-id interface {{ bgp.router_id }}
+    bgp router-id interface {{bgp.router_id}}
     no bgp default ipv4-unicast
 
     {# if multiple-as are used in fabric, default route-target filter should be disabled #}
@@ -18,13 +18,10 @@ router bgp {{ bgp.as_number }}
         no bgp default route-target filter
     {% endif %}
 
-    {# set global BGP Src Intf. If it is not set, then Loopback0 by default #}
-    {% set g_bgp_src_intf = bgp.source_interface | default ('Loopback0')%}
-
     {# defining BGP peer session template #}
     template peer-session EVPN-PEER-SESSION
-        remote-as {{ bgp.as_number }}
-        update-source {{ g_bgp_src_intf }}
+        remote-as 65001
+        update-source Lo0
 
     {# defining BGP peer policy template #}
     template peer-policy LEAF-EVPN-PEER-POLICY
@@ -37,20 +34,10 @@ router bgp {{ bgp.as_number }}
 
     {# BGP neighbors configuration #}
     {% for neighbor in bgp.neighbors%}
-        {# define bgp peer AS. By default - the same AS #}
-        {% set bgp_neighbor_as = bgp.neighbors[neighbor].peer_as_number|default(bgp.as_number) %}
+        neighbor {{neighbor }} inherit peer-session EVPN-PEER-SESSION
 
-        {# define bgp peer source interface. By default - global SRC INTF. If it is not set - Loopback0 #}
-        {% set bgp_neighbor_src_intf = bgp.neighbors[neighbor].source_interface|default(g_bgp_src_intf) %}
-
-        {# if it is eBGP neighborship, next list of commands is used #}
-        {% if bgp.as_number != bgp_neighbor_as %}
-            neighbor {{ neighbor }} remote-as {{ bgp_neighbor_as }}
-            neighbor {{ neighbor }} update-source {{ bgp_neighbor_src_intf }}
+        {# if it is eBGP neighborship, eBGP multihop command is used #}
+        {% if bgp.as_number != bgp.neighbors[neighbor].peer_as_number%}
             neighbor {{ neighbor }} ebgp-multihop 255
-        
-        {# if iBGP neighborship, then inherit peer-session template #}
-        {% else %}
-            neighbor {{neighbor }} inherit peer-session EVPN-PEER-SESSION
         {% endif %}
     {% endfor %}

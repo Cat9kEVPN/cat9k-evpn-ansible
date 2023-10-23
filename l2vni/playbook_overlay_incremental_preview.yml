@@ -1,99 +1,82 @@
 ---
+- name: Write l2vni incremental info to files in host_vars/inc_vars folder
+  import_playbook: playbook_overlay_incremental_generate.yml
 
-- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
-  hosts: leaf
+- name: Automated VXLAN deployment with BGP EVPN L2 underlay w/ Spine
+  hosts: all
   gather_facts: no
-
+  vars_files:
+    - "group_vars/overlay_db.yml"
   vars:
-    inc_block: ""
-    inc_dict:
-      #'../templates/vrf_definition.j2': 'vrf block'
-      #'../templates/bgp_l2vpn_ipv46_per_vrf.j2': 'bgp l2vpn ipv46 per vrf block'
+    incremental_run: false
+    whole_block: ""
+
+    vlan_dict:
       '../templates/vlan_create.j2': 'vlan block'
       '../templates/l2vpn_evpn_evi_create.j2': 'l2vpn evpn evi create block'
       '../templates/evi_vni_vlan_stiching.j2': 'evi vni vlan stiching block'
       '../templates/nve_create.j2': 'nve create block'
-      #'../templates/svi_create.j2': 'svi create block'
-      #'../templates/overlay_interfaces.j2': 'overlay interfaces block'
+    l2vpn_evpn_global_dict:
+      '../templates/l2vpn_evpn_global.j2': 'l2vpn evpn global block'
+    common_dict:
+      '../templates/bgp_global.j2': 'bgp global block'
+      '../templates/bgp_l2vpn_evpn_af.j2': 'bgp l2vpn evpn af block'
+      
+  tasks:  
+          - name: Check whether host_vars/inc_vars/{{ inventory_hostname }}.yml is present
+            local_action: stat path=./host_vars/inc_vars/{{ inventory_hostname }}.yml
+            register: file_state
+            become: no 
 
-  tasks:
-
-          - name: Set playbook_mode
-            run_once: true
-            set_fact:
-              playbook_mode: "-inc"
-
-          - name: Collect vars from group_vars/create_vars.yml
-            run_once: true
-            include_vars:
-              file: group_vars/create_vars.yml
-              name: create_vars
-              
-          - name: Collect vars from group_vars/overlay_db.yml
-            run_once: true
-            include_vars:
-              file: group_vars/overlay_db.yml
-              name: overlay_db_vars
-
-          - name: Include nve_interfaces and l2vpn_global vars
-            run_once: true
-            set_fact:
-              nve_interfaces: "{{ overlay_db_vars.nve_interfaces | default({}) }}"
-              l2vpn_global: "{{ overlay_db_vars.l2vpn_global | default({}) }}"
-
-          - name: Collect vars from host_vars/node_vars/<hostname>.yml
-            include_vars:
-              file: host_vars/node_vars/{{ inventory_hostname }}.yml
-              name: hostvars_data
-
-          - name: Include bgp vars
-            set_fact:
-              bgp: "{{ hostvars_data.bgp | default({}) }}"
-
-          - name: Run and parse show run nve
-            ansible.utils.cli_parse:
-              command: "show run nve"
-              parser:
-                name: ansible.netcommon.pyats
-              set_fact: nve_output
-                
-          - name: Process incremental data
-            overlay_inc_preprocess:
-              userinput: "{{ create_vars }}"
-              overlay_intf: "{{ hostvars_data }}"
-              hostvars: "{{ nve_output }}"
-              tocompare: "{{ overlay_db_vars }}"
-            register: module_output
-
-          - name: Include vars and configure overlay
-            when: module_output != {}
+          - name: Executing tasks if host_vars/inc_vars/{{ inventory_hostname }}.yml is present
+            when: file_state.stat.exists and inventory_hostname in groups['leaf']
             block:
-            - name: Include vars from module output
-              set_fact:
-                "{{ item.key }}": "{{ item.value }}"
-              with_dict: "{{ module_output }}"
+            - name: Load variables from files under host_vars/inc_vars folder
+              include_vars: host_vars/inc_vars/{{ inventory_hostname }}.yml
 
-            - name: Read template files
-              set_fact:
-                inc_block: "{{ inc_block }} ! {{ item.value }} {{ lookup('template', item.key) }}"
-              with_dict: "{{ inc_dict }}"
+          - name: Check if full execution is needed
+            set_fact: 
+              incremental_run: true
+            when: (vlan_cli is defined) or (access_intf_cli is defined)
 
-          - name: Copy configurations to respective file (<hostname>-inc.txt) under 'preview_files' folder
+          - name: Read VLAN related template files
+            when: (inventory_hostname in groups['leaf']) and ((incremental_run == true and vlan_cli is defined)) 
+            set_fact:
+              whole_block: "{{ whole_block }} ! {{ vlan_dict[item.key] }} {{ lookup('template', item.key) }}"
+            with_dict: "{{ vlan_dict }}"
+
+#          - name: Read global L2VPN EVPN related template files
+#            when: (inventory_hostname in groups['leaf']) and (incremental_run == false)
+#            set_fact:
+#              whole_block: "{{ whole_block }} ! {{ l2vpn_evpn_global_dict[item.key] }} {{ lookup('template', item.key) }}"
+#            with_dict: "{{ l2vpn_evpn_global_dict }}"
+#
+#          - name: Read BGP neighbors related template files
+#            when: incremental_run == false
+#            set_fact:
+#              whole_block: "{{ whole_block }} ! {{ common_dict[item.key] }} {{ lookup('template', item.key) }}"
+#            with_dict: "{{ common_dict }}"
+
+          - name: Render template files output
+            set_fact:
+              rendered: "{{  whole_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n! ') }}"
+
+          - name: Copy configurations to respective file ( <hostname>-inc.txt ) under 'preview_files' folder
             copy:
               dest: preview_files/{{inventory_hostname}}-inc.txt
-              content: "{{ inc_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n! ') }}"
+              content: "{{ rendered }}"
+              
+          - name: Clearing configurations in preview_files/<hostname>-inc.txt if device config is skipped
+            when: not file_state.stat.exists
+            copy:
+              dest: preview_files/{{inventory_hostname}}-inc.txt
+              content: ""
 
 - name: Display output file info
   hosts: localhost
   gather_facts: no
+  run_once: True
 
   tasks:
-          - name: Set playbook_mode
-            set_fact:
-              playbook_mode: "-inc"
-
-          - debug:
-              msg: Please refer to <hostname>-inc.txt in 'preview_files' folder
-
-- name: Import tasks from playbook_access_preview.yml
-  import_playbook: playbook_access_preview.yml
+    - debug:
+        msg: Please refer to <hostname>-inc.txt in 'preview_files' folder
