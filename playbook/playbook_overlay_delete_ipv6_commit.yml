@@ -1,0 +1,14 @@
+---
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
+  hosts: leaf
+  gather_facts: no
+
+  tasks:
+
+          - name: Set playbook mode
+            run_once: true
+            set_fact:
+              playbook_mode: del
+
+- name: Import tasks from playbook_overlay_incremental_ipv6_commit.yml
+  import_playbook: playbook_overlay_incremental_ipv6_commit.yml
