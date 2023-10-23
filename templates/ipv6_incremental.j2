@@ -6,23 +6,25 @@ This module incrementally adding/removing ipv6 configuration to the fabric.
 
 #jinja2: lstrip_blocks: "True", trim_blocks: "True"
 
-{% set action = ipv6_action | default ('add') %}
-{% if action == 'delete' %}
+{% set action = playbook_mode | default ('inc') %}
+
+{% if action == 'del' %}
     {% set prefix = 'no' %}
-{% elif action == 'add' %}
+{% elif action == 'inc' %}
     {% set prefix = '' %}
 {% endif %}
 
 {# Global ipv6 unicast routing enable/disable #}
-{% if ipv6_routing is defined %}
+{% if ipv6_routing is defined and playbook_mode == 'add'%}
   ipv6 unicast-routing
 {% endif %}
 
 {# vrf configuration #}
 
 {% if vrfs is defined %}
+    ! vrf block
     {% for vrf in vrfs %}
-
+        !
         vrf definition {{ vrf }}
 
         {# Checking an action for the AF #}
@@ -49,9 +51,11 @@ This module incrementally adding/removing ipv6 configuration to the fabric.
 {% endif %}
 
 {# SVI configuration #}
-{% if svis is defined %}
-    {% for svi in svis %}
 
+{% if svis is defined %}
+    ! svi block
+    {% for svi in svis %}
+        !
         interface Vlan{{svi}}
                     
         {% if svis[svi].ipv6 is defined %}
@@ -68,10 +72,12 @@ This module incrementally adding/removing ipv6 configuration to the fabric.
 
 {# bgp configuration #}
 
-{% if vrfs is defined -%}
+{% if vrfs is defined %}
+    ! bgp l2vpn ipv46 per vrf block
+    !
     router bgp {{ bgp.as_number }}
-    {% for vrf in vrfs -%}        
-        {% for af in vrfs[vrf].afs -%}
+    {% for vrf in vrfs %}        
+        {% for af in vrfs[vrf].afs %}
             {% if prefix == 'no'%}
                 {{ prefix }} address-family {{ af }} vrf {{ vrf }}
             {% else %}

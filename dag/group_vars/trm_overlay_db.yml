@@ -125,7 +125,7 @@
 
 vrfs:
   blue:                                                 
-    register_source: loopback1 
+    register_source: loopback12
                          
     fabric_anycast_rp:                                  
       rp_loopback: Loopback256                          
@@ -134,3 +134,22 @@ vrfs:
     afs:
       ipv4:
         default_mdt_group: '239.1.1.1' 
+
+  green:
+    register_source: Loopback11
+    ipv6_register_source: Loopback11   
+
+    fabric_internal_rp:
+      rp_device: Leaf-02
+      rp_loopback: Loopback255
+      ipv4_rp_address: '10.3.255.255'
+      ipv6_rp_address: 'FC00:2:255::255'   
+
+    afs:
+      ipv4:
+        default_mdt_group: '239.1.1.2'
+        data_mdt_group: '225.2.3.0 0.0.0.255'
+        data_mdt_threshold: '111'  
+
+      ipv6:
+        default_mdt_group: '239.1.1.2'
