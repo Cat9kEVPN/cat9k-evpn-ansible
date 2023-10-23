@@ -22,59 +22,35 @@
 
   tasks:
 
-          # Set db file path and load overlay_db
-          - name: Load and process overlay input file
+          - name: Load vars from group_vars/overlay_db.yml
             run_once: true
-            block:
-            - name: set overlay db input file path if not already set
-              when: input_vars_path is not defined
-              set_fact: 
-                input_vars_path: "./"
-
-            - name: Load vars from overlay input file
-              include_vars: 
-                file: "{{ input_vars_path }}group_vars/overlay_db.yml"
-
-            - name: Check for IPv6 config under VRFs
-              set_fact: 
-                ipv6_unicast: 'enable'
-              when: '"ipv6" in item.value.afs and ipv6_unicast is not defined'
-              with_dict: "{{ vrfs }}"
-
-          - name: Load vars from node_vars/<host>.yml input file
             include_vars: 
-              file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
+              file: "./group_vars/overlay_db.yml"
 
-          - name: Read template files
-            when: ipv6_unicast is defined
-            set_fact:
-              overlay_block: "{{ overlay_block }} ! routing block\nipv6 unicast-routing"
+          - name: Load vars from host_vars/node_vars/<hostname>.yml
+            include_vars: 
+              file: "./host_vars/node_vars/{{ inventory_hostname }}.yml"
 
-          - name: Read template files
-            when: inventory_hostname in groups['leaf']
+          - name: Read overlay template files
             set_fact:
-              overlay_block: "{{ overlay_block }} ! {{ leaf_ol_dict[item.key] }} {{ lookup('template', item.key ) }}"
-            with_dict: "{{ leaf_ol_dict }}"
-
-          - name: Read template files - BGP related
-            set_fact:
-              overlay_block: "{{ overlay_block }} ! {{ common_ol_dict[item.key] }} {{ lookup('template', item.key ) }}"
+              overlay_block: "{{ overlay_block }} ! {{ item.value }} {{ lookup('template', item.key) }}"
             with_dict: "{{ common_ol_dict }}"
 
-          - name: Render template files output
+          - name: Read overlay template files specific to leaf
+            when: inventory_hostname in (groups['leaf'] | default([]))
             set_fact:
-              rendered: "{{  overlay_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n\n! ') }}"
+              overlay_block: "{{ overlay_block }} ! {{ item.value }} {{ lookup('template', item.key) }}"
+            with_dict: "{{ leaf_ol_dict }}"
 
           - name: Copy configurations to respective file ( <hostname>-overlay.txt ) under 'preview_files' folder
             copy:
               dest: preview_files/{{inventory_hostname}}-overlay.txt
-              content: "{{ rendered }}"
+              content: "{{ overlay_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n\n! ') }}"
 
-- name: Display output file info
+- name: Display preview file info
   hosts: localhost
   gather_facts: no
-  run_once: True
 
   tasks:
-    - debug:
-        msg: Please refer to <hostname>-overlay.txt in 'preview_files' folder
+          - debug:
+              msg: Please refer to <hostname>-overlay.txt in 'preview_files' folder

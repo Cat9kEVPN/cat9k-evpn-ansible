@@ -1,60 +1,60 @@
 ---
 
-- name: Write DAG delete info to files in host_vars/delete_vars folder
-  import_playbook: playbook_overlay_delete_generate.yml
-
-- name: Automated VXLAN deployment with BGP EVPN L3 underlay w/ Spine
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
   hosts: leaf
   gather_facts: no
-  vars: 
-    update_acc_intf: false
-    block_dict:
+  vars:
+    overlay_dict:
       '../templates/svi_create.j2': 'svi block'
       '../templates/nve_create.j2': 'nve block'
       '../templates/vlan_create.j2': 'vlan block' 
+      '../templates/l2vpn_evpn_evi_create.j2': 'l2vpn evpn evi block'
       '../templates/vrf_definition.j2': 'vrf block'
+      #'../templates/access_interfaces.j2': 'access interfaces block'
+      '../templates/overlay_interfaces.j2': 'overlay interfaces block'
 
   tasks:
 
-          - name: Load variables from group_vars/delete_vars.yml file
+          - name: Load variables from group_vars/delete_vars.yml
             run_once: true
-            include_vars: group_vars/delete_vars.yml
-          
-          - name: Load variables from group_vars/delete_vars.yml file and appending to dag keyword
-            when: l3vni is defined
-            set_fact:
-              dag: "{{ l3vni }}"
+            include_vars:
+              file: group_vars/delete_vars.yml
+              name: to_del
 
-          - name: Get "update_access" value if present in group_vars/delete_vars.yml
-            run_once: true
-            when: update_access is defined
-            set_fact:
-              update_acc_intf: "{{ update_access }}"
+          - name: Run and parse "show run nve"
+            ansible.utils.cli_parse:
+              command: "show run nve"
+              parser:
+                name: ansible.netcommon.pyats
+              set_fact: nve_output
 
-          - name: Check whether host_vars/delete_vars/<hostname>.yml is present
-            local_action: stat path=./host_vars/delete_vars/{{ inventory_hostname }}.yml
-            register: file_state
-            become: no 
+          - name: Run and parse "show run | section ^interface"
+            ansible.utils.cli_parse:
+              command: "show run | section ^interface"
+              parser:
+                name: ansible.netcommon.pyats
+              set_fact: interface_output
 
-          - name: Executing tasks if host_vars/delete_vars/<hostname>.yml is present
-            when: file_state.stat.exists
+          - name: Process overlay data
+            overlay_delete_preprocess:
+              device_vars: "{{ {'run_nve': nve_output, 'intf_sec': interface_output | default([])} }}"
+              to_del: "{{ to_del }}"
+            register: module_output
+
+          - name: Include vars and read templates
+            when: module_output != {}
             block:
-            - name: Load variables from files under host_vars/delete_vars folder
-              include_vars: host_vars/delete_vars/{{inventory_hostname}}.yml
+            - name: Include variables
+              set_fact:
+                "{{ item.key }}": "{{ item.value }}"
+              with_dict: "{{ module_output }}"
 
             - name: Applying configurations
               cli_config:
                 config: "{{ lookup('template', item.key) }}"
                 diff_match: none
               register: result
-              with_dict: "{{ block_dict }}"
-               
-            - name: Applying configurations on access interfaces
-              when: update_acc_intf == true
-              cli_config:
-                config: "{{ lookup('template', '../templates/access_interfaces.j2' ) }}"
-                diff_match: none
-              register: result
+              with_dict: "{{ overlay_dict }}"
 
             - name: Pause for 30 seconds for convergence  
               wait_for:

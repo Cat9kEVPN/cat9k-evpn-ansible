@@ -1,6 +1,6 @@
 ---
 
-- name: Automated VXLAN deployment with BGP EVPN L3 underlay w/ Spine
+- name: Automated VXLAN deployment with BGP EVPN L2/L3 underlay w/ Spine
   hosts: all
   gather_facts: no
   vars:
@@ -9,48 +9,40 @@
       '../templates/hostname.j2': 'hostname block'
       '../templates/global_routing.j2': 'global routing block'
       '../templates/underlay_interfaces.j2': 'underlay interface block'
-      '../templates/ospf_interfaces.j2': 'ospf interface block'
-      '../templates/pim_interfaces.j2': 'pim interface block'
-      '../templates/pim_rp.j2': 'pim rp block'
+      '../templates/ospf_interfaces.j2': 'OSPF interface block'
+      '../templates/pim_interfaces.j2': 'PIM interface block'
+      '../templates/pim_rp.j2': 'PIM RP block'
+      '../templates/isis_underlay.j2': 'ISIS underlay block'
+
+    underlay_spine_dict:
+      '../templates/msdp_peering.j2': 'MSDP peering block'
 
   tasks:
-          # Set db file path and load underlay vars
-          - name: Load and process underlay input file
-            run_once: true
-            block:
-            - name: set underlay vars input file path if not already set
-              when: input_vars_path is not defined
-              set_fact: 
-                input_vars_path: "./"
 
-          - name: Load vars from node_vars/<host>.yml input file
+          - name: Load vars from host_vars/node_vars/<hostname>.yml
             include_vars: 
-              file: "{{ input_vars_path }}host_vars/node_vars/{{ inventory_hostname }}.yml"
-              
-          - name: Read template files
+              file: "./host_vars/node_vars/{{ inventory_hostname }}.yml"
+
+          - name: Read underlay template files
             set_fact:
-              underlay_block: "{{ underlay_block }} ! {{ underlay_dict[item.key] }} {{ lookup('template', item.key ) }}"
+              underlay_block: "{{ underlay_block }} ! {{ item.value }} {{ lookup('template', item.key ) }}"
             with_dict: "{{ underlay_dict }}"
 
-          - name: Read MSDP peering template file
-            when: inventory_hostname in groups['spine']
+          - name: Read underlay template files specific to spine
+            when: inventory_hostname in (groups['spine'] | default([]))
             set_fact:
-              underlay_block: "{{ underlay_block }} ! MSDP peering block {{ lookup('template', '../templates/msdp_peering.j2' ) }}"
-
-          - name: Render template files output
-            set_fact:
-              rendered: "{{ underlay_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n! ') }}"
+              underlay_block: "{{ underlay_block }} ! {{ item.value }} {{ lookup('template', item.key ) }}"
+            with_dict: "{{ underlay_spine_dict }}"
 
           - name: Copy configurations to the respective file ( <hostname>-underlay.txt ) under 'preview_files' folder
             copy:
               dest: preview_files/{{inventory_hostname}}-underlay.txt
-              content: "{{ rendered }}"
+              content: "{{ underlay_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') | regex_replace('! ','\n\n! ') }}"
 
-- name: Display output file info
+- name: Display preview files info
   hosts: localhost
   gather_facts: no
-  run_once: True
 
   tasks:
-    - debug:
-        msg: Please refer to <hostname>-underlay.txt in 'preview_files' folder
+          - debug:
+              msg: Please refer to <hostname>-underlay.txt in 'preview_files' folder

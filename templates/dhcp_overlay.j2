@@ -1,147 +1,118 @@
 {#
-    This module configure/deconfigure global per vrf and per interface DHCP configuration 
-    
-    dhcp:
-        dhcp_options:
-          option_82_link_selection_standard: standard     # ip dhcp compatibility suboption link-selection standard (sub-option 150 -> 5)
-          option_82_server_id_override: standard          # ip dhcp compatibility suboption server-override standard (sub-option 152 -> 11)
-        relay_src_intf: Loopback0                           # dhcp relay src intf global config
+This module configure/deconfigure global per vrf and per interface DHCP configuration 
 
-        vrfs:    
-            all:
-                helper_vrf: global
-                helper_address: 10.1.1.1
-    #}
-    
-    #jinja2: lstrip_blocks: "True", trim_blocks: "True"
-    
-    {% if dhcp is defined %}
-        
-        {# set the main action - add/delete for DHCP section#}
-        {% set action = action | default ('add') %} 
-        {% if action == 'add' %}
-            {% set prefix = '' %}
-        {% elif action == 'delete' %}
-            {% set prefix = 'no' %}
-        {% endif %}
-    
-        {# processing global parameters #}
+dhcp_options:
+  option_82_link_selection_standard: standard     # ip dhcp compatibility suboption link-selection standard (sub-option 150 -> 5)
+  option_82_server_id_override: standard          # ip dhcp compatibility suboption server-override standard (sub-option 152 -> 11)
+vrfs:    
+    all:
+        helper_address: 
+        - 10.1.1.1
+        helper_vrf: global
+#}
 
-        {# option_82 #}
-        {{ prefix }} ip dhcp relay information option
-        {# option_82_vrf 82[151] #}
-        {{ prefix }} ip dhcp relay information option vpn
-        
-        {% if dhcp.dhcp_options is defined %}
-            {% for option in dhcp.dhcp_options %}
-                {# option_82_link_selection_standart 82[150] -> 82[5] #}
-                {% if option == 'option_82_link_selection_standard' and dhcp.dhcp_options[option] == 'standard' %}
-                    {{ prefix }} ip dhcp compatibility suboption link-selection standard
-                {# option_82_server_id_override 82[152] -> 82[11] #}
-                {% elif option == 'option_82_server_id_override' and dhcp.dhcp_options[option] == 'standard' %}
-                    {{ prefix }} ip dhcp compatibility suboption server-override standard
+#jinja2: lstrip_blocks: "True", trim_blocks: "True"
+
+
+{% set action = action | default ('add')%}
+{% if action == 'add' %}
+    {# processing global parameters #}
+    {# option_82 #}
+    ip dhcp relay information option
+    {# option_82_vrf 82[151] #}
+    ip dhcp relay information option vpn
+    {% if dhcp_options is defined %}
+        {% for option in dhcp_options %}
+            {# option_82_link_selection_standart 82[150] -> 82[5] #}
+            {% if option == 'option_82_link_selection_standard' and dhcp_options[option] == 'standard' %}
+                ip dhcp compatibility suboption link-selection standard
+            {# option_82_server_id_override 82[152] -> 82[11] #}
+            {% elif option == 'option_82_server_id_override' and dhcp_options[option] == 'standard' %}
+                ip dhcp compatibility suboption server-override standard
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    {# per vrf per interface configuration #}
+    {% if vrfs is defined and vrf_list != [] %}
+        {% for vrf in vrfs %}
+            {% if vrf == 'all' %}
+                {% set vrfs_list = all_vrfs %}
+            {% else %}
+                {% set vrfs_list = [vrf] %}
+            {% endif %}
+            {% for vrf_in in vrfs_list %}
+                {% if svis is defined %}
+                    {% for svi in svis[vrf_in] %}
+                        !
+                        {# default enabling/disabling snooping #}
+                        ip dhcp snooping vlan {{svi}}
+
+                        {# enter interface configuration mode #}
+                        interface Vlan {{svi}}
+
+                        {# helper vrf #}
+                        {% if vrfs[vrf].helper_vrf is defined %}
+                            {% set helper_vrf = vrfs[vrf].helper_vrf %}
+                        {% else %}
+                            {% set helper_vrf = vrf_in %}
+                        {% endif %}
+
+                        {# helper address #}
+                        {% for addr in vrfs[vrf].helper_address %}
+                            {% if helper_vrf == 'global' %}
+                                ip helper-address global {{ addr }}
+                            {% elif helper_vrf == vrf_in %}
+                                ip helper-address {{ addr }}
+                            {% else %}
+                                ip helper-address vrf {{ helper_vrf }} {{ addr }}
+                            {% endif %}
+                        {% endfor %}
+
+                        {# DHCP relay source interface#}
+                        {% if vrfs[vrf].relay_src_intf is defined %}
+                            ip dhcp relay source-interface {{ vrfs[vrf].relay_src_intf }}
+                        {% else %}
+                            ip dhcp relay source-interface {{ ovrly_intf_output[helper_vrf] }}
+                        {% endif %}
+                    {% endfor %}
                 {% endif %}
             {% endfor %}
-        {% endif %}
-    
-        {# per vrf per interface configuration#}
-        {% if dhcp.vrfs is defined %}
-            {% for vrf in dhcp.vrfs %}
-                {% if vrf == 'all' %}
-                    {% for vrf in all_vrfs %} 
-                        {% if dhcp.vrfs[vrf] is not defined %}
-                            {% if cli_vrf is defined and cli_vrf != vrf %}
-                                {# continue #}
-                            {% else %}
-                                {% for svi in svis[vrf] %}
+        {% endfor %}
+    {% endif %}  
 
-                                    {# default enabling/disabling snooping #}
-                                    {% if dhcp.vrfs[vrf] is not defined %}
-                                        !
-                                        {{ prefix }} ip dhcp snooping vlan {{svi}}
-                                    {% endif %}
-
-                                    {# enter interface configuration mode #}
-                                    interface Vlan {{svi}}
-
-                                    {# helper address #}
-                                    {% for addr in dhcp.vrfs.all.helper_address %}
-                                        {% if dhcp.vrfs.all.helper_vrf is defined %}
-                                            {% if dhcp.vrfs.all.helper_vrf == 'global' %}
-                                                {{ prefix }} ip helper-address global {{ addr }}
-                                            {% else %}
-                                                {% if dhcp.vrfs.all.helper_vrf != vrf %}
-                                                    {{ prefix }} ip helper-address vrf {{ dhcp.vrfs.all.helper_vrf }} {{ addr }}
-                                                {% else %}
-                                                    {{ prefix }} ip helper-address {{ addr }}
-                                                {% endif %}
-                                            {% endif %}
-                                        {% else %}
-                                            {{ prefix }} ip helper-address {{ addr }}
-                                        {% endif %}
-                                    {% endfor %}
-
-                                    {# DHCP relay source interface#}
-                                    {% if dhcp.vrfs.all.helper_vrf is defined %}
-                                        {% if dhcp.vrfs.all.relay_src_intf is defined %}
-                                            {{ prefix }} ip dhcp relay source-interface {{ dhcp.vrfs.all.relay_src_intf }}
-                                        {% else %}
-                                            {% if dhcp.vrfs.all.helper_vrf != 'global' %}
-                                                {{ prefix }} ip dhcp relay source-interface {{ ovrly_intf_output.overlay_intf[dhcp.vrfs.all.helper_vrf] }}
-                                            {% endif %}
-                                        {% endif %}
-                                    {% else %}
-                                        {{ prefix }}  ip dhcp relay source-interface {{ ovrly_intf_output.overlay_intf[vrf] }}
-                                    {% endif %}
-                                {% endfor %}   
-                            {% endif %}
-                        {% endif %}
-                    {% endfor %} 
-                {% else %}
-                    {% if cli_vrf is defined and cli_vrf != vrf %}
-                    {# continue #}
-                    {% else %}
-                        {% for svi in svis[vrf] %}
-
-                            {# default enabling/disabling snooping #}
-                            !
-                            {{ prefix }} ip dhcp snooping vlan {{svi}}
-
-                            {# enter interface configuration mode #}
-                            interface Vlan {{svi}}
-
-                            {# helper address #}
-                            {% for addr in dhcp.vrfs[vrf].helper_address %}
-                                {% if dhcp.vrfs[vrf].helper_vrf is defined %}
-                                    {% if dhcp.vrfs[vrf].helper_vrf == 'global' %}
-                                        {{ prefix }} ip helper-address global {{ addr }}
-                                    {% else %}
-                                        {% if dhcp.vrfs[vrf].helper_vrf != vrf %}
-                                            {{ prefix }} ip helper-address vrf {{ dhcp.vrfs[vrf].helper_vrf }} {{ addr }}
-                                        {% else %}
-                                            {{ prefix }} ip helper-address {{ addr }}
-                                        {% endif %}
-                                    {% endif %}
-                                {% else %}
-                                    {{ prefix }} ip helper-address {{ addr }}
-                                {% endif %}
-                            {% endfor %}
-
-                            {# DHCP relay source interface#}
-                            {% if dhcp.vrfs[vrf].helper_vrf is defined %}
-                                {% if dhcp.vrfs[vrf].relay_src_intf is defined %}
-                                    {{ prefix }} ip dhcp relay source-interface {{ dhcp.vrfs[vrf].relay_src_intf }}
-                                {% else %}
-                                    {% if dhcp.vrfs[vrf].helper_vrf != 'global' %}
-                                        {{ prefix }} ip dhcp relay source-interface {{ ovrly_intf_output.overlay_intf[dhcp.vrfs[vrf].helper_vrf] }}
-                                    {% endif %}
-                                {% endif %}
-                            {% else %}
-                                {{ prefix }} ip dhcp relay source-interface {{ ovrly_intf_output.overlay_intf[vrf] }}
-                            {% endif %}
-                        {% endfor %}   
-                    {% endif %}            
-                {% endif %} 
-            {% endfor %}
-        {% endif %}    
+{% elif action == 'delete' %}
+    {% if dhcp_options is defined %}
+        {% for option in dhcp_options %}
+            no {{ option }}
+        {% endfor %}
     {% endif %}
+    {% if svis is defined %}
+        {% for svi in svis %}
+            {# disabling snooping #}
+            !
+            no ip dhcp snooping vlan {{svi}}
+
+            {# enter interface configuration mode #}
+            interface Vlan {{svi}}
+
+            {# helper address #}
+            {% if svis[svi].helper_address is defined %}
+                {% for addr in svis[svi].helper_address %}
+                    {% set helper_address_dict = svis[svi].helper_address[addr] %}
+                    {% if  helper_address_dict.reachable_over is defined %}
+                      no ip helper-address {{ helper_address_dict.reachable_over }} {{ helper_address_dict.ip_address }}
+                    {% else %}
+                      no ip helper-address {{ helper_address_dict.ip_address }}
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+
+            {# DHCP relay source interface#}
+            {% if svis[svi].relay_src_intf is defined %}
+                no ip dhcp relay source-interface {{ svis[svi].relay_src_intf }}
+            {% endif %}
+            
+        {%endfor%}
+    {% endif %}
+{% endif %}
