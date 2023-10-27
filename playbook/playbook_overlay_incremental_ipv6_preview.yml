@@ -5,8 +5,8 @@
   vars:
     playbook_mode: inc
     ipv6_block : ''
-    ipv6_dict:
-      '../templates/ipv6_incremental.j2': 'ipv6 block'
+    template_list:
+      - '../templates/ipv6_incremental.j2'
 
   tasks:
 
@@ -54,8 +54,8 @@
             
             - name: Read template files
               set_fact:
-                ipv6_block: "{{ ipv6_block }} ! {{ item.value }} {{ lookup('template', item.key ) }}"
-              with_dict: "{{ ipv6_dict }}"
+                ipv6_block: "{{ ipv6_block }}{{ lookup('template', item ) }}"
+              loop: "{{ template_list }}"
 
           - name: Copy configurations to respective file (<hostname>-ipv6-{{ playbook_mode }}.txt) under 'preview_files' folder
             copy:

@@ -8,6 +8,7 @@ Three types of actions for trunk are supported:
     
 #jinja2: lstrip_blocks: "True", trim_blocks: "True"
 {% if access_interfaces is defined %}
+    ! Access interface block
     {# for each interface getting list of vlans and action type #}
     {% if access_interfaces.trunks is defined %}
         {% for intf, params in access_interfaces.trunks | dictsort -%}

@@ -9,7 +9,7 @@ DOCUMENTATION = r'''
 ---
 module: dhcp_preprocess
 
-short_description: This module contains functions used in preprocessing, for DHCP related playbooks
+short_description: This module contains functions used in preprocessing group_vars/dhcp_db.yml, for DHCP delete related playbooks
 '''
 
 def vrfs_with_no_src(module, vrfs_dict):
@@ -53,7 +53,8 @@ def assign_src_intf(module, ovrly_intf_info):
                     break            
             if vrf not in ret_dict: 
                 module.fail_json(
-                    "Relay source interface for " + vrf +" is not defined and cannot be found in hostvars/<node>.yml"
+                    """Relay source interface for " + vrf +" is not defined 
+                    and cannot be found in hostvars/<node>.yml"""
                 )
 
     return ret_dict
@@ -61,20 +62,18 @@ def assign_src_intf(module, ovrly_intf_info):
 def run_module():
     module = AnsibleModule(
         argument_spec=dict(
-            dhcp_info=dict(required=False,type='dict'),
-            ovrly_intf_info=dict(required=False,type='dict')
+            get_no_src_vrf=dict(required=False,type='dict'),
+            get_src_intf=dict(required=False,type='dict')
     ),
         supports_check_mode=True
     )   
 
     result = {}
-    if module.params['dhcp_info']:
-        dhcp_info = module.params['dhcp_info']
-        result = vrfs_with_no_src(module, dhcp_info)
+    if module.params['get_no_src_vrf']:
+        result = vrfs_with_no_src(module, module.params['get_no_src_vrf'])
 
-    if module.params['ovrly_intf_info']:
-        ovrly_intf_info = module.params['ovrly_intf_info']
-        result = assign_src_intf(module, ovrly_intf_info)  
+    if module.params['get_src_intf']:
+        result = assign_src_intf(module, module.params['get_src_intf'])  
 
     module.exit_json(**result)
 

@@ -29,7 +29,7 @@
 # ______________________________________________
 
 
- vlans:
+vlans:
   - 104
 
- update_access_intf: true
+update_access_intf: true

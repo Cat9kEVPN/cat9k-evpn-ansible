@@ -1,7 +1,7 @@
 # This is the input file for playbook_trm_overlay_preview.yml, playbook_trm_overlay_commit.yml
 #
 #
-#   vrfs:
+#   dag:
 #     blue:
 #       register_source: Loopback1
 #   
@@ -22,7 +22,7 @@
 # By default, VXLAN with BGP auto-discovery, default SSM are enabled
 #
 #
-#   vrfs:
+#   dag:
 #     blue:                                                 <--------- Applies config to blue DAG
 #       register_source: loopback1                          <--------- configs unique IP for the loopback
 #
@@ -39,7 +39,7 @@
 #
 # By default, VXLAN with BGP auto-discovery is enabled
 #
-#   vrfs:   
+#   dag:   
 #     blue:
 #       register_source: loopback1
 #       ipv6_register_source: loopback1                     <--------- configs unique IP for the loopback for IPv6; if this key is missing, "register_source" is used for IPv6
@@ -66,7 +66,7 @@
 #
 # By default, VXLAN with BGP auto-discovery, default SSM are enabled
 #
-#   vrfs:   
+#   dag:   
 #     blue:
 #       ipv6_register_source: loopback1                     <--------- configs unique IP for the loopback for IPv6
 #
@@ -83,7 +83,7 @@
 # Example 4) TRM v4 with anycast RP fabric for DAG 'blue'
 #            TRM v4 and v6 with internal RP fabric for DAG 'green'
 #
-#   vrfs:
+#   dag:
 #     blue:
 #       register_source: Loopback0
 #   
@@ -123,7 +123,7 @@
 # ______________________________________________
 # ______________________________________________
 
-vrfs:
+dag:
   blue:                                                 
     register_source: loopback12
                          

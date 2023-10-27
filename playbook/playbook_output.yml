@@ -9,57 +9,33 @@
 
   tasks:  
 
-          - name: construct show commands from host var file for leafs
-            when: inventory_hostname in groups['leaf']
+          - name: Construct show commands from host var file for leafs
+            when: inventory_hostname in groups['leaf'] | default([])
             copy:
-                dest: "output/{{inventory_hostname}}-show_commands.txt" 
-                content: "{{ lookup('template', '../templates/leaf_show_command.j2') }}"
+              dest: "output/{{inventory_hostname}}-show_commands.txt" 
+              content: "{{ lookup('template', '../templates/leaf_show_command.j2') }}"
 
-          - name: cat show commands file of leaf
-            when: inventory_hostname in groups['leaf']
+          - name: Construct show commands from host var file for Spines
+            when: inventory_hostname in groups['spine'] | default([])
+            copy:
+              dest: "output/{{inventory_hostname}}-show_commands.txt" 
+              content: "{{ lookup('template', '../templates/spine_show_command.j2') }}"
+
+          - name: Cat show commands file
             shell: cat "output/{{inventory_hostname}}-show_commands.txt"
-            register: leaf_command_buf
-            
-          - name: run show command on Leafs
-            when: inventory_hostname in groups['leaf']
+            register: command_buf
+
+          - name: Run show command
             ios_command:
-               commands:
-                   "{{ leaf_command_buf.stdout_lines }}" 
+              commands:
+                "{{ command_buf.stdout_lines }}" 
+            register: dev_output
 
-            register: leaf_output
-
-          - name: save outputs to output file for Leafs
-            when: inventory_hostname in groups['leaf']
+          - name: Save outputs to output file
             copy:
-                dest: "output/{{inventory_hostname}}-show_output.txt" 
-                content: |
-                  "{{leaf_command_buf.stdout_lines | zip(leaf_output.stdout_lines) | to_nice_yaml}}"   
-
-          - name: construct show commands from host var file for Spines
-            when: inventory_hostname in groups['spine']
-            copy:
-                dest: "output/{{inventory_hostname}}-show_commands.txt" 
-                content: "{{ lookup('template', '../templates/spine_show_command.j2') }}"
-
-          - name: cat show commands file of Spines
-            when: inventory_hostname in groups['spine']
-            shell: cat "output/{{inventory_hostname}}-show_commands.txt"
-            register: spine_command_buf
-            
-          - name: run show command on Spines
-            when: inventory_hostname in groups['spine']
-            ios_command:
-               commands:
-                   "{{ spine_command_buf.stdout_lines }}" 
-
-            register: spine_output
-
-          - name: save outputs to output file for Spines
-            when: inventory_hostname in groups['spine']
-            copy:
-                dest: "output/{{inventory_hostname}}-show_output.txt" 
-                content: |
-                  "{{spine_command_buf.stdout_lines | zip(spine_output.stdout_lines) | to_nice_yaml}}"   
+              dest: "output/{{inventory_hostname}}-show_output.txt" 
+              content: |
+                "{{ command_buf.stdout_lines | zip(dev_output.stdout_lines) | to_nice_yaml}}" 
 
           - name: Display output file info
             run_once: true

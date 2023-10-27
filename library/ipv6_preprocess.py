@@ -9,8 +9,7 @@ DOCUMENTATION = r'''
 ---
 module: ipv6_preprocess_yml
 
-short_description: This module is used for getting the extra values by comparing all.yml and show run nve parser  
-                   configurations and return the modified dictionary
+short_description: This module is used for preprocessing group_vars/ipv6_create_vars.yml(/ipv6_delete_vars.yml) for IPv6 related playbooks
 '''
 
 def compare(userinput, parsed_output, overlay_db, leaf_data, playbook_mode):

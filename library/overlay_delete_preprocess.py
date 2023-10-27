@@ -11,9 +11,7 @@ DOCUMENTATION = r'''
 ---
 module: overlay_delete_preprocess
 
-short_description: Get the DAG related informations from 
-                   'show run nve', 'show run | section ^interface' parsed CLI output
-                   and add them to the dictionary
+short_description: This module contains functions used in preprocessing group_vars/delete_vars.yml, for overlay delete playbook
 '''
 
 import json

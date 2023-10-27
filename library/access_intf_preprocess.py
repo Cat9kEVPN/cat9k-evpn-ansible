@@ -7,7 +7,7 @@ DOCUMENTATION = r'''
 ---
 module: access_intf_preprocess
 
-short_description: This module contains functions used in preprocessing trm_overlay_db.yml, for TRM related playbooks
+short_description: This module contains functions used in preprocessing host_vars/access_intf/<host>.yml, for access interface related playbooks
 '''
 
 def get_interfaces(access_interfaces, vlan_overlay_db):

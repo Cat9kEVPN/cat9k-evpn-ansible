@@ -3,6 +3,7 @@
 - name: Overlay "group_vars/overlay_db.yml" validation 
   hosts: localhost
   gather_facts: no
+
   tasks: 
 
           - name: Load vars from group_vars/overlay_db.yml
@@ -10,7 +11,7 @@
               file: "./group_vars/overlay_db.yml"
               name: overlay_data
  
-          - name: run the "group_vars/overlay_db.yml" validation module
+          - name: Run the "group_vars/overlay_db.yml" validation module
             overlay_yml_validation: 
               overlay_data: "{{ overlay_data }}"
               #verbose: True (displays complete output if validation is successful else displays the errors)

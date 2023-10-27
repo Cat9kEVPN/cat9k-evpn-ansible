@@ -66,7 +66,11 @@ def collect_rp_loopback(vrf_trm_info):
         for leaf_dev in rp_device:
             device_rp_dict.setdefault(leaf_dev, []).append(vrf_rp['rp_loopback'])
 
-    return {'rp_per_device': device_rp_dict, 'rp_interfaces': rp_lpbck_dict, 'vrf_afs': list(vrf_mvpn.keys())}
+    return {
+        'rp_loopbacks': device_rp_dict, 
+        'rp_interfaces': rp_lpbck_dict, 
+        'vrf_afs': list(vrf_mvpn.keys())
+    }
 
 def run_module():
     module = AnsibleModule(
@@ -76,8 +80,6 @@ def run_module():
     ),
         supports_check_mode=True
     )   
-
-    result = {}
 
     if module.params['vrf_trm_info']:
         result = collect_rp_loopback(module.params['vrf_trm_info'])

@@ -10,33 +10,25 @@ This module is configuring MVPN AF for IPv4 and activates neighbors under AF
 {% endif %}
 
 {# Entering bgp process configuration #}
-
-{% if action == 'delete' %}
-    {% if bgp is defined %}
-        {% if bgp.mvpn_afs is defined and bgp.mvpn_afs != [] %}
-            !
-            router bgp {{ bgp.as_number }}
-            {% for af in bgp.mvpn_afs %}
-                !
-                no address-family {{ af }}
-            {% endfor %}
-        {% endif %}
-    {% endif %}
-
-{% else %}
+{% if bgp.mvpn_afs is defined and bgp.mvpn_afs != [] %}
+    ! BGP MVPN block
     !
     router bgp {{ bgp.as_number }}
-    {% for mvpn in mvpns %}
+    {% for mvpn in bgp.mvpn_afs %}
         !
-        address-family {{ mvpn }} mvpn
-        {% for neighbor in bgp.mvpn_neighbors %}
-            {{ prefix }} neighbor {{neighbor }} activate
-            {# configuration of RR-client if needed #}
-            {% if bgp.rrc is defined and bgp.rrc == 'true' %}
-                {{ prefix }} neighbor {{ neighbor }} inherit peer-policy SPINE-EVPN-PEER-POLICY
-            {% else %}
-                {{ prefix }} neighbor {{ neighbor }} inherit peer-policy LEAF-EVPN-PEER-POLICY
-            {% endif %}
-        {% endfor %}
+        {% if action == 'delete' %}
+            no address-family {{ mvpn }}
+        {% else %}
+            address-family {{ mvpn }} mvpn
+            {% for neighbor in bgp.mvpn_neighbors %}
+                {{ prefix }} neighbor {{neighbor }} activate
+                {# configuration of RR-client if needed #}
+                {% if bgp.rrc is defined and bgp.rrc == 'true' %}
+                    {{ prefix }} neighbor {{ neighbor }} inherit peer-policy SPINE-EVPN-PEER-POLICY
+                {% else %}
+                    {{ prefix }} neighbor {{ neighbor }} inherit peer-policy LEAF-EVPN-PEER-POLICY
+                {% endif %}
+            {% endfor %}
+        {% endif %}
     {% endfor %}
 {% endif %}

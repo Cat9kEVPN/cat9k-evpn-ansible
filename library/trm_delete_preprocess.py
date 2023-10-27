@@ -7,7 +7,7 @@ DOCUMENTATION = r'''
 ---
 module: trm_delete_preprocess
 
-short_description: This module contains functions used in preprocessing trm_overlay_db.yml, for TRM related playbooks
+short_description: This module contains functions used in preprocessing trm_overlay_db.yml, for TRM delete related playbooks
 '''
 import re as re
 

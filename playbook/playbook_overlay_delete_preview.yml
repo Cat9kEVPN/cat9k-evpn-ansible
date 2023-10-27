@@ -4,14 +4,14 @@
   gather_facts: no
   vars:
     overlay_block: ''
-    overlay_dict:
-      '../templates/svi_create.j2': 'svi block'
-      '../templates/nve_create.j2': 'nve block'
-      '../templates/vlan_create.j2': 'vlan block' 
-      '../templates/l2vpn_evpn_evi_create.j2': 'l2vpn evpn evi block'
-      '../templates/vrf_definition.j2': 'vrf block'
-      '../templates/access_interfaces.j2': 'access interfaces block'
-      '../templates/overlay_interfaces.j2': 'overlay interfaces block'
+    template_list:
+      - '../templates/svi_create.j2'
+      - '../templates/nve_create.j2'
+      - '../templates/vlan_create.j2'
+      - '../templates/l2vpn_evpn_evi_create.j2'
+      - '../templates/vrf_definition.j2'
+      - '../templates/access_interfaces.j2'
+      - '../templates/overlay_interfaces.j2'
 
   tasks:
 
@@ -51,8 +51,8 @@
 
             - name: Read template files
               set_fact:
-                overlay_block: "{{ overlay_block }} ! {{ item.value }} {{ lookup('template', item.key) }}"
-              with_dict: "{{ overlay_dict }}"
+                overlay_block: "{{ overlay_block }}{{ lookup('template', item) }}"
+              loop: "{{ template_list }}"
 
           - name: Copy configurations to the respective file (<hostname>-delete.txt) under 'preview_files' folder
             copy:

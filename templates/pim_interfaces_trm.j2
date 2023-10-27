@@ -12,17 +12,10 @@ This module enable/disable PIM on the interfaces for incremetal TRM add/delete
 {% endif %}
 
 {% if svis is defined %}
+    ! PIM interface block
     {% for svi in svis %}
         !
         interface Vlan{{svi}}
-            {{ prefix }} ip pim sparse-mode
-    {% endfor %}
-{% endif %}
-
-{% if rp_per_device is defined %}
-    {% for rp_lpbk in rp_per_device %}
-        !
-        interface {{rp_lpbk}}
             {{ prefix }} ip pim sparse-mode
     {% endfor %}
 {% endif %}

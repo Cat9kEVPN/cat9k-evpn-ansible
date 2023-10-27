@@ -4,32 +4,31 @@ This module configures TRM RP loopback interfaces
 
 #jinja2: lstrip_blocks: "True", trim_blocks: "True"
 
-{% if action is defined and action == 'delete' %}
-    {% if rp_loopbacks is defined %}
+{% if rp_loopbacks is defined %}
+    ! RP interface block
+    {% if action is defined and action == 'delete' %}
         {% for intf in rp_loopbacks %}
             !
             no interface {{ intf }}
         {% endfor %}
+    {% else %}
+        {% for intf in rp_loopbacks %}
+            !
+            interface  {{ intf }}
+            description RP loopback for VRF {{ rp_interfaces_data[intf].vrf }}
+            vrf forwarding {{ rp_interfaces_data[intf].vrf }}
+
+            {% if rp_interfaces_data[intf].ipv4 is defined %}
+                ip address {{ rp_interfaces_data[intf].ipv4 }}
+            {% endif %}
+
+            {% if rp_interfaces_data[intf].ipv6 is defined %}
+                ipv6 address {{ rp_interfaces_data[intf].ipv6 }}
+                ipv6 enable
+            {% endif %}
+
+            ip pim sparse-mode
+
+        {% endfor %}
     {% endif %}
-
-{% else %}
-    {% for intf in rp_per_device %}
-        !
-        interface  {{ intf }}
-        description RP loopback for VRF {{ rp_interfaces[intf].vrf }}
-        vrf forwarding {{ rp_interfaces[intf].vrf }}
-
-        {% if rp_interfaces[intf].ipv4 is defined %}
-            ip address {{ rp_interfaces[intf].ipv4 }}
-        {% endif %}
-
-        {% if rp_interfaces[intf].ipv6 is defined %}
-            ipv6 address {{ rp_interfaces[intf].ipv6 }}
-            ipv6 enable
-        {% endif %}
-
-        ip pim sparse-mode
-
-    {% endfor %}
 {% endif %}
-

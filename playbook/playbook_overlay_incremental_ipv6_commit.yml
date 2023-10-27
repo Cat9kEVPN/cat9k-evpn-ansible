@@ -4,8 +4,8 @@
   gather_facts: no
   vars:
     playbook_mode: inc
-    ipv6_dict:
-      '../templates/ipv6_incremental.j2': 'ipv6 block'
+    template_list:
+      - '../templates/ipv6_incremental.j2'
 
   tasks:
 
@@ -53,10 +53,10 @@
 
             - name: Configure IPv6
               cli_config:
-                config: " {{ lookup('template', item.key) }} "
+                config: " {{ lookup('template', item) }} "
                 diff_match: none 
               register: result
-              with_dict: "{{ ipv6_dict }}"
+              loop: "{{ template_list }}"
             
           - name: Pause for 20 seconds for convergence  
             wait_for:

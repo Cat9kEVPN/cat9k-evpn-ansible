@@ -9,8 +9,7 @@ DOCUMENTATION = r'''
 ---
 module: overlay_inc_preprocess
 
-short_description: This module is used for getting the extra vs  by comparing all.yml and show run nve parser  
-                   configurations and return the modified dictionary
+short_description: This module contains functions used in preprocessing group_vars/create_vars.yml, for overlay incremental playbook
 '''
 
 def compare(create_vars, overlay_db_vars, hostvars_vars, parsed_output):

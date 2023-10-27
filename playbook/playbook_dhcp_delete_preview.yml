@@ -1,0 +1,60 @@
+---
+
+- name: Disable DHCP for EVPN overlay
+  hosts: leaf
+  gather_facts: no
+  vars:
+    action: 'delete'
+    dhcp_block: ''
+    template_list:
+      - '../templates/dhcp_overlay.j2'
+
+  tasks:
+
+            - name: Load vars from dhcp_delete_vars.yml
+              run_once: true
+              include_vars: 
+                file: "./group_vars/dhcp_delete_vars.yml"
+                name: dhcp_delete_vars
+
+            - name: Run and parse "show run nve"
+              ansible.utils.cli_parse:
+                command: "show run nve"
+                parser:
+                  name: ansible.netcommon.pyats
+                set_fact: overlay_dict
+
+            - name: Collect "show run | sec dhcp"
+              cli_command:
+                command: show run | sec dhcp
+              register: dhcp_output
+
+            - name: Process DHCP data
+              dhcp_del_preprocess: "{{ {
+                  'overlay_dict': overlay_dict,
+                  'to_del': dhcp_delete_vars.dag,
+                  'header_output': dhcp_output.stdout_lines } }}"
+              register: dhcp_module_output
+
+            - name: Include vars from dhcp output
+              set_fact:
+                "{{ item.key }}": "{{ item.value }}"
+              with_dict: "{{ dhcp_module_output }}"
+
+            - name: Read DHCP configuration template
+              set_fact:
+                dhcp_block: "{{ dhcp_block }}{{ lookup('template', item ) }}"
+              loop: "{{ template_list }}"
+
+            - name: Copy configurations to respective file (<hostname>-dhcp-del.txt) under 'preview_files' folder
+              copy:
+                dest: preview_files/{{inventory_hostname}}-dhcp-del.txt
+                content: "{{ dhcp_block | regex_replace('#jinja2: lstrip_blocks: \"True\", trim_blocks: \"True\"', '') | regex_replace('\\n(\\s+)','\n') }}"
+
+- name: Display output info
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+            - debug:
+                msg: Please refer to <hostname>-dhcp-del.txt in 'preview_files' folder

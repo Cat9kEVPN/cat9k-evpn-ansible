@@ -4,14 +4,14 @@
   hosts: leaf
   gather_facts: no
   vars:
-    overlay_dict:
-      '../templates/svi_create.j2': 'svi block'
-      '../templates/nve_create.j2': 'nve block'
-      '../templates/vlan_create.j2': 'vlan block' 
-      '../templates/l2vpn_evpn_evi_create.j2': 'l2vpn evpn evi block'
-      '../templates/vrf_definition.j2': 'vrf block'
-      '../templates/access_interfaces.j2': 'access interfaces block'
-      '../templates/overlay_interfaces.j2': 'overlay interfaces block'
+    template_list:
+      - '../templates/svi_create.j2'
+      - '../templates/nve_create.j2'
+      - '../templates/vlan_create.j2'
+      - '../templates/l2vpn_evpn_evi_create.j2'
+      - '../templates/vrf_definition.j2'
+      - '../templates/access_interfaces.j2'
+      - '../templates/overlay_interfaces.j2'
 
   tasks:
 
@@ -51,10 +51,10 @@
 
             - name: Configure overlay
               cli_config:
-                config: "{{ lookup('template', item.key) }}"
+                config: "{{ lookup('template', item) }}"
                 diff_match: none
               register: result
-              with_dict: "{{ overlay_dict }}"
+              loop: "{{ template_list }}"
 
             - name: Pause for 30 seconds for convergence  
               wait_for:

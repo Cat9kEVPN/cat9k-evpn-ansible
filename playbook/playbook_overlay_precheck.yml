@@ -1,6 +1,6 @@
 ---
 
-- name: Check for underlay loopback ip reachability
+- name: Check for underlay loopback IP reachability
   hosts: leaf
   gather_facts: no
   connection: local

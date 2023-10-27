@@ -1,0 +1,52 @@
+---
+
+- name: Increment DHCP for EVPN overlay
+  hosts: leaf
+  gather_facts: no
+
+  tasks:
+            - name: Load variables
+              run_once: true
+              block:
+              - name: Set playbook mode
+                set_fact:
+                  playbook_mode: '-inc'
+
+              - name: Load vars from dhcp_create_vars.yml
+                include_vars: 
+                  file: "./group_vars/dhcp_create_vars.yml"
+                  name: dhcp_create_vars
+
+              - name: Load vars from dhcp_db.yml
+                include_vars: 
+                  file: "./group_vars/dhcp_db.yml"
+                  name: dhcp_db_vars
+
+              - name: Filter interested DAGs when vrfs is 'all'
+                when: '"all" in dhcp_db_vars.dag'
+                set_fact:
+                  vrfs: "{{ (vrfs | default({})) | combine ({item: dhcp_db_vars.dag.all}) }}"
+                loop: "{{ dhcp_create_vars.dag }}"
+
+              - name: Filter interested DAGs when vrfs is not 'all'
+                when: '"all" not in dhcp_db_vars.dag'
+                block:
+                - set_fact:
+                    vrfs: "{{ (vrfs | default({})) | combine ({item.key: item.value}) }}"
+                  with_dict: "{{ dhcp_db_vars.dag }}"
+                  when: "item.key in dhcp_create_vars.dag or 'all' in dhcp_create_vars.dag"
+
+              - name: Set DHCP options
+                set_fact:
+                  dhcp_options: "{{ dhcp_db_vars.dhcp_options | default({}) }}"
+
+- name: Display output info
+  hosts: localhost
+  gather_facts: no
+
+  tasks:
+            - set_fact:
+                playbook_mode: '-inc'
+
+- name: Import tasks from playbook_dhcp_preview.yml
+  import_playbook: playbook_dhcp_preview.yml

@@ -7,17 +7,17 @@
   tasks:  
 
           - name: replace base config
-            when: inventory_hostname in groups['leaf']
+            when: inventory_hostname in groups['leaf'] | default([])
             ios_command:
-                commands: 
-                  - show run
-                  - configure replace bootflash:default_config.txt force 
-                  - show run
+              commands: 
+                - show run
+                - configure replace bootflash:default_config.txt force 
+                - show run
 
           - name: replace base config
-            when: inventory_hostname in groups['spine']
+            when: inventory_hostname in groups['spine'] | default([])
             ios_command:
-                commands: 
-                  - show run
-                  - configure replace bootflash:default_config.txt force 
-                  - show run
+              commands: 
+                - show run
+                - configure replace bootflash:default_config.txt force 
+                - show run

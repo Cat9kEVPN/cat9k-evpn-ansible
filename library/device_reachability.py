@@ -1,8 +1,15 @@
-#check the version,license and loopback ip reachability
-
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
+
 from ansible.module_utils.basic import AnsibleModule
+
+DOCUMENTATION = r'''
+---
+module: access_intf_preprocess
+
+short_description: This module contains functions used to check the version, license, and loopback ip reachability
+'''
+
 
 import re
 import yaml

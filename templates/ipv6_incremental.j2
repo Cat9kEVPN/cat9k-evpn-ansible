@@ -16,13 +16,15 @@ This module incrementally adding/removing ipv6 configuration to the fabric.
 
 {# Global ipv6 unicast routing enable/disable #}
 {% if ipv6_routing is defined and playbook_mode == 'add'%}
+  ! Routing block
+  !
   ipv6 unicast-routing
 {% endif %}
 
 {# vrf configuration #}
 
 {% if vrfs is defined %}
-    ! vrf block
+    ! VRF block
     {% for vrf in vrfs %}
         !
         vrf definition {{ vrf }}
@@ -53,7 +55,7 @@ This module incrementally adding/removing ipv6 configuration to the fabric.
 {# SVI configuration #}
 
 {% if svis is defined %}
-    ! svi block
+    ! SVI block
     {% for svi in svis %}
         !
         interface Vlan{{svi}}
@@ -73,7 +75,7 @@ This module incrementally adding/removing ipv6 configuration to the fabric.
 {# bgp configuration #}
 
 {% if vrfs is defined %}
-    ! bgp l2vpn ipv46 per vrf block
+    ! BGP L2VPN IPv46 per vrf block
     !
     router bgp {{ bgp.as_number }}
     {% for vrf in vrfs %}        

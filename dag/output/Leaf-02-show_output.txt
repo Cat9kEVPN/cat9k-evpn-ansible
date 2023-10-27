@@ -1,0 +1,74 @@
+"-   - show run nve
+    -   - Building configuration...
+        - ''
+        - 'Current configuration : 5 bytes'
+        - end
+-   - show nve peers
+    -   - '''M'' - MAC entry download flag  ''A'' - Adjacency download flag'
+        - '''4'' - IPv4 flag  ''6'' - IPv6 flag'
+        - ''
+        - Interface  VNI      Type Peer-IP          RMAC/Num_RTs   eVNI     state
+            flags UP time
+-   - show l2vpn evpn peers vxlan
+    -   - ''
+-   - 'show bgp l2vpn evpn summary '
+    -   - '% BGP not active'
+-   - 'show bgp l2vpn evpn '
+    -   - '% BGP not active'
+-   - ''
+    -   - ''
+-   - '   '
+    -   - ''
+-   - '     show l2vpn evpn evi 101 detail'
+    -   - '% No matching EVPN instance'
+-   - '     show l2vpn evpn mac evi 101'
+    -   - MAC Address    EVI   VLAN  ESI                      Ether Tag  Next Hop(s)
+        - '-------------- ----- ----- ------------------------ ---------- ---------------'
+-   - '     show l2vpn evpn mac ip evi 101'
+    -   - IP Address                              EVI   VLAN  MAC Address    Next
+            Hop(s)
+        - '--------------------------------------- ----- ----- -------------- -----------'
+-   - '     show l2fib bridge-domain 101 detail'
+    -   - ''
+-   - '      '
+    -   - ''
+-   - '     show l2vpn evpn evi 102 detail'
+    -   - '% No matching EVPN instance'
+-   - '     show l2vpn evpn mac evi 102'
+    -   - MAC Address    EVI   VLAN  ESI                      Ether Tag  Next Hop(s)
+        - '-------------- ----- ----- ------------------------ ---------- ---------------'
+-   - '     show l2vpn evpn mac ip evi 102'
+    -   - IP Address                              EVI   VLAN  MAC Address    Next
+            Hop(s)
+        - '--------------------------------------- ----- ----- -------------- -----------'
+-   - '     show l2fib bridge-domain 102 detail'
+    -   - ''
+-   - '        '
+    -   - ''
+-   - '     show l2vpn evpn evi 201 detail'
+    -   - '% No matching EVPN instance'
+-   - '     show l2vpn evpn mac evi 201'
+    -   - MAC Address    EVI   VLAN  ESI                      Ether Tag  Next Hop(s)
+        - '-------------- ----- ----- ------------------------ ---------- ---------------'
+-   - '     show l2vpn evpn mac ip evi 201'
+    -   - IP Address                              EVI   VLAN  MAC Address    Next
+            Hop(s)
+        - '--------------------------------------- ----- ----- -------------- -----------'
+-   - '     show l2fib bridge-domain 201 detail'
+    -   - ''
+-   - '      '
+    -   - ''
+-   - '     show l2vpn evpn evi 202 detail'
+    -   - '% No matching EVPN instance'
+-   - '     show l2vpn evpn mac evi 202'
+    -   - MAC Address    EVI   VLAN  ESI                      Ether Tag  Next Hop(s)
+        - '-------------- ----- ----- ------------------------ ---------- ---------------'
+-   - '     show l2vpn evpn mac ip evi 202'
+    -   - IP Address                              EVI   VLAN  MAC Address    Next
+            Hop(s)
+        - '--------------------------------------- ----- ----- -------------- -----------'
+-   - '     show l2fib bridge-domain 202 detail'
+    -   - ''
+-   - '                                                         '
+    -   - ''
+" 
