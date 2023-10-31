@@ -14,8 +14,7 @@ short_description: This module contains functions used in preprocessing group_va
 
 def vrfs_with_no_src(module, vrfs_dict):
 
-    ret_dict = {}
-    ret_dict['vrfs'] = []
+    ret_dict = {'vrfs': []}
 
     for vrf in vrfs_dict:
         if 'helper_vrf' not in vrfs_dict[vrf]:
@@ -35,45 +34,72 @@ def vrfs_with_no_src(module, vrfs_dict):
 
     return ret_dict
 
-def assign_src_intf(module, ovrly_intf_info):
+def svis_vrfs_dict(module, overlay_vars):
 
-    no_src_vrf = ovrly_intf_info['no_src_vrf']
+    dhcp_vars = overlay_vars['dhcp_vars']
 
-    if 'all' in no_src_vrf: 
-        no_src_vrf = ovrly_intf_info['all_vrfs']
+    vrfs_dict = {}
+    all_vrfs = []
+    overlay_vrfs = overlay_vars.get('vrf', {})
+    if 'all' in dhcp_vars:
+        for vrf in overlay_vrfs:
+            if vrf not in dhcp_vars:
+                vrfs_dict[vrf] = dhcp_vars['all']
+                all_vrfs.append(vrf)
+            else:
+               vrfs_dict[vrf] = dhcp_vars[vrf]
+
+        if 'all' in overlay_vars['no_src_vrfs']:
+            overlay_vars['no_src_vrfs'].remove('all')
+            overlay_vars['no_src_vrfs'] += all_vrfs
+    else:
+        vrfs_dict = dhcp_vars
+
+    svis_dict = {}
+    if vrfs_dict:
+        overlay_svis = overlay_vars.get('svis', {})
+        for svi, svi_data in overlay_svis.items():
+            if svi_data['vrf'] in vrfs_dict and svi_data['svi_type'] == 'access':
+                svis_dict.setdefault(svi_data['vrf'], []).append(svi)
+
+    return {
+        'vrfs': vrfs_dict, 
+        'svis': svis_dict, 
+        'src_interfaces': assign_src_intf(module, overlay_vars)
+    }
+
+def assign_src_intf(module, interfaces_data):
 
     ret_dict = {}
-    overlay_intf = ovrly_intf_info['overlay_intf']
+    overlay_intf = interfaces_data.get('overlay_interfaces', {})
 
-    if no_src_vrf != []:
-        for vrf in no_src_vrf:
-            for intf in overlay_intf:
-                if overlay_intf[intf]['vrf'] == vrf:
-                    ret_dict[vrf] = intf
-                    break            
-            if vrf not in ret_dict: 
-                module.fail_json(
-                    """Relay source interface for " + vrf +" is not defined 
-                    and cannot be found in hostvars/<node>.yml"""
-                )
+    for vrf in interfaces_data['no_src_vrfs']:
+        for intf in overlay_intf:
+            if overlay_intf[intf]['vrf'] == vrf:
+                ret_dict[vrf] = intf
+                break  
+        if vrf not in ret_dict: 
+            module.fail_json(
+                """Relay source interface for " + vrf +" is not defined 
+                and cannot be found in hostvars/<node>.yml"""
+            )
 
     return ret_dict
 
 def run_module():
     module = AnsibleModule(
         argument_spec=dict(
-            get_no_src_vrf=dict(required=False,type='dict'),
-            get_src_intf=dict(required=False,type='dict')
+            dhcp_vars=dict(required=False,type='dict'),
+            overlay_dict=dict(required=False,type='dict')
     ),
         supports_check_mode=True
     )   
 
-    result = {}
-    if module.params['get_no_src_vrf']:
-        result = vrfs_with_no_src(module, module.params['get_no_src_vrf'])
+    if module.params['dhcp_vars']:
+        result = vrfs_with_no_src(module, module.params['dhcp_vars'])
 
-    if module.params['get_src_intf']:
-        result = assign_src_intf(module, module.params['get_src_intf'])  
+    if module.params['overlay_dict']:
+        result = svis_vrfs_dict(module, module.params['overlay_dict'])  
 
     module.exit_json(**result)
 

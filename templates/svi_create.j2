@@ -32,7 +32,6 @@ If action is not set in the configurations, it is "add" by default.
                 {% endif %}
                 no autostate
             {% endif %}
-            no shut
 
             {# Check if PIM configuration is needed on the SVI #}
             {% set pim_enable = svis[svi].pim_enable | default('no') %}
@@ -46,6 +45,8 @@ If action is not set in the configurations, it is "add" by default.
             {% if svis[svi].mac is defined and l2vpn_global.default_gw == "no" %}
                 mac-address {{ svis[svi].mac }}
             {% endif %}
+
+             no shut
 
         {% endif %}
     {% endfor %}

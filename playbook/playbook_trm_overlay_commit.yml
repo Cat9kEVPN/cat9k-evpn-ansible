@@ -4,7 +4,6 @@
   hosts: all
   gather_facts: no
   vars:
-    vrfs: {}
     playbook_mode: ''
     leaf_template_list:
       - '../templates/vrf_definition_trm.j2'
@@ -14,7 +13,6 @@
       - '../templates/bgp_mvpn_af_trm.j2'
 
   tasks:
-    
 
             - name: Load and process TRM input file
               run_once: True
@@ -31,60 +29,48 @@
                   set_fact: 
                     vrfs: "{{ trm_db_vars.dag }}"
 
-              - name: Collect RP loopbacks and VRFs AFs from trm_overlay_db.yml
+              - name: Collect RP loopbacks, RP interfaces data and VRFs AFs from trm_overlay_db.yml
                 trm_preprocess:
                   vrf_trm_info: "{{ {'vrfs': vrfs, 'inventory_leafs': groups['leaf']} }}"
-                register: trm_db_data
+                register: processed_trm_db
 
-              - name: Collect all RP loopback data
-                set_fact: 
-                  rp_interfaces_data: "{{ trm_db_data.rp_interfaces }}"
+              - name: Include rp_loopbacks_data, vrfs_afs vars
+                set_fact:
+                  "{{ item.key }}": "{{ item.value }}"
+                with_dict: "{{ processed_trm_db }}"
+
+            - name: Run and parse show run nve
+              ansible.utils.cli_parse:
+                command: "show run nve"
+                parser:
+                  name: ansible.netcommon.pyats
+                set_fact: overlay_dict
 
             - name: Get overlay data to collect VRFs and SVIs data
               when: inventory_hostname in groups['leaf'] and vrfs != {}
               block:
-              - name: Run and parse show run nve
-                ansible.utils.cli_parse:
-                  command: "show run nve"
-                  parser:
-                    name: ansible.netcommon.pyats
-                  set_fact: overlay_dict
-
               - name: Collect SVIs from the overlay data 
                 set_fact:
                   svis: "{{ svis | default([]) + [ item.key ] }}"
                 when: item.value.vrf in vrfs
                 with_dict: "{{ overlay_dict.svis | default({}) }}"
 
-              - name: Get RP loopbacks to enable PIM-Sparse mode
-                set_fact:
-                  rp_loopbacks: "{{ trm_db_data.rp_loopbacks[inventory_hostname] | default([]) }}"
+            - name: Get RP loopbacks to enable PIM-Sparse mode
+              when: inventory_hostname in rp_loopbacks
+              set_fact:
+                rp_loopbacks: "{{ rp_loopbacks[inventory_hostname] }}"
 
-            - name: Collect BGP AFs from device
+            - name: Collect L2VPN addr family neighbor and set it as MVPN AF neighbors
               block:
-
-              - name: Run and parse show run | sec bgp
-                ansible.utils.cli_parse:
-                  command: "show run | sec bgp"
-                  parser:
-                    name: ansible.netcommon.pyats
-                  set_fact: bgp_dict
-                  
-              - name: Collect L2VPN addr family neighbor and set it as MVPN AF neighbors
-                block:
-                - set_fact: 
-                    bgp_list: "{{ (bgp_dict.bgp | default({})) | dict2items }}"
-                - set_fact:
-                    bgp: "{{ bgp | default({}) | combine(
-                      { 'as_number': bgp_list[0].value.as_number | string },
-                      { 'mvpn_neighbors': bgp_list[0].value.address_family['l2vpn evpn'].address_family_neighbor | list },
-                      { 'mvpn_afs': trm_db_data.vrf_afs }
-                      ) }}"
-
-              - name: Set spines as RRC
-                when: inventory_hostname in (groups['spine'] | default([]))
-                set_fact:
+              - set_fact: 
+                  bgp: "{{ {'as_number': (overlay_dict.bgp | list)[0]} }}"
+              - set_fact:
+                  bgp: "{{ bgp | combine({
+                    'mvpn_neighbors': overlay_dict.bgp[as_number].address_family['l2vpn evpn'].address_family_neighbor | list,
+                    'mvpn_afs': vrf_afs }) }}" 
+              - set_fact:
                   bgp: "{{ bgp | default({}) | combine({'rrc': 'true'}) }}"
+                when: inventory_hostname in (groups['spine'] | default([]))
 
             - name: Read leaf-only config template files
               when: inventory_hostname in groups['leaf']

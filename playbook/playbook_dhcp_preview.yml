@@ -4,11 +4,10 @@
   hosts: leaf
   gather_facts: no
   vars:
-    playbook_mode: ''
-    dhcp_block: ''
-    svis: {}
+    playbook_mode: ""
+    dhcp_block: ""
     template_list:
-      - '../templates/dhcp_overlay.j2'
+      - "../templates/dhcp_overlay.j2"
 
   tasks:
             - name: Load and process DHCP input file
@@ -24,48 +23,29 @@
                   vrfs: "{{ dhcp_db_vars.dag }}"
                   dhcp_options: "{{ dhcp_db_vars.dhcp_options | default({}) }}"
                   
-            - name: Get list of VRFs
-              run_once: true
-              set_fact:
-                vrf_list: "{{ vrfs.keys() }}"
-
             - name: Collect VRFs with no relay interface set if any
               run_once: true
               dhcp_preprocess:
-                get_no_src_vrf: "{{ vrfs }}"
-              register: no_src_vrf
+                dhcp_vars: "{{ vrfs }}"
+              register: no_src_vrfs
+                
+            # Collect VRFs, SVIs and overlay interfaces data
+            - name: Run and parse show run nve
+              ansible.utils.cli_parse:
+                command: "show run nve"
+                parser:
+                  name: ansible.netcommon.pyats
+                set_fact: overlay_dict
 
-            - name: Collect VRFs, SVIs and overlay interfaces data
-              block:
-              - name: Run and parse show run nve
-                ansible.utils.cli_parse:
-                  command: "show run nve"
-                  parser:
-                    name: ansible.netcommon.pyats
-                  set_fact: overlay_dict
+            - name: Get VRFs (if 'all'), SVIs and relay src interface (if not defined already)
+              dhcp_preprocess:
+                overlay_dict: "{{ overlay_dict | combine({'no_src_vrfs':no_src_vrfs.vrfs, 'dhcp_vars':vrfs}) }}"
+              register: module_output
 
-              - name: Collect VRFs from show run nve output if dag is set to 'all'
-                when: '"all" in vrf_list'
-                block:
-                - set_fact:
-                    vrf_dev_dict: "{{ overlay_dict.vrf | default({}) }}"
-                - set_fact: 
-                    all_vrfs: "{{ vrf_dev_dict | difference(vrf_list) }}"
-                    vrf_list: "{{ vrf_dev_dict | list }}"
-
-              - name: Collect svis of the VRFs from show run nve output
-                set_fact: 
-                  svis: "{{ svis | combine ({item.value.vrf: (svis[item.value.vrf] | default([])) + [item.key]}) }}"
-                with_dict: "{{ overlay_dict.svis }}"
-                when: item.value.vrf in vrf_list and item.value.svi_type == 'access'
-
-              - name: Assign relay src interface from show run nve output for VRFs if not defined already
-                dhcp_preprocess:
-                  get_src_intf: "{{ {
-                    'all_vrfs': vrf_list, 
-                    'overlay_intf': overlay_dict.overlay_interfaces | default({}), 
-                    'no_src_vrf': no_src_vrf.vrfs | default([]) } }}"
-                register: ovrly_intf_output
+            - name: Include VRFs, SVIs and source interfaces dict from module output
+              set_fact:
+                "{{ item.key }}": "{{ item.value }}"
+              with_dict: "{{ module_output }}"
 
             - name: Read DHCP configuration template
               set_fact:
@@ -82,7 +62,7 @@
   hosts: localhost
   gather_facts: no
   vars:
-    playbook_mode: ''
+    playbook_mode: ""
 
   tasks:
     - debug:

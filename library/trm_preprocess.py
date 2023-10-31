@@ -10,25 +10,6 @@ module: trm_preprocess
 short_description: This module contains functions used in preprocessing trm_overlay_db.yml, for TRM related playbooks
 '''
 
-def filter_non_existing_vrfs(vrf_dict):
-    filtered_vrfs = {}
-
-    unfiltered_vrfs = vrf_dict['unfiltered_vrfs']
-    overlay_vrfs = vrf_dict['overlay_vrfs']
-
-    for vrf in unfiltered_vrfs:
-        if vrf in overlay_vrfs:
-            af_dict = {}
-            for af in unfiltered_vrfs[vrf]['afs']:
-                if af in overlay_vrfs[vrf]['address_family'] and 'mdt_auto_discovery' in overlay_vrfs[vrf]['address_family'][af]:
-                    af_dict[af] = unfiltered_vrfs[vrf]['afs'][af]
-
-            if 'ipv4' in af_dict or 'ipv6' in af_dict:
-                filtered_vrfs[vrf] = unfiltered_vrfs[vrf]
-                filtered_vrfs[vrf]['afs'] = af_dict
-                
-    return {'filtered_vrfs': filtered_vrfs}
-
 def collect_rp_loopback(vrf_trm_info):
     device_rp_dict, rp_lpbck_dict, vrf_mvpn = {}, {}, {}
 
@@ -68,23 +49,20 @@ def collect_rp_loopback(vrf_trm_info):
 
     return {
         'rp_loopbacks': device_rp_dict, 
-        'rp_interfaces': rp_lpbck_dict, 
+        'rp_interfaces_data': rp_lpbck_dict, 
         'vrf_afs': list(vrf_mvpn.keys())
     }
 
 def run_module():
     module = AnsibleModule(
         argument_spec=dict(
-            vrf_trm_info=dict(required=False,type='dict'),
-            filter_deleted_vrfs=dict(required=False,type='dict')
+            vrf_trm_info=dict(required=True,type='dict')
     ),
         supports_check_mode=True
     )   
 
     if module.params['vrf_trm_info']:
         result = collect_rp_loopback(module.params['vrf_trm_info'])
-    if module.params['filter_deleted_vrfs']:
-        result = filter_non_existing_vrfs(module.params['filter_deleted_vrfs'])
 
     module.exit_json(**result)
 

@@ -36,48 +36,39 @@ vrfs:
     {% endif %}
 
     {# per vrf per interface configuration #}
-    {% if vrfs is defined and vrf_list != [] %}
+    {% if vrfs is defined and svis is defined %}
         {% for vrf in vrfs %}
-            {% if vrf == 'all' %}
-                {% set vrfs_list = all_vrfs %}
-            {% else %}
-                {% set vrfs_list = [vrf] %}
-            {% endif %}
-            {% for vrf_in in vrfs_list %}
-                {% if svis is defined %}
-                    {% for svi in svis[vrf_in] %}
-                        !
-                        {# default enabling/disabling snooping #}
-                        ip dhcp snooping vlan {{svi}}
+            {% for svi in svis[vrf] %}
+                !
+                {# default enabling/disabling snooping #}
+                ip dhcp snooping vlan {{svi}}
 
-                        {# enter interface configuration mode #}
-                        interface Vlan {{svi}}
+                {# enter interface configuration mode #}
+                interface Vlan {{svi}}
 
-                        {# helper vrf #}
-                        {% if vrfs[vrf].helper_vrf is defined %}
-                            {% set helper_vrf = vrfs[vrf].helper_vrf %}
-                        {% else %}
-                            {% set helper_vrf = vrf_in %}
-                        {% endif %}
+                {# helper vrf #}
+                {% if vrfs[vrf].helper_vrf is defined %}
+                    {% set helper_vrf = vrfs[vrf].helper_vrf %}
+                {% else %}
+                    {% set helper_vrf = vrf %}
+                {% endif %}
 
-                        {# helper address #}
-                        {% for addr in vrfs[vrf].helper_address %}
-                            {% if helper_vrf == 'global' %}
-                                ip helper-address global {{ addr }}
-                            {% elif helper_vrf == vrf_in %}
-                                ip helper-address {{ addr }}
-                            {% else %}
-                                ip helper-address vrf {{ helper_vrf }} {{ addr }}
-                            {% endif %}
-                        {% endfor %}
+                {# helper address #}
+                {% for addr in vrfs[vrf].helper_address %}
+                    {% if helper_vrf == 'global' %}
+                        ip helper-address global {{ addr }}
+                    {% elif helper_vrf == vrf %}
+                        ip helper-address {{ addr }}
+                    {% else %}
+                        ip helper-address vrf {{ helper_vrf }} {{ addr }}
+                    {% endif %}
+                {% endfor %}
 
-                        {# DHCP relay source interface#}
-                        {% if vrfs[vrf].relay_src_intf is defined %}
-                            ip dhcp relay source-interface {{ vrfs[vrf].relay_src_intf }}
-                        {% else %}
-                            ip dhcp relay source-interface {{ ovrly_intf_output[helper_vrf] }}
-                        {% endif %}
-                    {% endfor %}
+                {# DHCP relay source interface #}
+                {% if vrfs[vrf].relay_src_intf is defined %}
+                    ip dhcp relay source-interface {{ vrfs[vrf].relay_src_intf }}
+                {% else %}
+                    ip dhcp relay source-interface {{ src_interfaces[helper_vrf] }}
                 {% endif %}
             {% endfor %}
         {% endfor %}
@@ -110,7 +101,7 @@ vrfs:
                 {% endfor %}
             {% endif %}
 
-            {# DHCP relay source interface#}
+            {# DHCP relay source interface #}
             {% if svis[svi].relay_src_intf is defined %}
                 no ip dhcp relay source-interface {{ svis[svi].relay_src_intf }}
             {% endif %}
