@@ -4,6 +4,7 @@
   gather_facts: no
   vars:
     playbook_mode: inc
+    input_file: 'ipv6_create_vars'
     ipv6_block : ''
     template_list:
       - '../templates/ipv6_incremental.j2'
@@ -15,15 +16,20 @@
             include_vars:
               file: group_vars/overlay_db.yml
               name: overlay_db_vars
-
+              
+          - name: Set input file if delete playbook
+            run_once: true
+            set_fact:
+              input_file: ipv6_delete_vars
+            when: "playbook_mode == 'del'"
+            
           - name: Collect vars from group_vars/ipv6_create_vars.yml
             run_once: true
             include_vars:
-              file: group_vars/ipv6_create_vars.yml
+              file: group_vars/{{input_file}}.yml
               name: ipv6_vars
             
           - name: Collect vars from host_vars/node_vars/<hostname>.yml
-            run_once: true
             include_vars:
               file: host_vars/node_vars/{{ inventory_hostname }}.yml
               name: hostvars_data
