@@ -65,11 +65,7 @@ vrfs:
                 {% endfor %}
 
                 {# DHCP relay source interface #}
-                {% if vrfs[vrf].relay_src_intf is defined %}
-                    ip dhcp relay source-interface {{ vrfs[vrf].relay_src_intf }}
-                {% else %}
-                    ip dhcp relay source-interface {{ src_interfaces[helper_vrf] }}
-                {% endif %}
+                ip dhcp relay source-interface {{ vrfs[vrf].relay_src_intf }}
             {% endfor %}
         {% endfor %}
     {% endif %}  
