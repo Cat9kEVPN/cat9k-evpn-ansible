@@ -44,7 +44,7 @@ def svis_vrfs_dict(module, overlay_vars):
     if 'all' in dhcp_vars:
         for vrf in overlay_vrfs:
             if vrf not in dhcp_vars:
-                vrfs_dict[vrf] = dhcp_vars['all']
+                vrfs_dict[vrf] = dhcp_vars['all'].copy()
                 all_vrfs.append(vrf)
             else:
                vrfs_dict[vrf] = dhcp_vars[vrf]
@@ -55,7 +55,10 @@ def svis_vrfs_dict(module, overlay_vars):
     else:
         vrfs_dict = dhcp_vars
 
+    vrfs_dict = assign_src_intf(module, overlay_vars, vrfs_dict)
+
     svis_dict = {}
+
     if vrfs_dict:
         overlay_svis = overlay_vars.get('svis', {})
         for svi, svi_data in overlay_svis.items():
@@ -65,26 +68,24 @@ def svis_vrfs_dict(module, overlay_vars):
     return {
         'vrfs': vrfs_dict, 
         'svis': svis_dict, 
-        'src_interfaces': assign_src_intf(module, overlay_vars)
     }
 
-def assign_src_intf(module, interfaces_data):
+def assign_src_intf(module, interfaces_data, vrfs_dict):
 
-    ret_dict = {}
     overlay_intf = interfaces_data.get('overlay_interfaces', {})
 
-    for vrf in interfaces_data['no_src_vrfs']:
+    for vrf in interfaces_data.get('no_src_vrfs', []):
         for intf in overlay_intf:
             if overlay_intf[intf]['vrf'] == vrf:
-                ret_dict[vrf] = intf
-                break  
-        if vrf not in ret_dict: 
+                vrfs_dict[vrf]['relay_src_intf'] = intf
+                break 
+        if 'relay_src_intf' not in vrfs_dict[vrf]: 
             module.fail_json(
                 """Relay source interface for " + vrf +" is not defined 
                 and cannot be found in hostvars/<node>.yml"""
             )
 
-    return ret_dict
+    return vrfs_dict
 
 def run_module():
     module = AnsibleModule(
