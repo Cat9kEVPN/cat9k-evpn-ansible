@@ -18,6 +18,16 @@ This module configures overlay interfaces
               {% elif action == 'add' %}
                   vrf forwarding {{ overlay_interfaces[intf].vrf }}
                   ip address {{ overlay_interfaces[intf].ip_address }} {{ overlay_interfaces[intf].subnet_mask }} 
+                  {% if overlay_interfaces[intf].ipv6 is defined %}
+                      ipv6 enable
+                      {% for ipv6_addr in overlay_interfaces[intf].ipv6 %}
+                          ipv6 address {{ipv6_addr}}
+                      {% endfor %}
+                  {% endif %}
+                  {% set pim_enable = overlay_interfaces[intf].pim_enable | default('no') %}
+                  {% if pim_enable == 'yes' %}
+                      ip pim sparse-mode
+                  {% endif %}
               {% endif %}
               no shutdown
           {% endif %}

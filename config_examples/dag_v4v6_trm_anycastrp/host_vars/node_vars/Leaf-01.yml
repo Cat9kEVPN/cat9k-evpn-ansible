@@ -66,3 +66,23 @@ overlay_interfaces:
     subnet_mask: '255.255.255.0'
     loopback: 'yes'
     vrf: 'blue'
+  
+  Loopback901:
+    name: 'Vrf Loopback'
+    ip_address: '10.1.255.1'
+    subnet_mask: '255.255.255.255'
+    ipv6:
+      - 'FC00:1:255::1/128'
+    loopback: 'yes'
+    pim_enable: 'yes'
+    vrf: 'green'
+
+  Loopback902:
+    name: 'Vrf Loopback'
+    ip_address: '10.2.255.1'
+    subnet_mask: '255.255.255.255'
+    ipv6:
+      - 'FC00:2:254::1/128'
+    loopback: 'yes'
+    pim_enable: 'yes'
+    vrf: 'blue'

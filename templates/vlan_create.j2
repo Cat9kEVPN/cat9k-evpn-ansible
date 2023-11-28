@@ -18,9 +18,11 @@ If action is not set in the configurations, it is "add" by default.
               {% elif action == 'add' %}
                   !
                   vlan {{vlan}}
+                    no shutdown
                   {% if vlans[vlan].description is defined %}
                       name {{ vlans[vlan].description }}
                   {% endif %}
+                  exit
               {% endif %}
           {% endif %}
       {% endfor %}
