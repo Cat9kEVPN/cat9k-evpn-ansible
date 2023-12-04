@@ -82,7 +82,7 @@ overlay_interfaces:
     ip_address: '10.2.255.1'
     subnet_mask: '255.255.255.255'
     ipv6:
-      - 'FC00:2:254::1/128'
+      - 'FC00:2:255::1/128'
     loopback: 'yes'
     pim_enable: 'yes'
     vrf: 'blue'
