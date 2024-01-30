@@ -130,11 +130,11 @@
 
 dag:
   green:                                                 
-    register_source: loopback1
+    register_source: loopback901
                          
     fabric_internal_rp:      
       rp_device: Leaf-02                       
-      rp_loopback: Loopback256                          
+      rp_loopback: Loopback255                          
       ipv4_rp_address: '10.2.255.255'
       ipv6_rp_address: 'FC00:2:255::255'                 
  
@@ -146,13 +146,13 @@ dag:
         default_mdt_group: '239.1.1.1'
 
   blue:
-    register_source: Loopback1
+    register_source: Loopback902
    
     fabric_internal_rp:      
       rp_device: Leaf-02
-      rp_loopback: Loopback256
-      ipv4_rp_address: '10.2.255.255'
-      ipv6_rp_address: 'FC00:2:255::255' 
+      rp_loopback: Loopback254
+      ipv4_rp_address: '10.2.254.254'
+      ipv6_rp_address: 'FC00:2:254::254' 
    
     afs:
       ipv4:
